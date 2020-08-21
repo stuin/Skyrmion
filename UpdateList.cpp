@@ -75,7 +75,7 @@ void UpdateList::update(double time) {
 
 		//For each node in layer order
 		while(source != NULL) {
-			if(alwaysLoadedLayers[layer] || source->checkCollision(camera)) {
+			if(alwaysLoadedLayers[layer] || camera == NULL || source->checkCollision(camera)) {
 				//Check each selected collision layer
 				int collisionLayer = 0;
 				for(int i = 0; i < (int)source->getCollisionLayers().count(); i++) {
@@ -124,7 +124,7 @@ void UpdateList::draw(sf::RenderWindow &window) {
 
 		while(source != NULL) {
 			if(!source->isHidden() &&
-				(alwaysLoadedLayers[layer] || source->checkCollision(camera))) {
+				(alwaysLoadedLayers[layer] || camera == NULL || source->checkCollision(camera))) {
 				//Check for parent node
 				if(source->getParent() != NULL) {
 					sf::Transform translation;

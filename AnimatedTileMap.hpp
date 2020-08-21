@@ -35,8 +35,8 @@ public:
 		//Build each frame
 		for(int i = 0; i < frames; i++) {
 			//Load new tilemap
-			TileMap *map = new TileMap(tileset, tileX, tileY, indexes, layer, i * numTiles);
-		    tilemaps.push_back(*map);
+			TileMap map = TileMap(tileset, tileX, tileY, indexes, layer, i * numTiles);
+		    tilemaps.push_back(map);
 		}
     }
 

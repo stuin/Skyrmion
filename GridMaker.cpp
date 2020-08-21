@@ -15,6 +15,12 @@ GridMaker::GridMaker(std::string file, unsigned int _width, unsigned int _height
 	reload(file);
 }
 
+GridMaker::~GridMaker() {
+	for(unsigned int y = 0; y < height; y++)
+		delete[] tiles[y];
+	delete[] tiles;
+}
+
 void GridMaker::reload(std::string file) {
 	//Set reading variables
 	unsigned int i = 0;
@@ -44,10 +50,6 @@ void GridMaker::reload(std::string file) {
 			tiles[i][j++] = ' ';
 		i++;
 	}
-}
-
-GridMaker::~GridMaker() {
-
 }
 
 //Set tile value
@@ -125,7 +127,18 @@ void Indexer::mapGrid(std::function<void(char, sf::Vector2f)> func) {
 		}
 }
 
+bool Indexer::inBounds(sf::Vector2f position) {
+	unsigned int x = position.x / scale.x;
+	unsigned int y = position.y / scale.y;
+	return grid->inBounds(x, y);
+}
+
 //Get size of grid
 sf::Vector2i Indexer::getSize() {
 	return grid->getSize();
+}
+
+//Get indexer scale
+sf::Vector2i Indexer::getScale() {
+	return scale;
 }

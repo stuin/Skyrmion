@@ -56,5 +56,7 @@ public:
 	void mapGrid(std::function<void(char, sf::Vector2f)> func);
 
 	//Check grid size
+	bool inBounds(sf::Vector2f position);
+	sf::Vector2i getScale();
 	sf::Vector2i getSize();
 };

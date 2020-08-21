@@ -1,9 +1,8 @@
 #pragma once
 
-#include <stdexcept>
+#include "LightMap.hpp"
 
-#include "Node.h"
-#include "GridMaker.h"
+#include <stdexcept>
 
 /*
  * Based off of sfml tutorial
@@ -14,23 +13,19 @@ private:
     const int tileX;
     const int tileY;
     Indexer indexes;
+    bool redraw = false;
 
     //Graphical variables
-    sf::VertexArray m_vertices;
-    sf::Texture m_tileset;
-
-    virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
-        states.transform *= getTransform();
-        states.texture = &m_tileset;
-        target.draw(m_vertices, states);
-    }
+    sf::VertexArray vertices;
+    sf::Texture tileset;
+    sf::RenderTexture *buffer;
 
 public:
-    TileMap(const std::string& tileset, int new_tileX, int new_tileY, Indexer new_indexes, unsigned char layer = 0, int offset = 0)
-     : Node(layer), tileX(new_tileX), tileY(new_tileY), indexes(new_indexes) {
+    TileMap(const std::string& _tileset, int _tileX, int _tileY, Indexer _indexes, unsigned char layer = 0, int offset = 0)
+     : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes) {
         // load the tileset texture
-        if(!m_tileset.loadFromFile(tileset))
-            throw std::invalid_argument("Tilemap texture not found: " + tileset);
+        if(!tileset.loadFromFile(_tileset))
+            throw std::invalid_argument("Tilemap texture not found: " + _tileset);
 
         //Set sizing
         unsigned int width = indexes.getSize().x;
@@ -38,19 +33,27 @@ public:
         setSize(sf::Vector2i(tileX * width, tileY * height));
         setOrigin(0, 0);
 
+        //Set up buffer texture
+        buffer = new sf::RenderTexture();
+        if(!buffer->create(tileX * width, tileY * height))
+            throw std::logic_error("Error creating TileMap buffer");
+
         // resize the vertex array to fit the level size
-        m_vertices.setPrimitiveType(sf::Quads);
-        m_vertices.resize(width * height * 4);
+        vertices.setPrimitiveType(sf::Quads);
+        vertices.resize(width * height * 4);
 
         //Load textures
         reload(offset);
+    }
+
+    ~TileMap() {
     }
 
     void reload(int offset = 0) {
         unsigned int width = indexes.getSize().x;
         unsigned int height = indexes.getSize().y;
         int *tiles = indexes.indexGrid();
-        int numTextures = (m_tileset.getSize().x / tileX) * (m_tileset.getSize().y / tileY);
+        int numTextures = (tileset.getSize().x / tileX) * (tileset.getSize().y / tileY);
 
         // populate the vertex array, with one quad per tile
         for(unsigned int i = 0; i < width; ++i)
@@ -60,11 +63,11 @@ public:
                 int rotations = (tiles[i + j * width] / numTextures);
 
                 // find its position in the tileset texture
-                int tu = tileNumber % (m_tileset.getSize().x / tileX);
-                int tv = tileNumber / (m_tileset.getSize().x / tileX);
+                int tu = tileNumber % (tileset.getSize().x / tileX);
+                int tv = tileNumber / (tileset.getSize().x / tileX);
 
                 // get a pointer to the current tile's quad
-                sf::Vertex* quad = &m_vertices[(i + j * width) * 4];
+                sf::Vertex* quad = &vertices[(i + j * width) * 4];
 
                 if(tileNumber - offset != -1) {
                     // define its 4 texture coordinates
@@ -85,5 +88,11 @@ public:
                     quad[3].position = sf::Vector2f(0, 0);
                 }
             }
+
+        //Draw to buffer
+        buffer->clear(sf::Color::Transparent);
+        buffer->draw(vertices, sf::RenderStates(&tileset));
+        buffer->display();
+        setTexture(buffer->getTexture());
     }
 };
