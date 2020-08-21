@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <math.h>
 
+#include <iostream>
+
 #define MAXLAYER 16
 #define LAYERERROR "Used collision layer > 16"
 

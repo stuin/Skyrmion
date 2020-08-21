@@ -1,6 +1,7 @@
 #pragma once
 
-#include "LightMap.hpp"
+#include "Node.h"
+#include "GridMaker.h"
 
 #include <stdexcept>
 

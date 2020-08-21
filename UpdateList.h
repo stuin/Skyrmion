@@ -7,8 +7,6 @@
 #include <thread>
 #include <chrono>
 
-#include <iostream>
-
 #include "Node.h"
 
 /*
