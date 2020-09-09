@@ -14,7 +14,6 @@ private:
     const int tileX;
     const int tileY;
     Indexer indexes;
-    bool redraw = false;
 
     //Graphical variables
     sf::VertexArray vertices;
