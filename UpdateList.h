@@ -25,6 +25,9 @@ private:
 	static Node *camera;
 	static Node *pointer;
 	static sf::View viewPlayer;
+	static std::bitset<MAXLAYER> hiddenLayers;
+
+	static bool running;
 
 	//Update loops
 	static void update(double time);
@@ -40,6 +43,7 @@ public:
 	static Node *setCamera(Node *follow, sf::Vector2f size);
 	static void setPointer(Node *follow);
 	static void alwaysLoadLayer(unsigned char layer);
+	static void hideLayer(unsigned char layer, bool hidden=true);
 
 	//Start engine
 	static void startEngine(std::string title, sf::VideoMode mode);

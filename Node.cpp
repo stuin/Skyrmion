@@ -7,9 +7,12 @@
 
 //Base constructor
 Node::Node(unsigned char layer, sf::Vector2i size, bool hidden, Node *parent) {
+	if(layer >= MAXLAYER)
+		throw new std::invalid_argument(LAYERERROR);
+	this->layer = layer;
+
 	setSize(size);
 	setHidden(hidden);
-	setLayer(layer);
 	setParent(parent);
 }
 
@@ -61,13 +64,6 @@ bool Node::isHidden() {
 	return hidden || deleted;
 }
 
-//Set node layer variable
-void Node::setLayer(unsigned char layer) {
-	if(layer >= MAXLAYER)
-		throw new std::invalid_argument(LAYERERROR);
-	this->layer = layer;
-}
-
 //Set collision box size
 void Node::setSize(sf::Vector2i size) {
 	this->size = size;
@@ -97,10 +93,10 @@ bool Node::getCollisionLayer(unsigned char layer) {
 }
 
 //Set if node collides with layer
-void Node::collideWith(unsigned char layer) {
+void Node::collideWith(unsigned char layer, bool collide) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
-	collisionLayers[layer] = true;
+	collisionLayers[layer] = collide;
 }
 
 //Check collision box against other node

@@ -47,7 +47,6 @@ public:
 	sf::Vector2f getShiftedPosition(double time, sf::Vector2f dir, int distance);
 
 	//General setters
-	void setLayer(unsigned char layer);
 	void setSize(sf::Vector2i size);
 	void setHidden(bool hidden);
 	void setParent(Node *parent);
@@ -55,7 +54,7 @@ public:
 	//Collision system
 	std::bitset<MAXLAYER> getCollisionLayers();
 	bool getCollisionLayer(unsigned char layer);
-	void collideWith(unsigned char layer);
+	void collideWith(unsigned char layer, bool collide=true);
 	bool checkCollision(Node *other);
 
 	//Linked list functions

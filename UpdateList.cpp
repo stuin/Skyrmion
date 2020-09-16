@@ -11,10 +11,13 @@
 Node *(UpdateList::screen)[MAXLAYER];
 std::bitset<MAXLAYER> UpdateList::alwaysLoadedLayers;
 std::vector<Node *> UpdateList::deleted;
+
 Node *UpdateList::camera = NULL;
 Node *UpdateList::pointer = NULL;
 sf::View UpdateList::viewPlayer;
-bool running = true;
+std::bitset<MAXLAYER> UpdateList::hiddenLayers;
+
+bool UpdateList::running = true;
 
 //Add node to update cycle
 void UpdateList::addNode(Node *next) {
@@ -58,6 +61,12 @@ void UpdateList::alwaysLoadLayer(unsigned char layer) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	alwaysLoadedLayers[layer] = true;
+}
+
+void UpdateList::hideLayer(unsigned char layer, bool hidden) {
+	if(layer >= MAXLAYER)
+		throw new std::invalid_argument(LAYERERROR);
+	hiddenLayers[layer] = hidden;
 }
 
 //Update all nodes in list
@@ -122,19 +131,20 @@ void UpdateList::draw(sf::RenderWindow &window) {
 	for(int layer = 0; layer < MAXLAYER; layer++) {
 		Node *source = screen[layer];
 
-		while(source != NULL) {
-			if(!source->isHidden() &&
-				(alwaysLoadedLayers[layer] || camera == NULL || source->checkCollision(camera))) {
-				//Check for parent node
-				if(source->getParent() != NULL) {
-					sf::Transform translation;
-					translation.translate(source->getParent()->getGPosition());
-					window.draw(*source, translation);
-				} else
-					window.draw(*source);
+		if(!hiddenLayers[layer])
+			while(source != NULL) {
+				if(!source->isHidden() &&
+					(alwaysLoadedLayers[layer] || camera == NULL || source->checkCollision(camera))) {
+					//Check for parent node
+					if(source->getParent() != NULL) {
+						sf::Transform translation;
+						translation.translate(source->getParent()->getGPosition());
+						window.draw(*source, translation);
+					} else
+						window.draw(*source);
+				}
+				source = source->getNext();
 			}
-			source = source->getNext();
-		}
 	}
 }
 
@@ -155,6 +165,8 @@ void UpdateList::renderingThread(std::string title, sf::VideoMode mode) {
 			if(event.type == sf::Event::Closed)
 				window.close();
 		}
+		if(!UpdateList::running)
+			window.close();
 
 		sf::Time time = clock.getElapsedTime();
 		if(time >= nextFrame) {
@@ -186,7 +198,7 @@ void UpdateList::renderingThread(std::string title, sf::VideoMode mode) {
 
 	std::cout << "Thread ending\n";
 
-	running = false;
+	UpdateList::running = false;
 }
 
 void UpdateList::startEngine(std::string title, sf::VideoMode mode) {
@@ -210,7 +222,7 @@ void UpdateList::startEngine(std::string title, sf::VideoMode mode) {
 
     //Run main window
     sf::Time lastTime = clock.getElapsedTime();
-	while (running) {
+	while (UpdateList::running) {
 		//Manage frame rate
 		sf::Time time = clock.getElapsedTime();
 		if(time >= nextFrame) {
