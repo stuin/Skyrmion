@@ -164,6 +164,15 @@ void UpdateList::renderingThread(std::string title, sf::VideoMode mode) {
 		while(window.pollEvent(event)) {
 			if(event.type == sf::Event::Closed)
 				window.close();
+			else if(pointer != NULL) {
+				if(event.type == sf::Event::MouseButtonPressed)
+					pointer->recieveEvent(event);
+				else if(event.type == sf::Event::MouseMoved) {
+					sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+					pointer->setPosition(mousePos);
+				}
+			}
+
 		}
 		if(!UpdateList::running)
 			window.close();
@@ -172,12 +181,6 @@ void UpdateList::renderingThread(std::string title, sf::VideoMode mode) {
 		if(time >= nextFrame) {
 			//Next update time
 			nextFrame = time + FRAME_DELAY;
-
-			//Set pointer position
-			if(pointer != NULL) {
-				sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-				pointer->setPosition(mousePos);
-			}
 
 			//Update window
 			window.clear();

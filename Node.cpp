@@ -156,3 +156,4 @@ void Node::collide(Node *object) {}
 void Node::collide(Node *object, double time) {
 	collide(object);
 }
+void Node::recieveEvent(sf::Event event) {}

@@ -71,4 +71,5 @@ public:
 	virtual void update(double time);
 	virtual void collide(Node *object);
 	virtual void collide(Node *object, double time);
+	virtual void recieveEvent(sf::Event event);
 };
