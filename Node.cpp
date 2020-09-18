@@ -105,18 +105,18 @@ bool Node::checkCollision(Node *other) {
 		return false;
 
 	//Get self box
-	sf::Vector2f thisPos = this->getGPosition();
-	sf::Vector2i thisSize = this->getSize() / 2;
+	sf::Vector2f thisPos = this->getGPosition() - this->getOrigin();
+	sf::Vector2i thisSize = this->getSize();
 
 	//Get other box
-	sf::Vector2f otherPos = other->getGPosition();
-	sf::Vector2i otherSize = other->getSize() / 2;
+	sf::Vector2f otherPos = other->getGPosition() - other->getOrigin();
+	sf::Vector2i otherSize = other->getSize();
 
 	//Check all cordinates
-	return thisPos.x - thisSize.x <= otherPos.x + otherSize.x &&
-		thisPos.x + thisSize.x >= otherPos.x - otherSize.x &&
-		thisPos.y - thisSize.y <= otherPos.y + otherSize.y &&
-		thisPos.y + thisSize.y >= otherPos.y - otherSize.y;
+	return thisPos.x <= otherPos.x + otherSize.x &&
+		thisPos.x + thisSize.x >= otherPos.x &&
+		thisPos.y <= otherPos.y + otherSize.y &&
+		thisPos.y + thisSize.y >= otherPos.y;
 }
 
 //Get next node in list
