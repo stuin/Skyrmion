@@ -10,6 +10,7 @@
 
 #define MAXLAYER 16
 #define LAYERERROR "Used collision layer > 16"
+using Layer = unsigned char;
 
 /*
  * Created by Stuart Irwin on 4/13/2019.
@@ -23,7 +24,7 @@ private:
 	bool hidden = false;
 	Node *parent = NULL;
 	std::bitset<MAXLAYER> collisionLayers;
-	unsigned char layer;
+	Layer layer;
 
 	//Background system variables
 	bool deleted = false;
@@ -31,7 +32,7 @@ private:
 
 public:
 	//Node constructors
-	Node(unsigned char layer = 0,
+	Node(Layer layer = 0,
 		sf::Vector2i size = sf::Vector2i(16, 16),
 		bool hidden = false,
 		Node *parent = NULL);
@@ -53,8 +54,8 @@ public:
 
 	//Collision system
 	std::bitset<MAXLAYER> getCollisionLayers();
-	bool getCollisionLayer(unsigned char layer);
-	void collideWith(unsigned char layer, bool collide=true);
+	bool getCollisionLayer(Layer layer);
+	void collideWith(Layer layer, bool collide=true);
 	bool checkCollision(Node *other);
 
 	//Linked list functions

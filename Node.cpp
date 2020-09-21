@@ -6,7 +6,7 @@
  */
 
 //Base constructor
-Node::Node(unsigned char layer, sf::Vector2i size, bool hidden, Node *parent) {
+Node::Node(Layer layer, sf::Vector2i size, bool hidden, Node *parent) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	this->layer = layer;
@@ -86,14 +86,14 @@ std::bitset<MAXLAYER> Node::getCollisionLayers() {
 }
 
 //Check if node collides with layer
-bool Node::getCollisionLayer(unsigned char layer) {
+bool Node::getCollisionLayer(Layer layer) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	return collisionLayers[layer];
 }
 
 //Set if node collides with layer
-void Node::collideWith(unsigned char layer, bool collide) {
+void Node::collideWith(Layer layer, bool collide) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	collisionLayers[layer] = collide;

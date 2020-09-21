@@ -17,11 +17,12 @@ Node *UpdateList::pointer = NULL;
 sf::View UpdateList::viewPlayer;
 std::bitset<MAXLAYER> UpdateList::hiddenLayers;
 
+Layer UpdateList::max = MAXLAYER;
 bool UpdateList::running = true;
 
 //Add node to update cycle
 void UpdateList::addNode(Node *next) {
-	unsigned char layer = next->getLayer();
+	Layer layer = next->getLayer();
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	if(screen[layer] == NULL)
@@ -31,7 +32,7 @@ void UpdateList::addNode(Node *next) {
 }
 
 //Remove all nodes in layer
-void UpdateList::clearLayer(unsigned char layer) {
+void UpdateList::clearLayer(Layer layer) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 
@@ -57,13 +58,13 @@ void UpdateList::setPointer(Node *follow) {
 	pointer = follow;
 }
 
-void UpdateList::alwaysLoadLayer(unsigned char layer) {
+void UpdateList::alwaysLoadLayer(Layer layer) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	alwaysLoadedLayers[layer] = true;
 }
 
-void UpdateList::hideLayer(unsigned char layer, bool hidden) {
+void UpdateList::hideLayer(Layer layer, bool hidden) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	hiddenLayers[layer] = hidden;
@@ -72,7 +73,7 @@ void UpdateList::hideLayer(unsigned char layer, bool hidden) {
 //Update all nodes in list
 void UpdateList::update(double time) {
 	//Check collisions and updates
-	for(int layer = 0; layer < MAXLAYER; layer++) {
+	for(int layer = 0; layer <= max; layer++) {
 		Node *source = screen[layer];
 
 		//Check first node for deletion
@@ -128,7 +129,7 @@ void UpdateList::draw(sf::RenderWindow &window) {
 	deleted.clear();
 
 	//Render each node in order
-	for(int layer = 0; layer < MAXLAYER; layer++) {
+	for(int layer = 0; layer <= max; layer++) {
 		Node *source = screen[layer];
 
 		if(!hiddenLayers[layer])
@@ -204,9 +205,10 @@ void UpdateList::renderingThread(std::string title, sf::VideoMode mode) {
 	UpdateList::running = false;
 }
 
-void UpdateList::startEngine(std::string title, sf::VideoMode mode) {
+void UpdateList::startEngine(std::string title, sf::VideoMode mode, Layer max) {
 	//Set frame rate manager
 	sf::Clock clock;
+	UpdateList::max = max;
 
 	std::thread rendering(UpdateList::renderingThread, title, mode);
 	sf::Time nextFrame = clock.getElapsedTime() + sf::milliseconds(FRAME_DELAY.asMilliseconds() / 2);

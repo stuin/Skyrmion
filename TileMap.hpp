@@ -21,7 +21,7 @@ private:
     sf::RenderTexture *buffer;
 
 public:
-    TileMap(const std::string& _tileset, int _tileX, int _tileY, Indexer _indexes, unsigned char layer = 0, int offset = 0)
+    TileMap(const std::string& _tileset, int _tileX, int _tileY, Indexer _indexes, Layer layer = 0, int offset = 0)
      : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes) {
         // load the tileset texture
         if(!tileset.loadFromFile(_tileset))

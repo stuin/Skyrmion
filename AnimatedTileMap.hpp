@@ -22,7 +22,7 @@ private:
     }
 
 public:
-	AnimatedTileMap(const std::string& tileset, int tileX, int tileY, Indexer indexes, int frames, double delay, unsigned char layer = 0) : Node(layer) {
+	AnimatedTileMap(const std::string& tileset, int tileX, int tileY, Indexer indexes, int frames, double delay, Layer layer = 0) : Node(layer) {
 		maxFrames = frames - 1;
 		int width = indexes.getSize().x;
         int height = indexes.getSize().y;
