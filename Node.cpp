@@ -21,8 +21,10 @@ int Node::getLayer() {
 	return layer;
 }
 
-//Get collision box size
-sf::Vector2i Node::getSize() {
+sf::Rect<int> Node::getRect() {
+	sf::Vector2f v = this->getGPosition() - this->getOrigin();
+	size.left = v.x;
+	size.top = v.y;
 	return size;
 }
 
@@ -61,12 +63,13 @@ sf::Vector2f Node::getShiftedPosition(double time, sf::Vector2f dir, int distanc
 
 //Check if node is hidden
 bool Node::isHidden() {
-	return hidden || deleted;
+	return hidden || deleted || (parent != NULL && parent->isHidden());
 }
 
 //Set collision box size
 void Node::setSize(sf::Vector2i size) {
-	this->size = size;
+	this->size.width = size.x;
+	this->size.height = size.y;
 	setOrigin(size.x / 2, size.y / 2);
 }
 
@@ -103,20 +106,7 @@ void Node::collideWith(Layer layer, bool collide) {
 bool Node::checkCollision(Node *other) {
 	if(other == NULL || other->isDeleted())
 		return false;
-
-	//Get self box
-	sf::Vector2f thisPos = this->getGPosition() - this->getOrigin();
-	sf::Vector2i thisSize = this->getSize();
-
-	//Get other box
-	sf::Vector2f otherPos = other->getGPosition() - other->getOrigin();
-	sf::Vector2i otherSize = other->getSize();
-
-	//Check all cordinates
-	return thisPos.x <= otherPos.x + otherSize.x &&
-		thisPos.x + thisSize.x >= otherPos.x &&
-		thisPos.y <= otherPos.y + otherSize.y &&
-		thisPos.y + thisSize.y >= otherPos.y;
+	return getRect().intersects(other->getRect());
 }
 
 //Get next node in list
@@ -134,26 +124,6 @@ void Node::addNode(Node *node) {
 
 //Remove node immdiately after this from list
 void Node::deleteNext() {
-	if(next != NULL && next->isDeleted()) {
+	if(next != NULL && next->isDeleted())
 		next = next->getNext();
-	}
 }
-
-//Check for deletion mark
-bool Node::isDeleted() {
-	return deleted;
-}
-
-//Mark for deletion
-void Node::setDelete() {
-	deleted = true;
-}
-Node::~Node() {}
-
-//Define virtual placeholders
-void Node::update(double time) {}
-void Node::collide(Node *object) {}
-void Node::collide(Node *object, double time) {
-	collide(object);
-}
-void Node::recieveEvent(sf::Event event) {}

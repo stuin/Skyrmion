@@ -11,6 +11,7 @@
 Node *(UpdateList::screen)[MAXLAYER];
 std::bitset<MAXLAYER> UpdateList::alwaysLoadedLayers;
 std::vector<Node *> UpdateList::deleted;
+std::unordered_map<sf::Event::EventType, std::vector<Node *>> UpdateList::listeners;
 
 Node *UpdateList::camera = NULL;
 Node *UpdateList::pointer = NULL;
@@ -41,6 +42,16 @@ void UpdateList::clearLayer(Layer layer) {
 		source->setDelete();
 		source = source->getNext();;
 	}
+}
+
+//Add node to list connected to cetain event
+void UpdateList::addListener(Node *item, sf::Event::EventType type) {
+	auto it = listeners.find(type);
+	if(it == listeners.end()) {
+		std::vector<Node *> vec = {item};
+		listeners.emplace(type, vec);
+	} else
+		it->second.push_back(item);
 }
 
 //Set camera to follow node
@@ -165,13 +176,21 @@ void UpdateList::renderingThread(std::string title, sf::VideoMode mode) {
 		while(window.pollEvent(event)) {
 			if(event.type == sf::Event::Closed)
 				window.close();
-			else if(pointer != NULL) {
-				if(event.type == sf::Event::MouseButtonPressed)
-					pointer->recieveEvent(event);
-				else if(event.type == sf::Event::MouseMoved) {
-					sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-					pointer->setPosition(mousePos);
+			else {
+				int shiftX = 1920 / window.getSize().x;
+				int shiftY = 1080 / window.getSize().y;
+				if(pointer != NULL) {
+					if(event.type == sf::Event::MouseButtonPressed)
+						pointer->recieveEvent(event, shiftX, shiftY);
+					else if(event.type == sf::Event::MouseMoved) {
+						pointer->setPosition(event.mouseMove.x * shiftX, event.mouseMove.y * shiftY);
+					}
 				}
+				auto it = listeners.find(event.type);
+				if(it != listeners.end())
+					for(Node *node : it->second)
+						if(!node->isHidden())
+							node->recieveEvent(event, shiftX, shiftY);
 			}
 
 		}

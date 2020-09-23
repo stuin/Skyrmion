@@ -20,7 +20,7 @@ using Layer = unsigned char;
 class Node : public sf::Sprite {
 private:
 	//Visible system variables
-	sf::Vector2i size;
+	sf::Rect<int> size;
 	bool hidden = false;
 	Node *parent = NULL;
 	std::bitset<MAXLAYER> collisionLayers;
@@ -32,14 +32,14 @@ private:
 
 public:
 	//Node constructors
-	Node(Layer layer = 0,
+	Node(Layer layer,
 		sf::Vector2i size = sf::Vector2i(16, 16),
 		bool hidden = false,
 		Node *parent = NULL);
 
 	//General getters
 	int getLayer();
-	sf::Vector2i getSize();
+	sf::Rect<int> getRect();
 	bool isHidden();
 	Node *getParent();
 
@@ -64,13 +64,19 @@ public:
 	void deleteNext();
 
 	//Proper deletion procedure
-	bool isDeleted();
-	void setDelete();
-	virtual ~Node();
+	bool isDeleted() {
+		return deleted;
+	}
+	void setDelete() {
+		deleted = true;
+	}
+	virtual ~Node() {}
 
 	//Entity implementation
-	virtual void update(double time);
-	virtual void collide(Node *object);
-	virtual void collide(Node *object, double time);
-	virtual void recieveEvent(sf::Event event);
+	virtual void update(double time) {}
+	virtual void collide(Node *object) {}
+	virtual void collide(Node *object, double time) {
+		collide(object);
+	}
+	virtual void recieveEvent(sf::Event event, int shiftX, int shiftY) {}
 };

@@ -2,8 +2,9 @@
 
 #include <string>
 #include <vector>
-#include <exception>
 #include <bitset>
+#include <unordered_map>
+#include <exception>
 #include <thread>
 #include <chrono>
 
@@ -20,6 +21,7 @@ private:
 	static Node *(screen)[MAXLAYER];
 	static std::bitset<MAXLAYER> alwaysLoadedLayers;
 	static std::vector<Node *> deleted;
+	static std::unordered_map<sf::Event::EventType, std::vector<Node *>> listeners;
 
 	//Display variables
 	static Node *camera;
@@ -39,6 +41,7 @@ public:
 	//Manage node lists
 	static void addNode(Node *next);
 	static void clearLayer(Layer layer);
+	static void addListener(Node *item, sf::Event::EventType type);
 
 	//Special featurs
 	static Node *setCamera(Node *follow, sf::Vector2f size);
