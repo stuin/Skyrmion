@@ -25,7 +25,6 @@ private:
 
 	//Display variables
 	static Node *camera;
-	static Node *pointer;
 	static sf::View viewPlayer;
 	static std::bitset<MAXLAYER> hiddenLayers;
 
@@ -45,7 +44,6 @@ public:
 
 	//Special featurs
 	static Node *setCamera(Node *follow, sf::Vector2f size);
-	static void setPointer(Node *follow);
 	static void alwaysLoadLayer(Layer layer);
 	static void hideLayer(Layer layer, bool hidden=true);
 

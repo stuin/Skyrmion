@@ -14,7 +14,6 @@ std::vector<Node *> UpdateList::deleted;
 std::unordered_map<sf::Event::EventType, std::vector<Node *>> UpdateList::listeners;
 
 Node *UpdateList::camera = NULL;
-Node *UpdateList::pointer = NULL;
 sf::View UpdateList::viewPlayer;
 std::bitset<MAXLAYER> UpdateList::hiddenLayers;
 
@@ -63,10 +62,6 @@ Node *UpdateList::setCamera(Node *follow, sf::Vector2f size) {
 		camera = new Node(0, sf::Vector2i(size.x,size.y), true, follow);
 	viewPlayer.setSize(size);
 	return camera;
-}
-
-void UpdateList::setPointer(Node *follow) {
-	pointer = follow;
 }
 
 void UpdateList::alwaysLoadLayer(Layer layer) {
@@ -179,13 +174,6 @@ void UpdateList::renderingThread(std::string title, sf::VideoMode mode) {
 			else {
 				int shiftX = 1920 / window.getSize().x;
 				int shiftY = 1080 / window.getSize().y;
-				if(pointer != NULL) {
-					if(event.type == sf::Event::MouseButtonPressed)
-						pointer->recieveEvent(event, shiftX, shiftY);
-					else if(event.type == sf::Event::MouseMoved) {
-						pointer->setPosition(event.mouseMove.x * shiftX, event.mouseMove.y * shiftY);
-					}
-				}
 				auto it = listeners.find(event.type);
 				if(it != listeners.end())
 					for(Node *node : it->second)
