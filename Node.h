@@ -80,3 +80,24 @@ public:
 	}
 	virtual void recieveEvent(sf::Event event, int shiftX, int shiftY) {}
 };
+
+class DrawNode : public Node {
+private:
+	sf::Drawable *image = NULL;
+
+	void draw(sf::RenderTarget& target, sf::RenderStates states) const {
+		if(image != NULL) {
+			states.transform *= getTransform();
+			target.draw(*image, states);
+		}
+	}
+
+public:
+	DrawNode(sf::Drawable &image, Layer layer, sf::Vector2i size=sf::Vector2i(16,16), Node *parent=NULL) : Node(layer, size, false, parent) {
+		this->image = &image;
+	}
+
+	void setImage(sf::Drawable &image) {
+		this->image = &image;
+	}
+};
