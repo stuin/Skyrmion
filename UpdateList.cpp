@@ -113,9 +113,9 @@ void UpdateList::update(double time) {
 			}
 
 			//Check next node for deletion
-			if(source->getNext() != NULL && source->getNext()->isDeleted()) {
-				deleted.push_back(source->getNext());
+			while(source->getNext() != NULL && source->getNext()->isDeleted()) {
 				source->deleteNext();
+				deleted.push_back(source->getNext());
 			}
 
 			source = source->getNext();
