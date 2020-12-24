@@ -156,31 +156,33 @@ void UpdateList::draw(sf::RenderWindow &window) {
 }
 
 //Seperate rendering thread
-void UpdateList::renderingThread(std::string title, sf::VideoMode mode) {
+void UpdateList::renderingThread(std::string title) {
 	//Set frame rate manager
 	sf::Clock clock;
 	sf::Time nextFrame = clock.getElapsedTime();
 
 	std::cout << "Thread starting\n";
-	sf::RenderWindow window(mode, title);
+	sf::RenderWindow window(sf::VideoMode::getDesktopMode(), title);
+	window.setVerticalSyncEnabled(true);
 
     //Run rendering loop
 	while(window.isOpen()) {
 		//Check event updates
 		sf::Event event;
+		//Calculate window sizing
+		int shiftX = 1920 / window.getSize().x;
+		int shiftY = 1080 / window.getSize().y;
 		while(window.pollEvent(event)) {
 			if(event.type == sf::Event::Closed)
 				window.close();
 			else {
-				int shiftX = 1920 / window.getSize().x;
-				int shiftY = 1080 / window.getSize().y;
+				//Send event to marked listeners
 				auto it = listeners.find(event.type);
 				if(it != listeners.end())
 					for(Node *node : it->second)
 						if(!node->isHidden())
 							node->recieveEvent(event, shiftX, shiftY);
 			}
-
 		}
 		if(!UpdateList::running)
 			window.close();
@@ -212,12 +214,21 @@ void UpdateList::renderingThread(std::string title, sf::VideoMode mode) {
 	UpdateList::running = false;
 }
 
-void UpdateList::startEngine(std::string title, sf::VideoMode mode, Layer max) {
+#if __linux__
+	#include <X11/Xlib.h>
+	#define init XInitThreads
+#else
+	#define init void
+#endif
+
+void UpdateList::startEngine(std::string title, Layer max) {
+	init();
+
 	//Set frame rate manager
 	sf::Clock clock;
 	UpdateList::max = max;
 
-	std::thread rendering(UpdateList::renderingThread, title, mode);
+	std::thread rendering(UpdateList::renderingThread, title);
 	sf::Time nextFrame = clock.getElapsedTime() + sf::milliseconds(FRAME_DELAY.asMilliseconds() / 2);
 
 	std::cout << "Starting\n";
@@ -252,4 +263,8 @@ void UpdateList::startEngine(std::string title, sf::VideoMode mode, Layer max) {
 	}
 
 	rendering.join();
+}
+
+void UpdateList::stopEngine() {
+	running = false;
 }

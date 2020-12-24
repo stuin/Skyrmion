@@ -34,7 +34,7 @@ private:
 	//Update loops
 	static void update(double time);
 	static void draw(sf::RenderWindow &window);
-	static void renderingThread(std::string title, sf::VideoMode mode);
+	static void renderingThread(std::string title);
 
 public:
 	//Manage node lists
@@ -48,5 +48,6 @@ public:
 	static void hideLayer(Layer layer, bool hidden=true);
 
 	//Start engine
-	static void startEngine(std::string title, sf::VideoMode mode, Layer max);
+	static void startEngine(std::string title, Layer max);
+	static void stopEngine();
 };
