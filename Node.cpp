@@ -22,10 +22,12 @@ int Node::getLayer() {
 }
 
 sf::Rect<int> Node::getRect() {
-	sf::Vector2f v = this->getGPosition() - this->getOrigin();
-	size.left = v.x;
-	size.top = v.y;
-	return size;
+	sf::Transform translation = getGTransform();
+	sf::Vector2f start = -getOrigin();
+	sf::Vector2f end = start + sf::Vector2f(size.width, size.height);
+	start = translation.transformPoint(start);
+	end = translation.transformPoint(end) - start;
+	return sf::Rect<int>(start.x, start.y, end.x, end.y);
 }
 
 //Get parent node
@@ -38,6 +40,16 @@ sf::Vector2f Node::getGPosition() {
 	if(parent != NULL)
 		return getPosition() + parent->getGPosition();
 	return getPosition();
+}
+
+//Get global position and scaling transformations
+sf::Transform Node::getGTransform() {
+	sf::Transform translation;
+	translation.translate(getPosition());
+	translation.scale(getScale(), getPosition());
+	if(parent != NULL)
+		translation.combine(parent->getGTransform());
+	return translation;
 }
 
 //Create position in a direction and distance
@@ -81,6 +93,13 @@ void Node::setHidden(bool hidden) {
 //Set parent node
 void Node::setParent(Node *parent) {
 	this->parent = parent;
+}
+
+void Node::setGPosition(float x, float y) {
+	sf::Vector2f pos(x, y);
+	if(parent != NULL)
+		pos -= parent->getGPosition();
+	setPosition(pos);
 }
 
 //Get full collision bitset

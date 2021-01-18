@@ -45,12 +45,14 @@ public:
 
 	//Special getters
 	sf::Vector2f getGPosition();
+	sf::Transform getGTransform();
 	sf::Vector2f getShiftedPosition(double time, sf::Vector2f dir, int distance);
 
 	//General setters
 	void setSize(sf::Vector2i size);
 	void setHidden(bool hidden);
 	void setParent(Node *parent);
+	void setGPosition(float x, float y);
 
 	//Collision system
 	std::bitset<MAXLAYER> getCollisionLayers();
