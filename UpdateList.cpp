@@ -143,9 +143,11 @@ void UpdateList::draw(sf::RenderWindow &window) {
 				if(!source->isHidden() &&
 					(alwaysLoadedLayers[layer] || camera == NULL || source->checkCollision(camera))) {
 					//Check for parent node
-					if(source->getParent() != NULL)
-						window.draw(*source, source->getParent()->getGTransform());
-					else
+					if(source->getParent() != NULL) {
+						sf::Transform translation;
+						translation.translate(source->getParent()->getGPosition());
+						window.draw(*source, translation);
+					} else
 						window.draw(*source);
 				}
 				source = source->getNext();
@@ -180,6 +182,12 @@ void UpdateList::renderingThread(std::string title) {
 					for(Node *node : it->second)
 						if(!node->isHidden())
 							node->recieveEvent(event, shiftX, shiftY);
+			}
+
+			//Adjust window size
+			if(event.type == sf::Event::Resized && camera == NULL) {
+				sf::Vector2f size(event.size.width, event.size.height);
+				viewPlayer.setSize(size);
 			}
 		}
 		if(!UpdateList::running)

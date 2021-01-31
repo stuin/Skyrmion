@@ -45,7 +45,6 @@ public:
 
 	//Special getters
 	sf::Vector2f getGPosition();
-	sf::Transform getGTransform();
 	sf::Vector2f getShiftedPosition(double time, sf::Vector2f dir, int distance);
 
 	//General setters
