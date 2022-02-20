@@ -42,10 +42,8 @@ public:
 	sf::Rect<int> getRect();
 	bool isHidden();
 	Node *getParent();
-
-	//Special getters
 	sf::Vector2f getGPosition();
-	sf::Vector2f getShiftedPosition(double time, sf::Vector2f dir, int distance);
+	sf::Vector2f getShiftedPosition(sf::Vector2f dir, double distance);
 
 	//General setters
 	void setSize(sf::Vector2i size);

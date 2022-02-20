@@ -54,13 +54,14 @@ void UpdateList::addListener(Node *item, sf::Event::EventType type) {
 }
 
 //Set camera to follow node
-Node *UpdateList::setCamera(Node *follow, sf::Vector2f size) {
+Node *UpdateList::setCamera(Node *follow, sf::Vector2f size, sf::Vector2f position) {
 	if(camera != NULL) {
 		camera->setSize(sf::Vector2i(size.x,size.y));
 		camera->setParent(follow);
 	} else
 		camera = new Node(0, sf::Vector2i(size.x,size.y), true, follow);
 	viewPlayer.setSize(size);
+	camera->setPosition(position);
 	return camera;
 }
 
@@ -180,8 +181,7 @@ void UpdateList::renderingThread(std::string title) {
 				auto it = listeners.find(event.type);
 				if(it != listeners.end())
 					for(Node *node : it->second)
-						if(!node->isHidden())
-							node->recieveEvent(event, shiftX, shiftY);
+						node->recieveEvent(event, shiftX, shiftY);
 			}
 
 			//Adjust window size

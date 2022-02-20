@@ -43,7 +43,7 @@ public:
 	static void addListener(Node *item, sf::Event::EventType type);
 
 	//Special featurs
-	static Node *setCamera(Node *follow, sf::Vector2f size);
+	static Node *setCamera(Node *follow, sf::Vector2f size, sf::Vector2f position=sf::Vector2f(0,0));
 	static void alwaysLoadLayer(Layer layer);
 	static void hideLayer(Layer layer, bool hidden=true);
 

@@ -41,21 +41,23 @@ sf::Vector2f Node::getGPosition() {
 }
 
 //Create position in a direction and distance
-sf::Vector2f Node::getShiftedPosition(double time, sf::Vector2f dir, int distance) {
+sf::Vector2f Node::getShiftedPosition(sf::Vector2f dir, double distance) {
 	float xOffset = 0;
 	float yOffset = 0;
+	if(dir.x == 0 && dir.y == 0)
+		return getPosition();
 	if(dir.x == 0)
-		yOffset = time * copysign(distance, dir.y);
+		yOffset = copysign(distance, dir.y);
 	else if(dir.y == 0)
-		xOffset = time * copysign(distance, dir.x);
+		xOffset = copysign(distance, dir.x);
 	else if(abs(dir.x) == abs(dir.y)) {
-		time *= sqrt(2) / 2.0;
-		xOffset = time * copysign(distance, dir.x);
-		yOffset = time * copysign(distance, dir.y);
+		float adjustment = sqrt(2) / 2.0;
+		xOffset = copysign(distance, dir.x);
+		yOffset = copysign(distance, dir.y);
 	} else {
 		float angle = std::atan2(dir.y, dir.x);
-		xOffset = cos(angle) * distance * time;
-		yOffset = sin(angle) * distance * time;
+		xOffset = cos(angle) * distance;
+		yOffset = sin(angle) * distance;
 	}
 
 	return sf::Vector2f(getPosition().x + xOffset, getPosition().y + yOffset);
