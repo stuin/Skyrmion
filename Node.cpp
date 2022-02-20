@@ -52,8 +52,8 @@ sf::Vector2f Node::getShiftedPosition(sf::Vector2f dir, double distance) {
 		xOffset = copysign(distance, dir.x);
 	else if(abs(dir.x) == abs(dir.y)) {
 		float adjustment = sqrt(2) / 2.0;
-		xOffset = copysign(distance, dir.x);
-		yOffset = copysign(distance, dir.y);
+		xOffset = adjustment * copysign(distance, dir.x);
+		yOffset = adjustment * copysign(distance, dir.y);
 	} else {
 		float angle = std::atan2(dir.y, dir.x);
 		xOffset = cos(angle) * distance;
