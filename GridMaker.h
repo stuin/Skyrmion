@@ -15,7 +15,7 @@
 class GridMaker {
 public:
 	//Build and convert grid
-	GridMaker(std::string file, const unsigned int width, const unsigned int height);
+	GridMaker(std::string file);
 	~GridMaker();
 	void reload(std::string file);
 
@@ -28,8 +28,8 @@ public:
 	bool inBounds(unsigned int x, unsigned int y) const;
 
 private:
-	const unsigned int height;
-	const unsigned int width;
+	unsigned int height = 0;
+	unsigned int width = 0;
 	char **tiles;
 };
 
