@@ -13,23 +13,27 @@ class TileMap : public Node {
 private:
     const int tileX;
     const int tileY;
-    Indexer indexes;
+    Indexer *indexes;
 
     //Graphical variables
     sf::VertexArray vertices;
-    sf::Texture tileset;
+    sf::Texture *tileset;
     sf::RenderTexture *buffer;
 
+    virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
+        states.transform *= getTransform();
+        states.texture = tileset;
+        target.draw(vertices, states);
+    }
+
 public:
-    TileMap(const std::string& _tileset, int _tileX, int _tileY, Indexer _indexes, Layer layer = 0, int offset = 0)
-     : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes) {
-        // load the tileset texture
-        if(!tileset.loadFromFile(_tileset))
-            throw std::invalid_argument("Tilemap texture not found: " + _tileset);
+
+    TileMap(sf::Texture *_tileset, int _tileX, int _tileY, Indexer *_indexes, Layer layer = 0, int offset = 0)
+     : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes), tileset(_tileset) {
 
         //Set sizing
-        unsigned int width = indexes.getSize().x;
-        unsigned int height = indexes.getSize().y;
+        unsigned int width = indexes->getSize().x;
+        unsigned int height = indexes->getSize().y;
         setSize(sf::Vector2i(tileX * width, tileY * height));
         setOrigin(0, 0);
 
@@ -50,10 +54,10 @@ public:
     }
 
     void reload(int offset = 0) {
-        unsigned int width = indexes.getSize().x;
-        unsigned int height = indexes.getSize().y;
-        int *tiles = indexes.indexGrid();
-        int numTextures = (tileset.getSize().x / tileX) * (tileset.getSize().y / tileY);
+        unsigned int width = indexes->getSize().x;
+        unsigned int height = indexes->getSize().y;
+        int *tiles = indexes->indexGrid();
+        int numTextures = (tileset->getSize().x / tileX) * (tileset->getSize().y / tileY);
 
         // populate the vertex array, with one quad per tile
         for(unsigned int i = 0; i < width; ++i)
@@ -63,8 +67,8 @@ public:
                 int rotations = (tiles[i + j * width] / numTextures);
 
                 // find its position in the tileset texture
-                int tu = tileNumber % (tileset.getSize().x / tileX);
-                int tv = tileNumber / (tileset.getSize().x / tileX);
+                int tu = tileNumber % (tileset->getSize().x / tileX);
+                int tv = tileNumber / (tileset->getSize().x / tileX);
 
                 // get a pointer to the current tile's quad
                 sf::Vertex* quad = &vertices[(i + j * width) * 4];
@@ -91,8 +95,12 @@ public:
 
         //Draw to buffer
         buffer->clear(sf::Color::Transparent);
-        buffer->draw(vertices, sf::RenderStates(&tileset));
+        buffer->draw(vertices, sf::RenderStates(tileset));
         buffer->display();
-        setTexture(buffer->getTexture());
+    }
+
+    void setIndex(Indexer *indexes) {
+        this->indexes = indexes;
+        reload();
     }
 };

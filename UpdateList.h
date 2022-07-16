@@ -42,10 +42,14 @@ public:
 	static void clearLayer(Layer layer);
 	static void addListener(Node *item, sf::Event::EventType type);
 
-	//Special featurs
+	//Special features
 	static Node *setCamera(Node *follow, sf::Vector2f size, sf::Vector2f position=sf::Vector2f(0,0));
 	static void alwaysLoadLayer(Layer layer);
 	static void hideLayer(Layer layer, bool hidden=true);
+
+	//Utility Functions
+	static void loadTexture(sf::Texture *texture, std::string filename);
+	static sf::Texture *getTexture(int index);
 
 	//Start engine
 	static void startEngine(std::string title, Layer max);

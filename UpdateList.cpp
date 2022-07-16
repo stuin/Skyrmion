@@ -77,6 +77,11 @@ void UpdateList::hideLayer(Layer layer, bool hidden) {
 	hiddenLayers[layer] = hidden;
 }
 
+void UpdateList::loadTexture(sf::Texture* texture, std::string filename) {
+	if(!texture->loadFromFile(filename))
+		throw std::invalid_argument("Texture " + filename + " not found");
+}
+
 //Update all nodes in list
 void UpdateList::update(double time) {
 	//Check collisions and updates
@@ -164,7 +169,6 @@ void UpdateList::renderingThread(std::string title) {
 
 	std::cout << "Thread starting\n";
 	sf::RenderWindow window(sf::VideoMode::getDesktopMode(), title);
-	window.setVerticalSyncEnabled(true);
 
     //Run rendering loop
 	while(window.isOpen()) {

@@ -6,6 +6,7 @@
 
 #include <fstream>
 #include <string>
+#include <functional>
 
 /*
  * Created by Stuart Irwin on 4/15/2019.
@@ -16,6 +17,7 @@ class GridMaker {
 public:
 	//Build and convert grid
 	GridMaker(std::string file);
+	GridMaker(unsigned int width, unsigned int height);
 	~GridMaker();
 	void reload(std::string file);
 
