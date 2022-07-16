@@ -21,11 +21,19 @@ int Node::getLayer() {
 	return layer;
 }
 
-sf::Rect<int> Node::getRect() {
-	sf::Vector2f v = this->getGPosition() - this->getOrigin();
-	size.left = v.x;
-	size.top = v.y;
+sf::Vector2i Node::getSize() {
 	return size;
+}
+
+//Create full collision box
+sf::Rect<int> Node::getRect() {
+	sf::Vector2f pos = this->getGPosition();
+	sf::Rect<int> rec;
+	rec.left = pos.x - (this->getOrigin().x * this->getScale().x);
+	rec.top = pos.y - (this->getOrigin().y * this->getScale().y);
+	rec.width = this->size.x * this->getScale().x;
+	rec.height = this->size.y * this->getScale().y;
+	return rec;
 }
 
 //Get parent node
@@ -70,8 +78,7 @@ bool Node::isHidden() {
 
 //Set collision box size
 void Node::setSize(sf::Vector2i size) {
-	this->size.width = size.x;
-	this->size.height = size.y;
+	this->size = size;
 	setOrigin(size.x / 2, size.y / 2);
 }
 

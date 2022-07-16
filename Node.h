@@ -17,10 +17,21 @@ using Layer = unsigned char;
  * Sprite with collision
  */
 
+struct WindowSize {
+	int shiftX;
+	int shiftY;
+	int cornerX;
+	int cornerY;
+
+	sf::Vector2f worldPos(int x, int y) {
+		return sf::Vector2f(x * shiftX + cornerX, y * shiftY + cornerY);
+	}
+};
+
 class Node : public sf::Sprite {
 private:
 	//Visible system variables
-	sf::Rect<int> size;
+	sf::Vector2i size;
 	bool hidden = false;
 	Node *parent = NULL;
 	std::bitset<MAXLAYER> collisionLayers;
@@ -39,6 +50,7 @@ public:
 
 	//General getters
 	int getLayer();
+	sf::Vector2i getSize();
 	sf::Rect<int> getRect();
 	bool isHidden();
 	Node *getParent();
@@ -77,7 +89,7 @@ public:
 	virtual void collide(Node *object, double time) {
 		collide(object);
 	}
-	virtual void recieveEvent(sf::Event event, int shiftX, int shiftY) {}
+	virtual void recieveEvent(sf::Event event, WindowSize *windowSize) {}
 };
 
 class DrawNode : public Node {

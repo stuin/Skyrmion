@@ -22,10 +22,10 @@ private:
     }
 
 public:
-	AnimatedTileMap(const std::string& tileset, int tileX, int tileY, Indexer indexes, int frames, double delay, Layer layer = 0) : Node(layer) {
+	AnimatedTileMap(sf::Texture *tileset, int tileX, int tileY, Indexer *indexes, int frames, double delay, Layer layer = 0) : Node(layer) {
 		maxFrames = frames - 1;
-		int width = indexes.getSize().x;
-        int height = indexes.getSize().y;
+		int width = indexes->getSize().x;
+        int height = indexes->getSize().y;
 		setSize(sf::Vector2i(tileX * width, tileY * height));
 		setOrigin(0, 0);
 
@@ -38,6 +38,19 @@ public:
 			TileMap map = TileMap(tileset, tileX, tileY, indexes, layer, i * numTiles);
 		    tilemaps.push_back(map);
 		}
+    }
+
+    AnimatedTileMap(sf::Vector2i size, double delay, Layer layer = 0) : Node(layer) {
+    	this->numTiles = 0;
+    	this->delay = delay;
+    	this->nextTime = delay;
+
+    	setSize(size);
+    	setOrigin(0, 0);
+    }
+
+    std::vector<TileMap> *getMaps() {
+    	return &tilemaps;
     }
 
 	//Reload all tilemaps

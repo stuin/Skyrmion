@@ -18,7 +18,7 @@ public:
 		UpdateList::addListener(this, sf::Event::KeyReleased);
 	}
 
-	void recieveEvent(sf::Event event, int shiftX, int shiftY) {
+	void recieveEvent(sf::Event event, WindowSize *windowSize) {
 		bool press = (event.type == sf::Event::KeyPressed);
 		for(int i = 0; i < 4; i++)
 			if(event.key.code == controls[i]) {

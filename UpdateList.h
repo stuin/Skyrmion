@@ -19,7 +19,8 @@ class UpdateList {
 private:
 	//Node management
 	static Node *(screen)[MAXLAYER];
-	static std::bitset<MAXLAYER> alwaysLoadedLayers;
+	static std::bitset<MAXLAYER> staticLayers;
+	static std::bitset<MAXLAYER> pausedLayers;
 	static std::vector<Node *> deleted;
 	static std::unordered_map<sf::Event::EventType, std::vector<Node *>> listeners;
 
@@ -44,7 +45,8 @@ public:
 
 	//Special features
 	static Node *setCamera(Node *follow, sf::Vector2f size, sf::Vector2f position=sf::Vector2f(0,0));
-	static void alwaysLoadLayer(Layer layer);
+	static void staticLayer(Layer layer, bool _static=true);
+	static void pauseLayer(Layer layer, bool pause=true);
 	static void hideLayer(Layer layer, bool hidden=true);
 
 	//Utility Functions
