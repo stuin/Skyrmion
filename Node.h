@@ -51,7 +51,7 @@ public:
 	//General getters
 	int getLayer();
 	sf::Vector2i getSize();
-	sf::Rect<int> getRect();
+	sf::FloatRect getRect();
 	bool isHidden();
 	Node *getParent();
 	sf::Vector2f getGPosition();
@@ -59,7 +59,7 @@ public:
 
 	//General setters
 	void setSize(sf::Vector2i size);
-	void setHidden(bool hidden);
+	void setHidden(bool hidden=true);
 	void setParent(Node *parent);
 	void setGPosition(float x, float y);
 

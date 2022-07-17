@@ -26,9 +26,9 @@ sf::Vector2i Node::getSize() {
 }
 
 //Create full collision box
-sf::Rect<int> Node::getRect() {
+sf::FloatRect Node::getRect() {
 	sf::Vector2f pos = this->getGPosition();
-	sf::Rect<int> rec;
+	sf::FloatRect rec;
 	rec.left = pos.x - (this->getOrigin().x * this->getScale().x);
 	rec.top = pos.y - (this->getOrigin().y * this->getScale().y);
 	rec.width = this->size.x * this->getScale().x;

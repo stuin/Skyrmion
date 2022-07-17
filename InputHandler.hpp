@@ -20,7 +20,7 @@ public:
 
 	void recieveEvent(sf::Event event, WindowSize *windowSize) {
 		bool press = (event.type == sf::Event::KeyPressed);
-		for(int i = 0; i < 4; i++)
+		for(int i = 0; i < pressed.size(); i++)
 			if(event.key.code == controls[i]) {
 				pressed[i] = press;
 				held[i] = press;
