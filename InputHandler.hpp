@@ -78,6 +78,10 @@ public:
 		direction = _direction;
 	}
 
+	sf::Vector2f getDirection() {
+		return direction;
+	}
+
 	sf::Vector2f getMovement(Node *node, double distance) {
 		return node->getShiftedPosition(direction, distance);
 	}
