@@ -2,7 +2,9 @@
 
 #include <string>
 #include <vector>
+#include <deque>
 #include <bitset>
+#include <atomic>
 #include <unordered_map>
 #include <exception>
 #include <thread>
@@ -18,15 +20,20 @@
 class UpdateList {
 private:
 	//Node management
-	static Node *(screen)[MAXLAYER];
+	static Node *screen[MAXLAYER];
 	static std::bitset<MAXLAYER> staticLayers;
 	static std::bitset<MAXLAYER> pausedLayers;
 	static std::vector<Node *> deleted;
+
+	//Window event system
+	static std::atomic_int event_count;
+	static std::deque<sf::Event> event_queue;
 	static std::unordered_map<sf::Event::EventType, std::vector<Node *>> listeners;
 
 	//Display variables
 	static Node *camera;
 	static sf::View viewPlayer;
+	static WindowSize windowSize;
 	static std::bitset<MAXLAYER> hiddenLayers;
 
 	static Layer max;

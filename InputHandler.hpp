@@ -38,7 +38,7 @@ public:
 	}
 
 	void update(double time) {
-		for(sint i = 0; i < pressed.size(); i++) {
+		for(sint i = 0; i < held.size(); i++) {
 			if(held[i]) {
 				if(heldFunc != NULL)
 					heldFunc(i);
@@ -55,6 +55,7 @@ class DirectionHandler : public InputHandler {
 private:
 	sf::Vector2f direction = sf::Vector2f(0, 0);
 
+public:
 	std::vector<std::string> listKeys(std::string field) {
 		std::vector<std::string> keys = {
 			field + "/up",
@@ -69,7 +70,6 @@ private:
 		return keys;
 	}
 
-public:
 	DirectionHandler(int *_controls, int count, int layer, Node *parent = NULL)
 	: InputHandler(_controls, count, layer, parent) {
 
@@ -89,6 +89,7 @@ public:
 		sf::Vector2f _direction = sf::Vector2f(0, 0);
 		for(sint i = 0; i < held.size(); i++) {
 			if(held[i]) {
+				//Update direction
 				switch(i % 4) {
 					case 0: // up
 						_direction.y--;
@@ -103,9 +104,16 @@ public:
 						_direction.x++;
 						break;
 				}
+
+				//Run lambda functions
+				if(heldFunc != NULL)
+					heldFunc(i);
+				if(pressed[i] && pressedFunc != NULL)
+					pressedFunc(i);
 			}
 		}
 		direction = _direction;
+		clearPressed();
 	}
 
 	sf::Vector2f getDirection() {
