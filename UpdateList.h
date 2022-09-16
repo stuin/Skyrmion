@@ -50,8 +50,12 @@ public:
 	static void clearLayer(Layer layer);
 	static void addListener(Node *item, sf::Event::EventType type);
 
-	//Special features
+	//Special node features
 	static Node *setCamera(Node *follow, sf::Vector2f size, sf::Vector2f position=sf::Vector2f(0,0));
+	static void sendMessage(Layer layer, int id);
+	static void sendMessage(int id);
+
+	//Layer control features
 	static void staticLayer(Layer layer, bool _static=true);
 	static void pauseLayer(Layer layer, bool pause=true);
 	static void hideLayer(Layer layer, bool hidden=true);

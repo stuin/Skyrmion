@@ -92,6 +92,7 @@ public:
 		collide(object);
 	}
 	virtual void recieveEvent(sf::Event event, WindowSize *windowSize) {}
+	virtual void recieveMessage(int id) {}
 };
 
 class DrawNode : public Node {
