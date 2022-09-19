@@ -8,14 +8,18 @@
  */
 
 //Static variables
-Node *(UpdateList::screen)[MAXLAYER];
+Node *UpdateList::screen[MAXLAYER];
 std::bitset<MAXLAYER> UpdateList::staticLayers;
 std::bitset<MAXLAYER> UpdateList::pausedLayers;
 std::vector<Node *> UpdateList::deleted;
+
+std::atomic_int UpdateList::event_count = 0;
+std::deque<sf::Event> UpdateList::event_queue;
 std::unordered_map<sf::Event::EventType, std::vector<Node *>> UpdateList::listeners;
 
 Node *UpdateList::camera = NULL;
 sf::View UpdateList::viewPlayer;
+WindowSize UpdateList::windowSize;
 std::bitset<MAXLAYER> UpdateList::hiddenLayers;
 
 Layer UpdateList::max = MAXLAYER;
@@ -91,6 +95,19 @@ void UpdateList::loadTexture(sf::Texture* texture, std::string filename) {
 
 //Update all nodes in list
 void UpdateList::update(double time) {
+	int count = event_count;
+	event_count -= count;
+	WindowSize size = windowSize;
+	for(int i = 0; i < count; i++) {
+		//Send event to marked listeners
+		sf::Event event = event_queue.back();
+		event_queue.pop_back();
+		auto it = listeners.find(event.type);
+		if(it != listeners.end())
+			for(Node *node : it->second)
+				node->recieveEvent(event, &size);
+	}
+
 	//Check collisions and updates
 	for(int layer = 0; layer <= max; layer++) {
 		Node *source = screen[layer];
@@ -181,23 +198,21 @@ void UpdateList::renderingThread(std::string title) {
 
     //Run rendering loop
 	while(window.isOpen()) {
-		//Check event updates
-		sf::Event event;
 		//Calculate window sizing
 		int shiftX = viewPlayer.getSize().x / window.getSize().x;
 		int shiftY = viewPlayer.getSize().y / window.getSize().y;
 		int cornerX = viewPlayer.getCenter().x - viewPlayer.getSize().x/2;
 		int cornerY = viewPlayer.getCenter().y - viewPlayer.getSize().y/2;
-		WindowSize windowSize = {shiftX, shiftY, cornerX, cornerY};
+		windowSize = {shiftX, shiftY, cornerX, cornerY};
+
+		//Check event updates
+		sf::Event event;
 		while(window.pollEvent(event)) {
 			if(event.type == sf::Event::Closed)
 				window.close();
-			else {
-				//Send event to marked listeners
-				auto it = listeners.find(event.type);
-				if(it != listeners.end())
-					for(Node *node : it->second)
-						node->recieveEvent(event, &windowSize);
+			else if(listeners.find(event.type) != listeners.end()) {
+				event_queue.push_front(event);
+				event_count++;
 			}
 
 			//Adjust window size
