@@ -10,7 +10,9 @@
 
 #define MAXLAYER 16
 #define LAYERERROR "Used collision layer > 16"
+
 using Layer = unsigned char;
+using sint = long unsigned int;
 
 /*
  * Created by Stuart Irwin on 4/13/2019.

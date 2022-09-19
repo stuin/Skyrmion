@@ -53,11 +53,15 @@ public:
     ~TileMap() {
     }
 
+    int countTextures() {
+        return (tileset->getSize().x / tileX) * (tileset->getSize().y / tileY);
+    }
+
     void reload(int offset = 0) {
         unsigned int width = indexes->getSize().x;
         unsigned int height = indexes->getSize().y;
         int *tiles = indexes->indexGrid();
-        int numTextures = (tileset->getSize().x / tileX) * (tileset->getSize().y / tileY);
+        int numTextures = countTextures();
 
         // populate the vertex array, with one quad per tile
         for(unsigned int i = 0; i < width; ++i)

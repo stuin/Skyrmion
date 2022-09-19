@@ -1,14 +1,15 @@
 #include "UpdateList.h"
+#include "Settings.h"
 
 class InputHandler : public Node {
 public:
-	sf::Keyboard::Key *controls;
+	int *controls;
 	std::vector<bool> pressed;
 	std::vector<bool> held;
 	std::function<void(int)> pressedFunc = NULL;
 	std::function<void(int)> heldFunc = NULL;
 
-	InputHandler(sf::Keyboard::Key *_controls, int count, int layer, Node *parent = NULL) 
+	InputHandler(int *_controls, int count, int layer, Node *parent = NULL) 
 	: Node(layer, sf::Vector2i(16, 16), true, parent), controls(_controls), pressed(count, false) {
 		pressed.assign(count, false);
 		held.assign(count, false);
@@ -18,9 +19,14 @@ public:
 		UpdateList::addListener(this, sf::Event::KeyReleased);
 	}
 
+	InputHandler(std::vector<std::string> keys, int layer, Node *parent = NULL)
+	: InputHandler(Settings::getControls(keys), keys.size(), layer, parent) {
+
+	}
+
 	void recieveEvent(sf::Event event, WindowSize *windowSize) {
 		bool press = (event.type == sf::Event::KeyPressed);
-		for(int i = 0; i < pressed.size(); i++)
+		for(sint i = 0; i < pressed.size(); i++)
 			if(event.key.code == controls[i]) {
 				pressed[i] = press;
 				held[i] = press;
@@ -32,7 +38,7 @@ public:
 	}
 
 	void update(double time) {
-		for(int i = 0; i < pressed.size(); i++) {
+		for(sint i = 0; i < pressed.size(); i++) {
 			if(held[i]) {
 				if(heldFunc != NULL)
 					heldFunc(i);
@@ -49,15 +55,39 @@ class DirectionHandler : public InputHandler {
 private:
 	sf::Vector2f direction = sf::Vector2f(0, 0);
 
+	std::vector<std::string> listKeys(std::string field) {
+		std::vector<std::string> keys = {
+			field + "/up",
+			field + "/down",
+			field + "/left",
+			field + "/right",
+			field + "/up2",
+			field + "/down2",
+			field + "/left2",
+			field + "/right2"
+		};
+		return keys;
+	}
+
 public:
-	DirectionHandler(sf::Keyboard::Key *_controls, int layer, Node *parent = NULL)
-	: InputHandler(_controls, 4, layer, parent) {
+	DirectionHandler(int *_controls, int count, int layer, Node *parent = NULL)
+	: InputHandler(_controls, count, layer, parent) {
+
+	}
+
+	DirectionHandler(std::vector<std::string> keys, int layer, Node *parent = NULL)
+	: InputHandler(keys, layer, parent) {
+
+	}
+
+	DirectionHandler(std::string field, int layer, Node *parent = NULL)
+	: InputHandler(listKeys(field), layer, parent) {
 
 	}
 
 	void update(double time) {
 		sf::Vector2f _direction = sf::Vector2f(0, 0);
-		for(int i = 0; i < held.size(); i++) {
+		for(sint i = 0; i < held.size(); i++) {
 			if(held[i]) {
 				switch(i % 4) {
 					case 0: // up
@@ -76,6 +106,10 @@ public:
 			}
 		}
 		direction = _direction;
+	}
+
+	sf::Vector2f getDirection() {
+		return direction;
 	}
 
 	sf::Vector2f getMovement(Node *node, double distance) {
