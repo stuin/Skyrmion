@@ -9,6 +9,7 @@
 
 #define MOUSE_OFFSET 150
 #define JOYSTICK_OFFSET 160
+#define JOYSTICK_ZONE 2.0f
 
 using json_pointer = nlohmann::json::json_pointer;
 
@@ -17,8 +18,9 @@ private:
 	static nlohmann::json data;
 
 public:
-	static std::map<std::string, int> keymap;
-	static std::map<sf::Mouse::Button, int> mousebuttons;
+	static std::map<std::string, int> KEYMAP;
+	static std::map<sf::Mouse::Button, int> MOUSEBUTTON;
+	static std::map<int, sf::Joystick::Axis> AXISID;
 
 	static void loadSettings(std::string filename) {
 		std::ifstream file(filename);
@@ -39,13 +41,15 @@ public:
 
 	static int getControl(std::string field) {
 		std::string keyname = data.value(json_pointer(field), "");
+		//Convert to uppercase
 		for(long unsigned int i = 0; i < keyname.length(); i++)
 			keyname[i] = toupper(keyname[i]);
-		return keymap[keyname];
+		return KEYMAP[keyname];
 	}
 
-	static int *getControls(std::vector<std::string> keys) {
-		int *controls = (int *)malloc(keys.size() * sizeof(int));
+	static std::vector<int> getControls(std::vector<std::string> keys) {
+		std::vector<int> controls;
+		controls.reserve(keys.size());
 		for(long unsigned int i = 0; i < keys.size(); i++)
 			controls[i] = getControl(keys[i]);
 		return controls;
