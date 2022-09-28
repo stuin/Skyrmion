@@ -3,7 +3,8 @@
 nlohmann::json Settings::data;
 
 std::map<std::string, int> Settings::KEYMAP = {
-	{"", 			sf::Keyboard::Unknown},
+	{"MOVING", 		-2},
+	{"", 			-1}, 
 	{"A", 			sf::Keyboard::A},
 	{"B", 			sf::Keyboard::B},
 	{"C", 			sf::Keyboard::C},
@@ -152,6 +153,18 @@ std::map<std::string, int> Settings::KEYMAP = {
 	{"JOYSTICK1RIGHT",	JOYSTICK_OFFSET+51},
 	{"JOYSTICK1UP",		JOYSTICK_OFFSET+52},
 	{"JOYSTICK1DOWN",	JOYSTICK_OFFSET+53},
+	{"JOYSTICK2LEFT",	JOYSTICK_OFFSET+54},
+	{"JOYSTICK2RIGHT",	JOYSTICK_OFFSET+55},
+	{"JOYSTICK2UP",		JOYSTICK_OFFSET+56},
+	{"JOYSTICK2DOWN",	JOYSTICK_OFFSET+57},
+	{"JOYSTICK3LEFT",	JOYSTICK_OFFSET+58},
+	{"JOYSTICK3RIGHT",	JOYSTICK_OFFSET+59},
+	{"JOYSTICK3UP",		JOYSTICK_OFFSET+60},
+	{"JOYSTICK3DOWN",	JOYSTICK_OFFSET+61},
+	{"JOYSTICK4LEFT",	JOYSTICK_OFFSET+62},
+	{"JOYSTICK4RIGHT",	JOYSTICK_OFFSET+63},
+	{"JOYSTICK4UP",		JOYSTICK_OFFSET+64},
+	{"JOYSTICK4DOWN",	JOYSTICK_OFFSET+65},
 };
 
 std::map<sf::Mouse::Button, int> Settings::MOUSEBUTTON = {
@@ -162,7 +175,7 @@ std::map<sf::Mouse::Button, int> Settings::MOUSEBUTTON = {
 	{sf::Mouse::XButton2,	MOUSE_OFFSET+4} 
 };
 
-std::map<int, sf::Joystick::Axis> Settings::AXISID = {
+std::map<int, sf::Joystick::Axis> Settings::JOYSTICKAXIS = {
 	{0, sf::Joystick::X},
 	{1, sf::Joystick::Y},
 	{2, sf::Joystick::U},
@@ -171,4 +184,15 @@ std::map<int, sf::Joystick::Axis> Settings::AXISID = {
 	{5, sf::Joystick::R},
 	{6, sf::Joystick::PovX},
 	{7, sf::Joystick::PovY}
+};
+
+std::map<sf::Joystick::Axis, int> Settings::JOYSTICKID = {
+	{sf::Joystick::X, 		0},
+	{sf::Joystick::Y, 		1},
+	{sf::Joystick::U, 		2},
+	{sf::Joystick::V, 		3},
+	{sf::Joystick::Z, 		4},
+	{sf::Joystick::R, 		5},
+	{sf::Joystick::PovX, 	6},
+	{sf::Joystick::PovY, 	7}
 };

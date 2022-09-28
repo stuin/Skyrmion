@@ -1,21 +1,14 @@
+#include <cstdlib>
+
 #include "UpdateList.h"
 #include "Settings.h"
 
+#define MAXALTS 2
+#define JOYSTICK_ZONE 5.0f
+
 class InputHandler : public Node {
-public:
-	std::vector<int> controls;
-	std::vector<bool> pressed;
-	std::vector<bool> held;
-	std::function<void(int)> pressedFunc = NULL;
-	std::function<void(int)> heldFunc = NULL;
-
-	int remap = -1;
-
-	InputHandler(std::vector<int> _controls, int layer, Node *parent = NULL) 
-	: Node(layer, sf::Vector2i(16, 16), true, parent), controls(_controls) {
-		pressed.assign(_controls.size(), false);
-		held.assign(_controls.size(), false);
-
+private:
+	void add_listeners() {
 		UpdateList::addNode(this);
 		UpdateList::addListener(this, sf::Event::KeyPressed);
 		UpdateList::addListener(this, sf::Event::KeyReleased);
@@ -24,22 +17,65 @@ public:
 		UpdateList::addListener(this, sf::Event::MouseWheelScrolled);
 		UpdateList::addListener(this, sf::Event::JoystickButtonPressed);
 		UpdateList::addListener(this, sf::Event::JoystickButtonReleased);
+		UpdateList::addListener(this, sf::Event::JoystickMoved);
+	}
+
+public:
+	std::vector<int> controls;
+	std::vector<std::string> keycodes;
+	std::vector<bool> pressed;
+	std::vector<bool> held;
+	std::function<void(int)> pressedFunc = NULL;
+	std::function<void(int)> heldFunc = NULL;
+
+	int remap = -1;
+	int count = 0;
+
+	InputHandler(std::vector<int> _controls, int layer, Node *parent = NULL) 
+	: Node(layer, sf::Vector2i(16, 16), true, parent), controls(_controls) {
+		keycodes.assign(_controls.size(), "");
+		pressed.assign(_controls.size(), false);
+		held.assign(_controls.size(), false);
+		count = _controls.size();
+
+		add_listeners();
 	}
 
 	InputHandler(std::vector<std::string> keys, int layer, Node *parent = NULL)
-	: InputHandler(Settings::getControls(keys), layer, parent) {
+	: Node(layer, sf::Vector2i(16, 16), true, parent) {
+		pressed.assign(keys.size() * MAXALTS, false);
+		held.assign(keys.size() * MAXALTS, false);
+		count = keys.size();
 
+		//Base keys
+		for(std::string s : keys) {
+			keycodes.push_back(s);
+			controls.push_back(Settings::getControl(s));
+		}
+
+		//Alternate keys
+		for(int i = 1; i < MAXALTS; i++) {
+			for(std::string s : keys) {
+				keycodes.push_back(s + "&" + std::to_string(i));
+				controls.push_back(Settings::getControl(s + "&" + std::to_string(i)));
+			}
+		}
+
+		add_listeners();
 	}
 
 	int addKey(int code) {
-		controls.push_back(code);
-		pressed.push_back(false);
-		held.push_back(false);
-		return controls.size() - 1;
+		controls.insert(controls.begin() + count, code);
+		keycodes.insert(keycodes.begin() + count, "");
+		pressed.insert(pressed.begin() + count, false);
+		held.insert(held.begin() + count, false);
+		return count++;
 	}
 
 	int addKey(std::string key) {
-		return addKey(Settings::getControl(key));
+		int i = addKey(Settings::getControl(key));
+		keycodes[i] = key;
+		return i;
 	}
 
 	void updateKey(int code, bool press) {
@@ -53,7 +89,7 @@ public:
 		while(i < pressed.size() && code != controls[i])
 			i++;
 
-		if(code == controls[i]) {
+		if(i < pressed.size()) {
 			pressed[i] = press;
 			held[i] = press;
 		}
@@ -87,6 +123,14 @@ public:
 				code = JOYSTICK_OFFSET + event.joystickButton.button;
 				updateKey(code, press);
 				break;
+			case sf::Event::JoystickMoved:
+				//Joysticks
+				press = std::abs(event.joystickMove.position) > JOYSTICK_ZONE;
+				code = JOYSTICK_OFFSET + 50 + (event.joystickMove.joystickId * 4) +
+					Settings::JOYSTICKID[event.joystickMove.axis] * 2 + 
+					(event.joystickMove.position > 0);
+				updateKey(code, press);
+				break;
 			default:
 				break;
 
@@ -101,9 +145,9 @@ public:
 		for(sint i = 0; i < held.size(); i++) {
 			if(held[i]) {
 				if(heldFunc != NULL)
-					heldFunc(i);
+					heldFunc(i % count);
 				if(pressed[i] && pressedFunc != NULL)
-					pressedFunc(i);
+					pressedFunc(i % count);
 			}
 		}
 
@@ -115,6 +159,7 @@ class DirectionHandler : public InputHandler {
 private:
 	sf::Vector2f direction = sf::Vector2f(0, 0);
 	int joystick = 0;
+	int moving = 0;
 
 public:
 	bool joystickMovement = false;
@@ -124,23 +169,19 @@ public:
 			field + "/up",
 			field + "/down",
 			field + "/left",
-			field + "/right",
-			field + "/up2",
-			field + "/down2",
-			field + "/left2",
-			field + "/right2"
+			field + "/right"
 		};
 		return keys;
 	}
 
-	DirectionHandler(std::vector<int> _controls, int count, int layer, Node *parent = NULL)
-	: InputHandler(_controls, count, layer, parent) {
-	
+	DirectionHandler(std::vector<int> _controls, int layer, Node *parent = NULL)
+	: InputHandler(_controls, layer, parent) {
+		moving = addKey(-2);
 	}
 
 	DirectionHandler(std::vector<std::string> keys, int layer, Node *parent = NULL)
 	: InputHandler(keys, layer, parent) {
-
+		moving = addKey(-2);
 	}
 
 	DirectionHandler(std::string field, int layer, Node *parent = NULL)
@@ -149,63 +190,65 @@ public:
 	}
 
 	void update(double time) {
-		sf::Vector2f _direction = sf::Vector2f(0, 0);
-		int last = 0;
+		direction = sf::Vector2f(0, 0);
 
 		//Button Input
 		for(sint i = 0; i < held.size(); i++) {
 			if(held[i]) {
-				last = i + 1;
 				joystickMovement = false;
 				//Update direction
-				switch(i % 4) {
+				switch(i % count) {
 					case 0: // up
-						_direction.y--;
+						direction.y--;
 						break;
 					case 1: // down
-						_direction.y++;
+						direction.y++;
 						break;
 					case 2: // left
-						_direction.x--;
+						direction.x--;
 						break;
 					case 3: // right
-						_direction.x++;
+						direction.x++;
 						break;
 				}
 			}
 		}
 
 		//Read from joystick
-		if(joystick > 0) {
+		int jid = (joystick - 1) / 4;
+		if(direction == sf::Vector2f(0, 0) && joystick > 0) {
 			int axes = ((joystick - 1) % 4) * 2;
-			sf::Joystick::Axis xAxis = Settings::AXISID[axes];
-			sf::Joystick::Axis yAxis = Settings::AXISID[axes + 1];
-			float xPos = sf::Joystick::getAxisPosition(joystick / 4, xAxis);
-			float yPos = sf::Joystick::getAxisPosition(joystick / 4, yAxis);
+			sf::Joystick::Axis xAxis = Settings::JOYSTICKAXIS[axes];
+			sf::Joystick::Axis yAxis = Settings::JOYSTICKAXIS[axes + 1];
+			if(sf::Joystick::hasAxis(jid, yAxis)) {
+				float xPos = sf::Joystick::getAxisPosition(jid, xAxis);
+				float yPos = sf::Joystick::getAxisPosition(jid, yAxis);
 
-			//Update outside of dead zone
-			if(xPos > JOYSTICK_ZONE || xPos < -JOYSTICK_ZONE ||
-					yPos > JOYSTICK_ZONE || yPos < -JOYSTICK_ZONE) {
-				//std::cout << xPos << " " << yPos << std::endl;
-				_direction.x = xPos / 100;
-				_direction.y = yPos / 100;
-				last = -1;
-				joystickMovement = true;
-			} else if(joystickMovement) {
-				_direction.x = 0;
-				_direction.y = 0;
+				//Update outside of dead zone
+				if(std::abs(xPos) > JOYSTICK_ZONE || std::abs(yPos) > JOYSTICK_ZONE) {
+					direction.x = xPos / 100;
+					direction.y = yPos / 100;
+					joystickMovement = true;
+				} else if(joystickMovement) {
+					direction.x = 0;
+					direction.y = 0;
+				}
 			}
 		}
 
+		//Update moving placeholder
+		updateKey(-2, direction != sf::Vector2f(0, 0));
+
 		//Run lambda functions
-		if(last != 0) {
-			if(heldFunc != NULL)
-				heldFunc(last);
-			if(pressed[last] && pressedFunc != NULL)
-				pressedFunc(last);
+		for(sint i = 0; i < held.size(); i++) {
+			if(held[i]) {
+				if(heldFunc != NULL)
+					heldFunc(i % count);
+				if(pressed[i] && pressedFunc != NULL)
+					pressedFunc(i % count);
+			}
 		}
 
-		direction = _direction;
 		clearPressed();
 	}
 
