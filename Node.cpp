@@ -102,9 +102,24 @@ bool Node::checkCollision(Node *other) {
 	return getRect().intersects(other->getRect());
 }
 
-//Create position in a direction and distance
-sf::Vector2f Node::getShiftedPosition(sf::Vector2f dir, double distance) {
-	return getPosition() + vectorLength(dir, distance);
+//Move node with a specific direction and distance
+sf::Vector2f Node::move(sf::Vector2f dir, double distance) {
+	sf::Vector2f target = getPosition() + vectorLength(dir, distance);
+	setPosition(target);
+	return target;
+}
+
+sf::Vector2f Node::move(sf::Vector2f dir, Indexer *indexes) {
+	sf::Vector2f target = gridCollision(getPosition(), dir, indexes);
+	setPosition(target);
+	return target;
+}
+
+sf::Vector2f Node::move(sf::Vector2f dir, Indexer *indexes, double distance) {
+	sf::Vector2f target = gridCollision(getPosition(), 
+		vectorLength(dir, distance), indexes);
+	setPosition(target);
+	return target;
 }
 
 //Create a vector with fixed length in any direction
@@ -128,6 +143,27 @@ sf::Vector2f Node::vectorLength(sf::Vector2f dir, double distance) {
 	}
 
 	return sf::Vector2f(xOffset, yOffset);
+}
+
+//Adjust vector for collision with grid
+sf::Vector2f Node::gridCollision(sf::Vector2f start, sf::Vector2f move, Indexer *indexes) {
+	sf::Vector2f end = start + move;
+
+	if(indexes->getTile(end) <= 0) {
+		sf::Vector2f horizontal = sf::Vector2f(start.x, end.y);
+		sf::Vector2f vertical = sf::Vector2f(end.x, start.y);
+
+		if(indexes->getTile(horizontal) > 0 && indexes->getTile(vertical) > 0)
+			end = (abs(move.x) > abs(move.y)) ? horizontal : vertical;
+		else if(indexes->getTile(horizontal) > 0)
+			end = horizontal;
+		else if(indexes->getTile(vertical) > 0)
+			end = vertical;
+		else
+			end = start;
+	}
+
+	return end;
 }
 
 //Get next node in list

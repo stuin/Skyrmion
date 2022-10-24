@@ -224,15 +224,6 @@ sf::Vector2f DirectionHandler::getMovement(double distance) {
 	return Node::vectorLength(direction, distance);
 }
 
-sf::Vector2f DirectionHandler::getMovement(Node *node, double distance) {
-	return node->getPosition() + getMovement(distance);
-}
-
-/*sf::Vector2f DirectionHandler::getMovement(Node *node, Indexer *collisionMap, double distance) {
-	sf::Vector2f start = node->getPosition();
-	sf::Vector2f end = start + getMovement(distance);
-}*/
-
 //List field names for json settings
 std::vector<std::string> DirectionHandler::listKeys(std::string field) {
 	std::vector<std::string> keys = {
