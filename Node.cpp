@@ -48,29 +48,6 @@ sf::Vector2f Node::getGPosition() {
 	return getPosition();
 }
 
-//Create position in a direction and distance
-sf::Vector2f Node::getShiftedPosition(sf::Vector2f dir, double distance) {
-	float xOffset = 0;
-	float yOffset = 0;
-	if(dir.x == 0 && dir.y == 0)
-		return getPosition();
-	if(dir.x == 0)
-		yOffset = copysign(distance, dir.y);
-	else if(dir.y == 0)
-		xOffset = copysign(distance, dir.x);
-	else if(abs(dir.x) == abs(dir.y)) {
-		float adjustment = sqrt(2) / 2.0;
-		xOffset = adjustment * copysign(distance, dir.x);
-		yOffset = adjustment * copysign(distance, dir.y);
-	} else {
-		float angle = std::atan2(dir.y, dir.x);
-		xOffset = cos(angle) * distance;
-		yOffset = sin(angle) * distance;
-	}
-
-	return sf::Vector2f(getPosition().x + xOffset, getPosition().y + yOffset);
-}
-
 //Check if node is hidden
 bool Node::isHidden() {
 	return hidden || deleted || (parent != NULL && parent->isHidden());
@@ -123,6 +100,34 @@ bool Node::checkCollision(Node *other) {
 	if(other == NULL || other->isDeleted())
 		return false;
 	return getRect().intersects(other->getRect());
+}
+
+//Create position in a direction and distance
+sf::Vector2f Node::getShiftedPosition(sf::Vector2f dir, double distance) {
+	return getPosition() + vectorLength(dir, distance);
+}
+
+//Create a vector with fixed length in any direction
+sf::Vector2f Node::vectorLength(sf::Vector2f dir, double distance) {
+	float xOffset = 0;
+	float yOffset = 0;
+	if(dir.x == 0 && dir.y == 0)
+		return sf::Vector2f(0, 0);
+	if(dir.x == 0)
+		yOffset = copysign(distance, dir.y);
+	else if(dir.y == 0)
+		xOffset = copysign(distance, dir.x);
+	else if(abs(dir.x) == abs(dir.y)) {
+		float adjustment = sqrt(2) / 2.0;
+		xOffset = adjustment * copysign(distance, dir.x);
+		yOffset = adjustment * copysign(distance, dir.y);
+	} else {
+		float angle = std::atan2(dir.y, dir.x);
+		xOffset = cos(angle) * distance;
+		yOffset = sin(angle) * distance;
+	}
+
+	return sf::Vector2f(xOffset, yOffset);
 }
 
 //Get next node in list

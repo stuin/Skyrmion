@@ -57,7 +57,6 @@ public:
 	bool isHidden();
 	Node *getParent();
 	sf::Vector2f getGPosition();
-	sf::Vector2f getShiftedPosition(sf::Vector2f dir, double distance);
 
 	//General setters
 	void setSize(sf::Vector2i size);
@@ -70,6 +69,10 @@ public:
 	bool getCollisionLayer(Layer layer);
 	void collideWith(Layer layer, bool collide=true);
 	bool checkCollision(Node *other);
+
+	//Other math utilities
+	sf::Vector2f getShiftedPosition(sf::Vector2f dir, double distance);
+	static sf::Vector2f vectorLength(sf::Vector2f dir, double distance);
 
 	//Linked list functions
 	Node *getNext();
