@@ -77,6 +77,21 @@ Node *UpdateList::setCamera(Node *follow, sf::Vector2f size, sf::Vector2f positi
 	return camera;
 }
 
+//Send signal message to all nodes in layer
+void UpdateList::sendSignal(Layer layer, int id) {
+	Node *source = screen[layer];
+	while(source != NULL) {
+		source->recieveSignal(id);
+		source = source->getNext();
+	}
+}
+
+//Send signal message to all nodes in game
+void UpdateList::sendSignal(int id) {
+	for(int layer = 0; layer <= max; layer++)
+		sendSignal(layer, id);
+}
+
 void UpdateList::staticLayer(Layer layer, bool _static) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
