@@ -8,13 +8,18 @@
  */
 
 //Static variables
-Node *(UpdateList::screen)[MAXLAYER];
-std::bitset<MAXLAYER> UpdateList::alwaysLoadedLayers;
+Node *UpdateList::screen[MAXLAYER];
+std::bitset<MAXLAYER> UpdateList::staticLayers;
+std::bitset<MAXLAYER> UpdateList::pausedLayers;
 std::vector<Node *> UpdateList::deleted;
+
+std::atomic_int UpdateList::event_count = 0;
+std::deque<sf::Event> UpdateList::event_queue;
 std::unordered_map<sf::Event::EventType, std::vector<Node *>> UpdateList::listeners;
 
 Node *UpdateList::camera = NULL;
 sf::View UpdateList::viewPlayer;
+WindowSize UpdateList::windowSize;
 std::bitset<MAXLAYER> UpdateList::hiddenLayers;
 
 Layer UpdateList::max = MAXLAYER;
@@ -29,6 +34,13 @@ void UpdateList::addNode(Node *next) {
 		screen[layer] = next;
 	else
 		screen[layer]->addNode(next);
+}
+
+//Get node in specific layer
+Node *UpdateList::getNode(Layer layer) {
+	if(layer >= MAXLAYER)
+		throw new std::invalid_argument(LAYERERROR);
+	return screen[layer];
 }
 
 //Remove all nodes in layer
@@ -54,20 +66,27 @@ void UpdateList::addListener(Node *item, sf::Event::EventType type) {
 }
 
 //Set camera to follow node
-Node *UpdateList::setCamera(Node *follow, sf::Vector2f size) {
+Node *UpdateList::setCamera(Node *follow, sf::Vector2f size, sf::Vector2f position) {
 	if(camera != NULL) {
 		camera->setSize(sf::Vector2i(size.x,size.y));
 		camera->setParent(follow);
 	} else
 		camera = new Node(0, sf::Vector2i(size.x,size.y), true, follow);
 	viewPlayer.setSize(size);
+	camera->setPosition(position);
 	return camera;
 }
 
-void UpdateList::alwaysLoadLayer(Layer layer) {
+void UpdateList::staticLayer(Layer layer, bool _static) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
-	alwaysLoadedLayers[layer] = true;
+	staticLayers[layer] = _static;
+}
+
+void UpdateList::pauseLayer(Layer layer, bool pause) {
+	if(layer >= MAXLAYER)
+		throw new std::invalid_argument(LAYERERROR);
+	pausedLayers[layer] = pause;
 }
 
 void UpdateList::hideLayer(Layer layer, bool hidden) {
@@ -76,49 +95,69 @@ void UpdateList::hideLayer(Layer layer, bool hidden) {
 	hiddenLayers[layer] = hidden;
 }
 
+void UpdateList::loadTexture(sf::Texture* texture, std::string filename) {
+	if(!texture->loadFromFile(filename))
+		throw std::invalid_argument("Texture " + filename + " not found");
+}
+
 //Update all nodes in list
 void UpdateList::update(double time) {
+	int count = event_count;
+	event_count -= count;
+	WindowSize size = windowSize;
+	for(int i = 0; i < count; i++) {
+		//Send event to marked listeners
+		sf::Event event = event_queue.back();
+		event_queue.pop_back();
+		auto it = listeners.find(event.type);
+		if(it != listeners.end())
+			for(Node *node : it->second)
+				node->recieveEvent(event, &size);
+	}
+
 	//Check collisions and updates
 	for(int layer = 0; layer <= max; layer++) {
 		Node *source = screen[layer];
 
-		//Check first node for deletion
-		if(source != NULL && source->isDeleted()) {
-			deleted.push_back(source);
-			source = source->getNext();
-			screen[layer] = source;
-		}
+		if(!pausedLayers[layer]) {
+			//Check first node for deletion
+			if(source != NULL && source->isDeleted()) {
+				deleted.push_back(source);
+				source = source->getNext();
+				screen[layer] = source;
+			}
 
-		//For each node in layer order
-		while(source != NULL) {
-			if(alwaysLoadedLayers[layer] || camera == NULL || source->checkCollision(camera)) {
-				//Check each selected collision layer
-				int collisionLayer = 0;
-				for(int i = 0; i < (int)source->getCollisionLayers().count(); i++) {
-					while(!source->getCollisionLayer(collisionLayer))
+			//For each node in layer order
+			while(source != NULL) {
+				if(staticLayers[layer] || camera == NULL || source->checkCollision(camera)) {
+					//Check each selected collision layer
+					int collisionLayer = 0;
+					for(int i = 0; i < (int)source->getCollisionLayers().count(); i++) {
+						while(!source->getCollisionLayer(collisionLayer))
+							collisionLayer++;
+
+						//Check collision box of each node
+						Node *other = screen[collisionLayer];
+						while(other != NULL) {
+							if(other != source && source->checkCollision(other))
+								source->collide(other, time);
+							other = other->getNext();
+						}
 						collisionLayer++;
-
-					//Check collision box of each node
-					Node *other = screen[collisionLayer];
-					while(other != NULL) {
-						if(other != source && source->checkCollision(other))
-							source->collide(other, time);
-						other = other->getNext();
 					}
-					collisionLayer++;
+
+					//Update each object
+					source->update(time);
 				}
 
-				//Update each object
-				source->update(time);
-			}
+				//Check next node for deletion
+				while(source->getNext() != NULL && source->getNext()->isDeleted()) {
+					deleted.push_back(source->getNext());
+					source->deleteNext();
+				}
 
-			//Check next node for deletion
-			while(source->getNext() != NULL && source->getNext()->isDeleted()) {
-				deleted.push_back(source->getNext());
-				source->deleteNext();
+				source = source->getNext();
 			}
-
-			source = source->getNext();
 		}
 	}
 }
@@ -141,7 +180,7 @@ void UpdateList::draw(sf::RenderWindow &window) {
 		if(!hiddenLayers[layer])
 			while(source != NULL) {
 				if(!source->isHidden() &&
-					(alwaysLoadedLayers[layer] || camera == NULL || source->checkCollision(camera))) {
+					(staticLayers[layer] || camera == NULL || source->checkCollision(camera))) {
 					//Check for parent node
 					if(source->getParent() != NULL) {
 						sf::Transform translation;
@@ -163,25 +202,24 @@ void UpdateList::renderingThread(std::string title) {
 
 	std::cout << "Thread starting\n";
 	sf::RenderWindow window(sf::VideoMode::getDesktopMode(), title);
-	window.setVerticalSyncEnabled(true);
 
     //Run rendering loop
 	while(window.isOpen()) {
-		//Check event updates
-		sf::Event event;
 		//Calculate window sizing
 		int shiftX = viewPlayer.getSize().x / window.getSize().x;
 		int shiftY = viewPlayer.getSize().y / window.getSize().y;
+		int cornerX = viewPlayer.getCenter().x - viewPlayer.getSize().x/2;
+		int cornerY = viewPlayer.getCenter().y - viewPlayer.getSize().y/2;
+		windowSize = {shiftX, shiftY, cornerX, cornerY};
+
+		//Check event updates
+		sf::Event event;
 		while(window.pollEvent(event)) {
 			if(event.type == sf::Event::Closed)
 				window.close();
-			else {
-				//Send event to marked listeners
-				auto it = listeners.find(event.type);
-				if(it != listeners.end())
-					for(Node *node : it->second)
-						if(!node->isHidden())
-							node->recieveEvent(event, shiftX, shiftY);
+			else if(listeners.find(event.type) != listeners.end()) {
+				event_queue.push_front(event);
+				event_count++;
 			}
 
 			//Adjust window size
@@ -198,16 +236,15 @@ void UpdateList::renderingThread(std::string title) {
 			//Next update time
 			nextFrame = time + FRAME_DELAY;
 
-			//Update window
-			window.clear();
-			UpdateList::draw(window);
-
 			//Set camera position
 			if(camera != NULL) {
 				viewPlayer.setCenter(camera->getGPosition());
 				window.setView(viewPlayer);
 			}
 
+			//Update window
+			window.clear();
+			UpdateList::draw(window);
 			window.display();
 		}
 		time = clock.getElapsedTime();

@@ -6,13 +6,37 @@
  */
 
 //Convert file to char[][]
-GridMaker::GridMaker(std::string file, unsigned int _width, unsigned int _height)
-: height(_height), width(_width) {
+GridMaker::GridMaker(std::string file) {
+	std::string line;
+	std::ifstream mapFile(file);
+
+	//Get maximum file size
+	while(std::getline(mapFile, line)) {
+		if(line.size() > width)
+			width = line.size();
+		++height;
+	}
+	mapFile.close();
+
 	//Build array
 	this->tiles = new char*[height];
 	for(unsigned int i = 0; i < height; i++)
 		tiles[i] = new char[width];
 	reload(file);
+}
+
+//Create blank char[][]
+GridMaker::GridMaker(unsigned int width, unsigned int height) {
+	this->width = width;
+	this->height = height;
+
+	//Build array
+	this->tiles = new char*[height];
+	for(unsigned int i = 0; i < height; i++) {
+		tiles[i] = new char[width];
+		for(unsigned int j = 0; j < width; j++)
+			tiles[i][j] = ' ';
+	}
 }
 
 GridMaker::~GridMaker() {

@@ -1,26 +1,38 @@
 #pragma once
 
-#include <SFML/System.hpp>
-#include <SFML/Graphics.hpp>
 #include <bitset>
 #include <stdexcept>
 #include <math.h>
-
 #include <iostream>
+
+#include "GridMaker.h"
 
 #define MAXLAYER 16
 #define LAYERERROR "Used collision layer > 16"
+
 using Layer = unsigned char;
+using sint = long unsigned int;
 
 /*
  * Created by Stuart Irwin on 4/13/2019.
  * Sprite with collision
  */
 
+struct WindowSize {
+	int shiftX;
+	int shiftY;
+	int cornerX;
+	int cornerY;
+
+	sf::Vector2f worldPos(int x, int y) {
+		return sf::Vector2f(x * shiftX + cornerX, y * shiftY + cornerY);
+	}
+};
+
 class Node : public sf::Sprite {
 private:
 	//Visible system variables
-	sf::Rect<int> size;
+	sf::Vector2i size;
 	bool hidden = false;
 	Node *parent = NULL;
 	std::bitset<MAXLAYER> collisionLayers;
@@ -39,18 +51,17 @@ public:
 
 	//General getters
 	int getLayer();
-	sf::Rect<int> getRect();
+	sf::Vector2i getSize();
+	sf::FloatRect getRect();
 	bool isHidden();
 	Node *getParent();
-
-	//Special getters
 	sf::Vector2f getGPosition();
-	sf::Vector2f getShiftedPosition(double time, sf::Vector2f dir, int distance);
 
 	//General setters
 	void setSize(sf::Vector2i size);
-	void setHidden(bool hidden);
+	void setHidden(bool hidden=true);
 	void setParent(Node *parent);
+	void setGPosition(sf::Vector2f pos);
 	void setGPosition(float x, float y);
 
 	//Collision system
@@ -58,6 +69,13 @@ public:
 	bool getCollisionLayer(Layer layer);
 	void collideWith(Layer layer, bool collide=true);
 	bool checkCollision(Node *other);
+
+	//Other math utilities
+	sf::Vector2f move(sf::Vector2f dir, double distance);
+	sf::Vector2f move(sf::Vector2f dir, Indexer *indexes);
+	sf::Vector2f move(sf::Vector2f dir, Indexer *indexes, double distance);
+	static sf::Vector2f vectorLength(sf::Vector2f dir, double distance);
+	static sf::Vector2f gridCollision(sf::Vector2f start, sf::Vector2f move, Indexer *indexes);
 
 	//Linked list functions
 	Node *getNext();
@@ -79,7 +97,7 @@ public:
 	virtual void collide(Node *object, double time) {
 		collide(object);
 	}
-	virtual void recieveEvent(sf::Event event, int shiftX, int shiftY) {}
+	virtual void recieveEvent(sf::Event event, WindowSize *windowSize) {}
 };
 
 class DrawNode : public Node {
