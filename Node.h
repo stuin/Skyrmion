@@ -1,12 +1,11 @@
 #pragma once
 
-#include <SFML/System.hpp>
-#include <SFML/Graphics.hpp>
 #include <bitset>
 #include <stdexcept>
 #include <math.h>
-
 #include <iostream>
+
+#include "GridMaker.h"
 
 #define MAXLAYER 16
 #define LAYERERROR "Used collision layer > 16"
@@ -57,7 +56,6 @@ public:
 	bool isHidden();
 	Node *getParent();
 	sf::Vector2f getGPosition();
-	sf::Vector2f getShiftedPosition(sf::Vector2f dir, double distance);
 
 	//General setters
 	void setSize(sf::Vector2i size);
@@ -70,6 +68,13 @@ public:
 	bool getCollisionLayer(Layer layer);
 	void collideWith(Layer layer, bool collide=true);
 	bool checkCollision(Node *other);
+
+	//Other math utilities
+	sf::Vector2f move(sf::Vector2f dir, double distance);
+	sf::Vector2f move(sf::Vector2f dir, Indexer *indexes);
+	sf::Vector2f move(sf::Vector2f dir, Indexer *indexes, double distance);
+	static sf::Vector2f vectorLength(sf::Vector2f dir, double distance);
+	static sf::Vector2f gridCollision(sf::Vector2f start, sf::Vector2f move, Indexer *indexes);
 
 	//Linked list functions
 	Node *getNext();

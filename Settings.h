@@ -17,8 +17,10 @@ private:
 	static nlohmann::json data;
 
 public:
-	static std::map<std::string, int> keymap;
-	static std::map<sf::Mouse::Button, int> mousebuttons;
+	static std::map<std::string, int> KEYMAP;
+	static std::map<sf::Mouse::Button, int> MOUSEBUTTON;
+	static std::map<int, sf::Joystick::Axis> JOYSTICKAXIS;
+	static std::map<sf::Joystick::Axis, int> JOYSTICKID;
 
 	static void loadSettings(std::string filename) {
 		std::ifstream file(filename);
@@ -39,16 +41,10 @@ public:
 
 	static int getControl(std::string field) {
 		std::string keyname = data.value(json_pointer(field), "");
+		//Convert to uppercase
 		for(long unsigned int i = 0; i < keyname.length(); i++)
 			keyname[i] = toupper(keyname[i]);
-		return keymap[keyname];
-	}
-
-	static int *getControls(std::vector<std::string> keys) {
-		int *controls = (int *)malloc(keys.size() * sizeof(int));
-		for(long unsigned int i = 0; i < keys.size(); i++)
-			controls[i] = getControl(keys[i]);
-		return controls;
+		return KEYMAP[keyname];
 	}
 
 	static void setBool(std::string field, bool value) {

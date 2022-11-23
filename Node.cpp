@@ -48,29 +48,6 @@ sf::Vector2f Node::getGPosition() {
 	return getPosition();
 }
 
-//Create position in a direction and distance
-sf::Vector2f Node::getShiftedPosition(sf::Vector2f dir, double distance) {
-	float xOffset = 0;
-	float yOffset = 0;
-	if(dir.x == 0 && dir.y == 0)
-		return getPosition();
-	if(dir.x == 0)
-		yOffset = copysign(distance, dir.y);
-	else if(dir.y == 0)
-		xOffset = copysign(distance, dir.x);
-	else if(abs(dir.x) == abs(dir.y)) {
-		float adjustment = sqrt(2) / 2.0;
-		xOffset = adjustment * copysign(distance, dir.x);
-		yOffset = adjustment * copysign(distance, dir.y);
-	} else {
-		float angle = std::atan2(dir.y, dir.x);
-		xOffset = cos(angle) * distance;
-		yOffset = sin(angle) * distance;
-	}
-
-	return sf::Vector2f(getPosition().x + xOffset, getPosition().y + yOffset);
-}
-
 //Check if node is hidden
 bool Node::isHidden() {
 	return hidden || deleted || (parent != NULL && parent->isHidden());
@@ -123,6 +100,70 @@ bool Node::checkCollision(Node *other) {
 	if(other == NULL || other->isDeleted())
 		return false;
 	return getRect().intersects(other->getRect());
+}
+
+//Move node with a specific direction and distance
+sf::Vector2f Node::move(sf::Vector2f dir, double distance) {
+	sf::Vector2f target = getPosition() + vectorLength(dir, distance);
+	setPosition(target);
+	return target;
+}
+
+sf::Vector2f Node::move(sf::Vector2f dir, Indexer *indexes) {
+	sf::Vector2f target = gridCollision(getPosition(), dir, indexes);
+	setPosition(target);
+	return target;
+}
+
+sf::Vector2f Node::move(sf::Vector2f dir, Indexer *indexes, double distance) {
+	sf::Vector2f target = gridCollision(getPosition(), 
+		vectorLength(dir, distance), indexes);
+	setPosition(target);
+	return target;
+}
+
+//Create a vector with fixed length in any direction
+sf::Vector2f Node::vectorLength(sf::Vector2f dir, double distance) {
+	float xOffset = 0;
+	float yOffset = 0;
+	if(dir.x == 0 && dir.y == 0)
+		return sf::Vector2f(0, 0);
+	if(dir.x == 0)
+		yOffset = copysign(distance, dir.y);
+	else if(dir.y == 0)
+		xOffset = copysign(distance, dir.x);
+	else if(abs(dir.x) == abs(dir.y)) {
+		float adjustment = sqrt(2) / 2.0;
+		xOffset = adjustment * copysign(distance, dir.x);
+		yOffset = adjustment * copysign(distance, dir.y);
+	} else {
+		float angle = std::atan2(dir.y, dir.x);
+		xOffset = cos(angle) * distance;
+		yOffset = sin(angle) * distance;
+	}
+
+	return sf::Vector2f(xOffset, yOffset);
+}
+
+//Adjust vector for collision with grid
+sf::Vector2f Node::gridCollision(sf::Vector2f start, sf::Vector2f move, Indexer *indexes) {
+	sf::Vector2f end = start + move;
+
+	if(indexes->getTile(end) <= 0) {
+		sf::Vector2f horizontal = sf::Vector2f(start.x, end.y);
+		sf::Vector2f vertical = sf::Vector2f(end.x, start.y);
+
+		if(indexes->getTile(horizontal) > 0 && indexes->getTile(vertical) > 0)
+			end = (abs(move.x) > abs(move.y)) ? horizontal : vertical;
+		else if(indexes->getTile(horizontal) > 0)
+			end = horizontal;
+		else if(indexes->getTile(vertical) > 0)
+			end = vertical;
+		else
+			end = start;
+	}
+
+	return end;
 }
 
 //Get next node in list
