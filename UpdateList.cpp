@@ -198,9 +198,9 @@ void UpdateList::renderingThread(std::string title) {
 
     //Run rendering loop
 	while(window.isOpen()) {
-		//Calculate window sizing
-		int shiftX = viewPlayer.getSize().x / window.getSize().x;
-		int shiftY = viewPlayer.getSize().y / window.getSize().y;
+		//Calculate window size and scaling
+		float shiftX = viewPlayer.getSize().x / window.getSize().x;
+		float shiftY = viewPlayer.getSize().y / window.getSize().y;
 		int cornerX = viewPlayer.getCenter().x - viewPlayer.getSize().x/2;
 		int cornerY = viewPlayer.getCenter().y - viewPlayer.getSize().y/2;
 		windowSize = {shiftX, shiftY, cornerX, cornerY};
@@ -216,9 +216,12 @@ void UpdateList::renderingThread(std::string title) {
 			}
 
 			//Adjust window size
-			if(event.type == sf::Event::Resized && camera == NULL) {
-				sf::Vector2f size(event.size.width, event.size.height);
-				viewPlayer.setSize(size);
+			if(event.type == sf::Event::Resized) {
+				if(camera == NULL) {
+					sf::Vector2f size(event.size.width, event.size.height);
+					viewPlayer.setSize(size);
+				}
+				std::cout << "Window Size: " << cornerX << "x" << cornerY << "\n";
 			}
 		}
 		if(!UpdateList::running)
