@@ -19,8 +19,8 @@ using sint = long unsigned int;
  */
 
 struct WindowSize {
-	int shiftX;
-	int shiftY;
+	float shiftX;
+	float shiftY;
 	int cornerX;
 	int cornerY;
 
