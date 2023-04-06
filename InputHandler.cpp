@@ -163,11 +163,11 @@ void DirectionHandler::update(double time) {
 				case 0: // up
 					direction.y--;
 					break;
-				case 1: // down
-					direction.y++;
-					break;
-				case 2: // left
+				case 1: // left
 					direction.x--;
+					break;
+				case 2: // down
+					direction.y++;
 					break;
 				case 3: // right
 					direction.x++;
@@ -230,8 +230,8 @@ sf::Vector2f DirectionHandler::getMovement(double distance) {
 std::vector<std::string> DirectionHandler::listKeys(std::string field) {
 	std::vector<std::string> keys = {
 		field + "/up",
-		field + "/down",
 		field + "/left",
+		field + "/down",
 		field + "/right"
 	};
 	return keys;
