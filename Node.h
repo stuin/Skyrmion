@@ -8,7 +8,7 @@
 #include "GridMaker.h"
 
 #define MAXLAYER 16
-#define LAYERERROR "Used collision layer > 16"
+#define LAYERERROR "Used collision layer > " + MAXLAYER
 
 using Layer = unsigned char;
 using sint = long unsigned int;
