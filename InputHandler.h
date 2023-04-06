@@ -41,10 +41,10 @@ class DirectionHandler : public InputHandler {
 private:
 	sf::Vector2f direction = sf::Vector2f(0, 0);
 	int joystick = 0;
-	int moving = 0;
 
 public:
 	bool joystickMovement = false;
+	int moving = 0;
 
 	DirectionHandler(std::vector<int> _controls, int layer, Node *parent = NULL);
 	DirectionHandler(std::vector<std::string> keys, int layer, Node *parent = NULL);

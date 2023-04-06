@@ -70,7 +70,7 @@ void InputHandler::updateKey(int code, bool press) {
 	while(i < pressed.size() && code != controls[i])
 		i++;
 
-	if(i < pressed.size()) {
+	if(i < pressed.size() && held[i] != press) {
 		pressed[i] = press;
 		held[i] = press;
 	}
@@ -199,7 +199,9 @@ void DirectionHandler::update(double time) {
 	}
 
 	//Update moving placeholder
-	updateKey(-2, direction != sf::Vector2f(0, 0));
+	bool moved = direction != sf::Vector2f(0, 0);
+	if(moved != held[moving])
+		updateKey(-2, moved);
 
 	//Run lambda functions
 	for(sint i = 0; i < held.size(); i++) {

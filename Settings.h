@@ -1,7 +1,7 @@
 #pragma once
 
-#include <SFML/Window.hpp>
 #include <nlohmann/json.hpp>
+#include <SFML/Window.hpp>
 
 #include <fstream>
 #include <string>

@@ -69,11 +69,15 @@ void Node::setParent(Node *parent) {
 	this->parent = parent;
 }
 
-void Node::setGPosition(float x, float y) {
-	sf::Vector2f pos(x, y);
+//Set position in global coordinates
+void Node::setGPosition(sf::Vector2f pos) {
 	if(parent != NULL)
 		pos -= parent->getGPosition();
 	setPosition(pos);
+}
+
+void Node::setGPosition(float x, float y) {
+	setGPosition(sf::Vector2f(x, y));
 }
 
 //Get full collision bitset

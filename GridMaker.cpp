@@ -89,6 +89,13 @@ char GridMaker::getTile(unsigned int x, unsigned int y) {
 	else return ' ';
 }
 
+//Set all tiles
+void GridMaker::clearTiles(char value) {
+	for(unsigned int y = 0; y < height; y++)
+		for(unsigned int x = 0; x < width; x++)
+			tiles[y][x] = value;
+}
+
 //Get size of grid
 sf::Vector2i GridMaker::getSize() const {
 	return sf::Vector2i(width, height);

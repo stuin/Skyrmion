@@ -24,6 +24,7 @@ public:
 	//Set or get tiles
 	void setTile(unsigned int x, unsigned int y, char value);
 	char getTile(unsigned int x, unsigned int y);
+	void clearTiles(char value);
 
 	//Check grid size
 	sf::Vector2i getSize() const;

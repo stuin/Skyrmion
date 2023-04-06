@@ -61,6 +61,7 @@ public:
 	void setSize(sf::Vector2i size);
 	void setHidden(bool hidden=true);
 	void setParent(Node *parent);
+	void setGPosition(sf::Vector2f pos);
 	void setGPosition(float x, float y);
 
 	//Collision system
@@ -97,6 +98,7 @@ public:
 		collide(object);
 	}
 	virtual void recieveEvent(sf::Event event, WindowSize *windowSize) {}
+	virtual void recieveSignal(int id) {}
 };
 
 class DrawNode : public Node {
