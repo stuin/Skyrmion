@@ -1,14 +1,18 @@
 #include "LightMap.h"
 
+#include <algorithm>
+
 //Based on http://journal.stuffwithstuff.com/2015/09/07/what-the-hero-sees/
 class Shadow {
 public:
 	float start;
 	float end;
+	int strength;
 
-	Shadow(float _start, float _end) {
+	Shadow(float _start, float _end, int _strength) {
 		start = _start;
 		end = _end;
+		strength = _strength;
 	}
 
 	/// Returns `true` if [other] is completely covered by this shadow.
@@ -23,18 +27,20 @@ private:
 
 public:
 
-	bool isInShadow(Shadow projection) {
+	float visibility(Shadow projection) {
+		int strength = 0;
 		for(Shadow shadow : shadows)
-			if(shadow.contains(projection)) 
-				return true;
+			if(strength < 100 && shadow.contains(projection))
+				strength += shadow.strength;
 
-		return false;
+		return (100 - std::min(strength, 100)) / 100.0;
 	}
 
 	bool isFullShadow() {
 		return shadows.size() == 1 &&
 			shadows[0].start == 0 &&
-			shadows[0].end == 1;
+			shadows[0].end == 1 &&
+			shadows[0].strength == 100;
 	}
 
 	void add(Shadow shadow) {
@@ -49,31 +55,33 @@ public:
 
 		// The new shadow is going here. See if it overlaps the
 		// previous or next.
-		Shadow *overlappingPrevious = NULL;
-		if(index > 0 && shadows[index - 1].end > shadow.start)
-			overlappingPrevious = &(shadows[index - 1]);
+		if(shadow.strength == 100) {
+			Shadow *overlappingPrevious = NULL;
+			if(index > 0 && shadows[index - 1].end > shadow.start && shadows[index - 1].strength == 100)
+				overlappingPrevious = &(shadows[index - 1]);
 
-		Shadow *overlappingNext = NULL;
-		if(index < shadows.size() && shadows[index].start < shadow.end)
-			overlappingNext = &(shadows[index]);
+			Shadow *overlappingNext = NULL;
+			if(index < shadows.size() && shadows[index].start < shadow.end && shadows[index].strength == 100)
+				overlappingNext = &(shadows[index]);
 
-		// Insert and unify with overlapping shadows.
-		if(overlappingNext != NULL) {
-			if(overlappingPrevious != NULL) {
-				// Overlaps both, so unify one and delete the other.
-				overlappingPrevious->end = overlappingNext->end;
-				shadows.erase(shadows.begin() + index);
+			// Insert and unify with overlapping shadows.
+			if(overlappingNext != NULL) {
+				if(overlappingPrevious != NULL) {
+					// Overlaps both, so unify one and delete the other.
+					overlappingPrevious->end = overlappingNext->end;
+					shadows.erase(shadows.begin() + index);
+				} else {
+					// Overlaps the next one, so unify it with that.
+					overlappingNext->start = shadow.start;
+				}
 			} else {
-				// Overlaps the next one, so unify it with that.
-				overlappingNext->start = shadow.start;
-			}
-		} else {
-			if(overlappingPrevious != NULL) {
-				// Overlaps the previous one, so unify it with that.
-				overlappingPrevious->end = shadow.end;
-			} else {
-				// Does not overlap anything, so insert.
-				shadows.insert(shadows.begin() + index, shadow);
+				if(overlappingPrevious != NULL) {
+					// Overlaps the previous one, so unify it with that.
+					overlappingPrevious->end = shadow.end;
+				} else {
+					// Does not overlap anything, so insert.
+					shadows.insert(shadows.begin() + index, shadow);
+				}
 			}
 		}
 	}
@@ -81,10 +89,10 @@ public:
 
 // Creates a [Shadow] that corresponds to the projected
 // silhouette of the tile at [row], [col].
-Shadow projectTile(float row, float col) {
+Shadow projectTile(float row, float col, int _absorb) {
 	float topLeft = col / (row + 2);
 	float bottomRight = (col + 1) / (row + 1);
-	return Shadow(topLeft, bottomRight);
+	return Shadow(topLeft, bottomRight, _absorb);
 }
 
 sf::Color LightMap::applyIntensity(unsigned int x, unsigned int y) {
@@ -143,17 +151,18 @@ void LightMap::lightOctant(sf::Vector2f light, int octant, float maxIntensity) {
 			if(!indexes.inBounds(pos + offset) || intensity < ambientIntensity) 
 				break;
 
-			Shadow projection = projectTile(row, col);
+			Shadow projection = projectTile(row, col, 0);
 
 			// Set the visibility of this tile.
-			bool visible = !line.isInShadow(projection);
-			float tileIntensity = visible ? intensity : ambientIntensity;
+			float visible = line.visibility(projection);
+			float tileIntensity = std::max(visible * intensity, ambientIntensity);
 
 			if(tileIntensity > tiles[(int)pos.x][(int)pos.y])
 				tiles[(int)pos.x][(int)pos.y] = tileIntensity;
 
 			// Add any opaque tiles to the shadow map.
-			if(visible && indexes.getTile(pos + offset) < 0) {
+			if(visible > 0 && indexes.getTile(pos + offset) < 0) {
+				projection.strength = -indexes.getTile(pos + offset);
 				line.add(projection);
 				if(line.isFullShadow())
 					return;

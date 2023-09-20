@@ -52,7 +52,6 @@ public:
 
 	sf::Vector2f getDirection();
 	sf::Vector2f getMovement(double distance);
-	sf::Vector2f getMovement(Node *node, double distance);
 
 	void update(double time);
 
