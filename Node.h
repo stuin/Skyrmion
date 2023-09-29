@@ -120,4 +120,8 @@ public:
 	void setImage(sf::Drawable &image) {
 		this->image = &image;
 	}
+
+	sf::Drawable *getImage() {
+		return image;
+	}
 };
