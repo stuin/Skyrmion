@@ -20,11 +20,11 @@ private:
     sf::Texture *tileset;
     sf::RenderTexture *buffer;
 
-    virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
+    /*virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
         states.transform *= getTransform();
         states.texture = tileset;
         target.draw(vertices, states);
-    }
+    }*/
 
 public:
 
@@ -41,6 +41,7 @@ public:
         buffer = new sf::RenderTexture();
         if(!buffer->create(tileX * width, tileY * height))
             throw std::logic_error("Error creating TileMap buffer");
+        setTexture(buffer->getTexture());
 
         // resize the vertex array to fit the level size
         vertices.setPrimitiveType(sf::Quads);

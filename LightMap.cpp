@@ -194,6 +194,12 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 	vertices.setPrimitiveType(sf::Quads);
 	vertices.resize((width + 1) * (height + 1) * 4);
 
+	//Set up buffer texture
+    buffer = new sf::RenderTexture();
+    if(!buffer->create(tileX * width, tileY * height))
+        throw std::logic_error("Error creating LightMap buffer");
+    setTexture(buffer->getTexture());
+
 	//Build array
 	tiles = new float*[width];
 	for(unsigned int x = 0; x < width; ++x) {

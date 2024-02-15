@@ -1,9 +1,10 @@
 #pragma once
 
 #include <bitset>
-#include <stdexcept>
-#include <math.h>
 #include <iostream>
+#include <math.h>
+#include <functional>
+#include <stdexcept>
 
 #include "GridMaker.h"
 

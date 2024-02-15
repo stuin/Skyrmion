@@ -28,6 +28,7 @@ private:
 
 	//Graphical storage
 	sf::VertexArray vertices;
+    sf::RenderTexture *buffer;
 	bool singular = true;
 
 	virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
