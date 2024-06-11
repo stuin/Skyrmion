@@ -25,6 +25,7 @@ private:
 	//Light sources
 	std::vector<sf::Vector2f> sourcePosition;
 	std::vector<float> sourceIntensity;
+	int nextIndex = 0;
 
 	//Graphical storage
 	sf::VertexArray vertices;
@@ -56,8 +57,10 @@ public:
 	sf::VertexArray *getVertices();
 
 	//Moving lights
-	int addSource(sf::Vector2f light, float intensity);
+	sf::Vector2f scalePosition(sf::Vector2f pos);
+	int addSource(sf::Vector2f light, float intensity, bool scale=true);
 	void moveSource(int i, sf::Vector2f light);
+	void deleteSource(int i);
 	void markCollection();
 };
 
@@ -73,7 +76,7 @@ private:
 
 		buffer->clear(sf::Color::Black);
 		for(unsigned int i = 0; i < lightmaps.size(); i++)
-			buffer->draw(*(lightmaps[i]), sf::BlendAdd);
+			buffer->draw(*(lightmaps[i]), sf::BlendMax);
 		buffer->display();
 
 		sf::Sprite sprite(buffer->getTexture());

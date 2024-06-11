@@ -160,9 +160,13 @@ void LightMap::lightOctant(sf::Vector2f light, int octant, float maxIntensity) {
 			if(tileIntensity > tiles[(int)pos.x][(int)pos.y])
 				tiles[(int)pos.x][(int)pos.y] = tileIntensity;
 
+			int tileValue = indexes.getTile(pos + offset);
+			if(tileValue / 100.0 > tiles[(int)pos.x][(int)pos.y])
+				tiles[(int)pos.x][(int)pos.y] = tileValue / 100.0;
+
 			// Add any opaque tiles to the shadow map.
-			if(visible > 0 && indexes.getTile(pos + offset) < 0) {
-				projection.strength = -indexes.getTile(pos + offset);
+			if(visible > 0 && tileValue < 0) {
+				projection.strength = -tileValue;
 				line.add(projection);
 				if(line.isFullShadow())
 					return;
@@ -189,7 +193,7 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 	width = indexes.getSize().x * indexes.getScale().x + 1;
 	height = indexes.getSize().y * indexes.getScale().y + 1;
 	setSize(sf::Vector2i(tileX * width, tileY * height));
-	setOrigin(tileX, tileY);
+	setOrigin(0, 0);
 
 	vertices.setPrimitiveType(sf::Quads);
 	vertices.resize((width + 1) * (height + 1) * 4);
@@ -201,11 +205,12 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 		for(unsigned int y = 0; y < height; ++y) {
 			tiles[x][y] = ambientIntensity;
 
-			//Add indexed lights
+			//Add static lights
 			if(indexLights) {
 				sf::Vector2f pos(x, y);
-				if(indexes.getTile(pos + offset) > 0)
-					addSource(pos, indexes.getTile(pos + offset) / 100.0);
+				int tileVale = indexes.getTile(pos + offset);
+				if(tileValue > 0)
+					addSource(pos, tileValue / 100.0, false);
 			}
 		}
 	}
@@ -249,14 +254,33 @@ sf::VertexArray *LightMap::getVertices() {
 	return &vertices;
 }
 
-int LightMap::addSource(sf::Vector2f light, float intensity) {
-	sourcePosition.push_back(light);
-	sourceIntensity.push_back(intensity);
-	return sourcePosition.size() - 1;
+sf::Vector2f LightMap::scalePosition(sf::Vector2f pos) {
+	return sf::Vector2f((int)(pos.x / tileX) - offset.x, (int)(pos.y / tileY) - offset.y);
+}
+
+int LightMap::addSource(sf::Vector2f light, float intensity, bool scale) {
+	if(scale)
+		light = scalePosition(light);
+	int lastIndex = nextIndex;
+	if(nextIndex < sourcePosition.size()) {
+		sourcePosition[nextIndex] = light;
+		sourceIntensity[nextIndex] = intensity;
+		while(nextIndex < sourcePosition.size() && sourceIntensity[nextIndex] > 0)
+			++nextIndex;
+	} else {
+		sourcePosition.push_back(light);
+		sourceIntensity.push_back(intensity);
+		nextIndex = sourcePosition.size();
+	}
+	return lastIndex;
 }
 
 void LightMap::moveSource(int i, sf::Vector2f light) {
-	sourcePosition[i] = light;
+	sourcePosition[i] = scalePosition(light);
+}
+
+void LightMap::deleteSource(int i) {
+	sourceIntensity[i] = 0;
 }
 
 void LightMap::markCollection() {

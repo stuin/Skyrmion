@@ -44,7 +44,7 @@ private:
 
 public:
 	//Node constructors
-	Node(Layer layer,
+	Node(Layer layer=0,
 		sf::Vector2i size = sf::Vector2i(16, 16),
 		bool hidden = false,
 		Node *parent = NULL);
@@ -71,11 +71,10 @@ public:
 	bool checkCollision(Node *other);
 
 	//Other math utilities
-	sf::Vector2f move(sf::Vector2f dir, double distance);
-	sf::Vector2f move(sf::Vector2f dir, Indexer *indexes);
-	sf::Vector2f move(sf::Vector2f dir, Indexer *indexes, double distance);
+	sf::Vector2f move(sf::Vector2f dir, double distance, int collideOffset=0);
+	sf::Vector2f move(sf::Vector2f dir, Indexer *indexes, double distance, int collideOffset=0);
 	static sf::Vector2f vectorLength(sf::Vector2f dir, double distance);
-	static sf::Vector2f gridCollision(sf::Vector2f start, sf::Vector2f move, Indexer *indexes);
+	static sf::Vector2f gridCollision(sf::Vector2f start, sf::Vector2f move, Indexer *indexes, int collideOffset);
 
 	//Linked list functions
 	Node *getNext();
@@ -98,7 +97,7 @@ public:
 		collide(object);
 	}
 	virtual void recieveEvent(sf::Event event, WindowSize *windowSize) {}
-	virtual void recieveSignal(int id) {}
+	virtual void recieveSignal(int id, Node *sender) {}
 };
 
 class DrawNode : public Node {
