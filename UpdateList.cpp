@@ -30,6 +30,8 @@ void UpdateList::addNode(Node *next) {
 	Layer layer = next->getLayer();
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
+	if(layer > max)
+		max = layer;
 	if(screen[layer] == NULL)
 		screen[layer] = next;
 	else
@@ -78,18 +80,18 @@ Node *UpdateList::setCamera(Node *follow, sf::Vector2f size, sf::Vector2f positi
 }
 
 //Send signal message to all nodes in layer
-void UpdateList::sendSignal(Layer layer, int id) {
+void UpdateList::sendSignal(Layer layer, int id, Node *sender) {
 	Node *source = screen[layer];
 	while(source != NULL) {
-		source->recieveSignal(id);
+		source->recieveSignal(id, sender);
 		source = source->getNext();
 	}
 }
 
 //Send signal message to all nodes in game
-void UpdateList::sendSignal(int id) {
+void UpdateList::sendSignal(int id, Node *sender) {
 	for(int layer = 0; layer <= max; layer++)
-		sendSignal(layer, id);
+		sendSignal(layer, id, sender);
 }
 
 void UpdateList::staticLayer(Layer layer, bool _static) {
@@ -282,12 +284,11 @@ void UpdateList::renderingThread(std::string title) {
 	#define init void
 #endif
 
-void UpdateList::startEngine(std::string title, Layer max) {
+void UpdateList::startEngine(std::string title) {
 	init();
 
 	//Set frame rate manager
 	sf::Clock clock;
-	UpdateList::max = max;
 
 	std::thread rendering(UpdateList::renderingThread, title);
 	sf::Time nextFrame = clock.getElapsedTime() + sf::milliseconds(FRAME_DELAY.asMilliseconds() / 2);

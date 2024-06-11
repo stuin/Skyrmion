@@ -53,8 +53,8 @@ public:
 
 	//Special node features
 	static Node *setCamera(Node *follow, sf::Vector2f size, sf::Vector2f position=sf::Vector2f(0,0));
-	static void sendSignal(Layer layer, int id);
-	static void sendSignal(int id);
+	static void sendSignal(Layer layer, int id, Node *sender);
+	static void sendSignal(int id, Node *sender);
 
 	//Layer control features
 	static void staticLayer(Layer layer, bool _static=true);
@@ -66,6 +66,6 @@ public:
 	static sf::Texture *getTexture(int index);
 
 	//Start engine
-	static void startEngine(std::string title, Layer max);
+	static void startEngine(std::string title);
 	static void stopEngine();
 };
