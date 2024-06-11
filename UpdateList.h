@@ -1,14 +1,14 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <deque>
-#include <bitset>
 #include <atomic>
-#include <unordered_map>
-#include <exception>
-#include <thread>
+#include <bitset>
 #include <chrono>
+#include <deque>
+#include <exception>
+#include <string>
+#include <thread>
+#include <unordered_map>
+#include <vector>
 
 #include "Node.h"
 
@@ -41,7 +41,7 @@ private:
 
 	//Update loops
 	static void update(double time);
-	static void draw(sf::RenderWindow &window);
+	static void draw(sf::RenderTarget &window, sf::Vector2f offset=sf::Vector2f(0,0));
 	static void renderingThread(std::string title);
 
 public:

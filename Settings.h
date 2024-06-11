@@ -4,8 +4,8 @@
 #include <SFML/Window.hpp>
 
 #include <fstream>
-#include <string>
 #include <iostream>
+#include <string>
 
 #define MOUSE_OFFSET 150
 #define JOYSTICK_OFFSET 160

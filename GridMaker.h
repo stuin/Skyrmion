@@ -4,9 +4,9 @@
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 
+#include <functional>
 #include <fstream>
 #include <string>
-#include <functional>
 
 /*
  * Created by Stuart Irwin on 4/15/2019.

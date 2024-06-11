@@ -146,7 +146,7 @@ void UpdateList::update(double time) {
 
 			//For each node in layer order
 			while(source != NULL) {
-				if(staticLayers[layer] || camera == NULL || source->checkCollision(camera)) {
+				if(staticLayers[layer] || camera == NULL || source->getRect().intersects(camera->getRect())) {
 					//Check each selected collision layer
 					int collisionLayer = 0;
 					for(int i = 0; i < (int)source->getCollisionLayers().count(); i++) {
@@ -155,8 +155,8 @@ void UpdateList::update(double time) {
 
 						//Check collision box of each node
 						Node *other = screen[collisionLayer];
-						while(other != NULL) {
-							if(other != source && source->checkCollision(other))
+						while(other != NULL && !other->isDeleted()) {
+							if(other != source && source->getRect().intersects(other->getRect()))
 								source->collide(other, time);
 							other = other->getNext();
 						}
@@ -180,7 +180,7 @@ void UpdateList::update(double time) {
 }
 
 //Thread safe draw nodes in list
-void UpdateList::draw(sf::RenderWindow &window) {
+void UpdateList::draw(sf::RenderTarget &window, sf::Vector2f offset) {
 	//Loop through list to delete
 	std::vector<Node *>::iterator it = deleted.begin();
 	while(it != deleted.end()) {
@@ -190,6 +190,12 @@ void UpdateList::draw(sf::RenderWindow &window) {
 	}
 	deleted.clear();
 
+	sf::FloatRect cameraRect = sf::FloatRect(-100000,-100000,200000,200000);
+	if(camera != NULL)
+		cameraRect = camera->getRect();
+	cameraRect = sf::FloatRect(cameraRect.left + offset.x, cameraRect.top + offset.y, 
+		cameraRect.width, cameraRect.height);
+
 	//Render each node in order
 	for(int layer = 0; layer <= max; layer++) {
 		Node *source = screen[layer];
@@ -197,14 +203,13 @@ void UpdateList::draw(sf::RenderWindow &window) {
 		if(!hiddenLayers[layer])
 			while(source != NULL) {
 				if(!source->isHidden() &&
-					(staticLayers[layer] || camera == NULL || source->checkCollision(camera))) {
+					(staticLayers[layer] || source->getRect().intersects(cameraRect))) {
+					sf::Transform translation;
 					//Check for parent node
-					if(source->getParent() != NULL) {
-						sf::Transform translation;
+					if(source->getParent() != NULL)
 						translation.translate(source->getParent()->getGPosition());
-						window.draw(*source, translation);
-					} else
-						window.draw(*source);
+					translation.translate(offset);
+					window.draw(*source, translation);
 				}
 				source = source->getNext();
 			}

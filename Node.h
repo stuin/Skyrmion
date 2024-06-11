@@ -1,9 +1,9 @@
 #pragma once
 
 #include <bitset>
+#include <functional>
 #include <iostream>
 #include <math.h>
-#include <functional>
 #include <stdexcept>
 
 #include "GridMaker.h"
@@ -69,7 +69,6 @@ public:
 	std::bitset<MAXLAYER> getCollisionLayers();
 	bool getCollisionLayer(Layer layer);
 	void collideWith(Layer layer, bool collide=true);
-	bool checkCollision(Node *other);
 
 	//Other math utilities
 	sf::Vector2f move(sf::Vector2f dir, double distance, int collideOffset=0);

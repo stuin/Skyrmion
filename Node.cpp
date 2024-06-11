@@ -99,13 +99,6 @@ void Node::collideWith(Layer layer, bool collide) {
 	collisionLayers[layer] = collide;
 }
 
-//Check collision box against other node
-bool Node::checkCollision(Node *other) {
-	if(other == NULL || other->isDeleted())
-		return false;
-	return getRect().intersects(other->getRect());
-}
-
 //Move node with a specific direction and distance
 sf::Vector2f Node::move(sf::Vector2f dir, double distance, int collideOffset) {
 	sf::Vector2f target = getPosition() + vectorLength(dir, distance);
