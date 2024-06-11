@@ -208,7 +208,7 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 			//Add static lights
 			if(indexLights) {
 				sf::Vector2f pos(x, y);
-				int tileVale = indexes.getTile(pos + offset);
+				int tileValue = indexes.getTile(pos + offset);
 				if(tileValue > 0)
 					addSource(pos, tileValue / 100.0, false);
 			}
