@@ -223,7 +223,7 @@ sf::Vector2f DirectionHandler::getDirection() {
 sf::Vector2f DirectionHandler::getMovement(double distance) {
 	if(joystickMovement)
 		return sf::Vector2f(direction.x * distance, direction.y * distance);
-	return Node::vectorLength(direction, distance);
+	return vectorLength(direction, distance);
 }
 
 //List field names for json settings

@@ -30,11 +30,14 @@ private:
 	static std::deque<sf::Event> event_queue;
 	static std::unordered_map<sf::Event::EventType, std::vector<Node *>> listeners;
 
-	//Display variables
+	//Viewport variables
 	static Node *camera;
 	static sf::View viewPlayer;
 	static WindowSize windowSize;
+
+	//Display special cases
 	static std::bitset<MAXLAYER> hiddenLayers;
+	static std::vector<Node *> reloadBuffer;
 
 	static Layer max;
 	static bool running;
@@ -55,6 +58,7 @@ public:
 	static Node *setCamera(Node *follow, sf::Vector2f size, sf::Vector2f position=sf::Vector2f(0,0));
 	static void sendSignal(Layer layer, int id, Node *sender);
 	static void sendSignal(int id, Node *sender);
+	static void scheduleReload(Node *buffer);
 
 	//Layer control features
 	static void staticLayer(Layer layer, bool _static=true);

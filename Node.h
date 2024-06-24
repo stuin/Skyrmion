@@ -11,6 +11,8 @@
 #define MAXLAYER 16
 #define LAYERERROR "Used collision layer > " + MAXLAYER
 
+#define RT2O2 sqrt(2) / 2.0
+
 using Layer = unsigned char;
 using sint = long unsigned int;
 
@@ -32,18 +34,22 @@ struct WindowSize {
 
 class Node : public sf::Sprite {
 private:
-	//Visible system variables
-	sf::Vector2i size;
-	bool hidden = false;
-	Node *parent = NULL;
-	std::bitset<MAXLAYER> collisionLayers;
+	//Base public variables
 	Layer layer;
+	Node *parent = NULL;
+	bool hidden = false;
+
+	//Collision
+	sf::Vector2i size;
+	std::bitset<MAXLAYER> collisionLayers;
 
 	//Background system variables
 	bool deleted = false;
 	Node *next = NULL;
 
 public:
+	sf::BlendMode blendMode;
+
 	//Node constructors
 	Node(Layer layer=0,
 		sf::Vector2i size = sf::Vector2i(16, 16),
@@ -73,7 +79,6 @@ public:
 	//Other math utilities
 	sf::Vector2f move(sf::Vector2f dir, double distance, int collideOffset=0);
 	sf::Vector2f move(sf::Vector2f dir, Indexer *indexes, double distance, int collideOffset=0);
-	static sf::Vector2f vectorLength(sf::Vector2f dir, double distance);
 	static sf::Vector2f gridCollision(sf::Vector2f start, sf::Vector2f move, Indexer *indexes, int collideOffset);
 
 	//Linked list functions
@@ -98,6 +103,7 @@ public:
 	}
 	virtual void recieveEvent(sf::Event event, WindowSize *windowSize) {}
 	virtual void recieveSignal(int id, Node *sender) {}
+	virtual void reloadBuffer() {}
 };
 
 class DrawNode : public Node {
@@ -124,3 +130,8 @@ public:
 		return image;
 	}
 };
+
+sf::Vector2f operator*(const sf::Vector2f &first, const sf::Vector2f &second);
+sf::Vector2f operator/(const sf::Vector2f &first, const sf::Vector2f &second);
+sf::Vector2f vectorLength(sf::Vector2f dir, double distance);
+std::string getString(sf::Vector2f pos);
