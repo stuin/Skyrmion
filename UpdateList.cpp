@@ -21,6 +21,7 @@ Node *UpdateList::camera = NULL;
 sf::View UpdateList::viewPlayer;
 WindowSize UpdateList::windowSize;
 std::bitset<MAXLAYER> UpdateList::hiddenLayers;
+std::vector<Node *> UpdateList::reloadBuffer;
 
 Layer UpdateList::max = MAXLAYER;
 bool UpdateList::running = true;
@@ -92,6 +93,12 @@ void UpdateList::sendSignal(Layer layer, int id, Node *sender) {
 void UpdateList::sendSignal(int id, Node *sender) {
 	for(int layer = 0; layer <= max; layer++)
 		sendSignal(layer, id, sender);
+}
+
+//Schedule reload call before draw
+void UpdateList::scheduleReload(Node *buffer) {
+	if(buffer != NULL)
+		reloadBuffer.push_back(buffer);
 }
 
 void UpdateList::staticLayer(Layer layer, bool _static) {
@@ -181,15 +188,7 @@ void UpdateList::update(double time) {
 
 //Thread safe draw nodes in list
 void UpdateList::draw(sf::RenderTarget &window, sf::Vector2f offset) {
-	//Loop through list to delete
-	std::vector<Node *>::iterator it = deleted.begin();
-	while(it != deleted.end()) {
-		Node *node = *it;
-		it++;
-		delete node;
-	}
-	deleted.clear();
-
+	//Find camera position
 	sf::FloatRect cameraRect = sf::FloatRect(-100000,-100000,200000,200000);
 	if(camera != NULL)
 		cameraRect = camera->getRect();
@@ -204,12 +203,13 @@ void UpdateList::draw(sf::RenderTarget &window, sf::Vector2f offset) {
 			while(source != NULL) {
 				if(!source->isHidden() &&
 					(staticLayers[layer] || source->getRect().intersects(cameraRect))) {
-					sf::Transform translation;
+					sf::RenderStates state(source->blendMode);
 					//Check for parent node
 					if(source->getParent() != NULL)
-						translation.translate(source->getParent()->getGPosition());
-					translation.translate(offset);
-					window.draw(*source, translation);
+						state.transform.translate(source->getParent()->getGPosition());
+					state.transform.translate(offset);
+
+					window.draw(*source, state);
 				}
 				source = source->getNext();
 			}
@@ -260,6 +260,23 @@ void UpdateList::renderingThread(std::string title) {
 		if(time >= nextFrame) {
 			//Next update time
 			nextFrame = time + FRAME_DELAY;
+
+			//Loop through list to reload any buffers
+			std::vector<Node *>::iterator rit = reloadBuffer.begin();
+			while(rit != reloadBuffer.end()) {
+				(*rit)->reloadBuffer();
+				rit++;
+			}
+			reloadBuffer.clear();
+
+			//Loop through list to delete nodes
+			std::vector<Node *>::iterator dit = deleted.begin();
+			while(dit != deleted.end()) {
+				Node *node = *dit;
+				dit++;
+				delete node;
+			}
+			deleted.clear();
 
 			//Set camera position
 			if(camera != NULL) {

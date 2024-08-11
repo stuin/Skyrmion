@@ -100,6 +100,13 @@ sf::Color LightMap::applyIntensity(unsigned int x, unsigned int y) {
 	if(x < width && y < height)
 		intensity = tiles[x][y];
 
+	return applyIntensity(intensity);
+}
+
+//Create color from light percentage
+sf::Color LightMap::applyIntensity(float intensity) {
+	intensity = std::min(intensity, 1.0f);
+
 	sf::Color result;
 	result.a = 255;
 	result.r = (char)(lightColor.r * intensity);
@@ -188,6 +195,7 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 	ambientIntensity = _ambient;
 	absorb = _absorb;
 	lightColor = _lightColor;
+	blendMode = sf::BlendMultiply;
 
 	//Set sizing
 	width = indexes.getSize().x * indexes.getScale().x + 1;
@@ -199,10 +207,9 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 	vertices.resize((width + 1) * (height + 1) * 4);
 
 	//Set up buffer texture
-    buffer = new sf::RenderTexture();
-    if(!buffer->create(tileX * width, tileY * height))
+    if(!buffer.create(tileX * width, tileY * height))
         throw std::logic_error("Error creating LightMap buffer");
-    setTexture(buffer->getTexture());
+    setTexture(buffer.getTexture());
 
 	//Build array
 	tiles = new float*[width];
@@ -254,10 +261,18 @@ void LightMap::reload() {
 			quad[2].color = applyIntensity(x-1, y-1);
 			quad[3].color = applyIntensity(x, y-1);
 		}
+
+	UpdateList::scheduleReload(this);
+	if(collection != NULL)
+		UpdateList::scheduleReload(collection);
 }
 
-sf::VertexArray *LightMap::getVertices() {
-	return &vertices;
+void LightMap::reloadBuffer() {
+	//Update buffer
+	buffer.clear(applyIntensity(ambientIntensity));
+	buffer.draw(vertices, sf::BlendAdd);
+	buffer.display();
+	//std::cout << "Redraw lightmap\n";
 }
 
 sf::Vector2f LightMap::scalePosition(sf::Vector2f pos) {
@@ -289,7 +304,8 @@ void LightMap::deleteSource(int i) {
 	sourceIntensity[i] = 0;
 }
 
-void LightMap::markCollection() {
+void LightMap::markCollection(Node *node) {
 	singular = false;
+	collection = node;
 	setHidden(true);
 }
