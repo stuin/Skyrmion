@@ -2,6 +2,13 @@
 
 #include <algorithm>
 
+class SubShadow {
+public:
+	sf::Vector2f *points;
+	int count;
+	float intensity;
+};
+
 sf::Vector2f intersect(sf::Vector2f start1, sf::Vector2f end1, sf::Vector2f start2, sf::Vector2f end2) {
     double a1 = end1.y - start1.y;
     double b1 = start1.x - end1.x;
@@ -54,7 +61,9 @@ sf::Color LightMap::applyIntensity(unsigned int x, unsigned int y) {
 	return applyIntensity(intensity);
 }
 
+//Create color from light percentage
 sf::Color LightMap::applyIntensity(float intensity) {
+	intensity = std::min(intensity, 1.0f);
 	sf::Color result;
 	result.a = 255;
 	result.r = (char)(lightColor.r * intensity);
@@ -64,13 +73,26 @@ sf::Color LightMap::applyIntensity(float intensity) {
 	return result;
 }
 
-void LightMap::createShape(sf::Vector2f pos, std::vector<sf::Vector2f> shape, float intensity) {
+void LightMap::createCircle(sf::Vector2f pos, std::vector<sf::Vector2f> shape, float intensity) {
 	sf::Vector2f scale = getScale();
 	int size = shape.size();
 	int shapesI = swapShapes ? 1 : 0;
+
+	for(int i = 0; i + 1 < size; i += 2) {
+		vertices[shapesI].append(sf::Vertex(pos, applyIntensity(intensity)));
+		vertices[shapesI].append(sf::Vertex(pos + shape[i], applyIntensity(intensity - (absorb * distance(shape[i])))));
+		vertices[shapesI].append(sf::Vertex(pos + shape[i+1], applyIntensity(intensity - (absorb * distance(shape[i+1])))));
+		
+		if(i + 2 < size)
+			vertices[shapesI].append(sf::Vertex(pos + shape[i+2], applyIntensity(intensity - (absorb * distance(shape[i+2])))));
+		else
+			vertices[shapesI].append(sf::Vertex(pos, applyIntensity(intensity)));
+		usedQuads++;
+	}
+
 	//size = renderCount++ % (size - 2) + 2;
 
-	sf::ConvexShape polygon;
+	/*sf::ConvexShape polygon;
 	polygon.setPointCount(size);
 	for(int i = 0; i < size; i++)
 		polygon.setPoint(i, shape[i]);
@@ -83,24 +105,30 @@ void LightMap::createShape(sf::Vector2f pos, std::vector<sf::Vector2f> shape, fl
 		polygon.setFillColor(applyIntensity(0));
 	}
 	lightShapes[shapesI].push_back(polygon);
-	usedQuads += 1;
+	usedQuads += 1;*/
 }
 
 void LightMap::lightRays(sf::Vector2f light, float maxIntensity) {
-	int maxRange = std::ceil(maxIntensity / absorb) * tileX;
+	int maxRange = std::ceil(maxIntensity / absorb);
 
 	debugPoints = 0;
 	//debug->addDot(light2);
 
 	std::vector<sf::Vector2f> points;
+	std::vector<SubShadow> transparencies;
+	int transparentValue = 0;
+
 	for(sf::Vector2f point : defaultCirclePoints) {
 		float r = 1;
 		float length = distance(point);
+		sf::Vector2f edge = sf::Vector2f(0,0);
+
+		//Raycast to final tile
 		while(r * length < maxRange && indexes.getTile(light + point*r) == 0)
 			r += 1;
 
-		sf::Vector2f edge = sf::Vector2f(0,0);
 		if(r * length < maxRange) {
+			//Shift ray to edge of tile
 			sf::Vector2f square = centerPoint(light + point*r, tileSize);
 			sf::Vector2f offset = ((light + point*r) - square) * 2.0f;
 			offset.x = fabs(offset.x);
@@ -109,15 +137,31 @@ void LightMap::lightRays(sf::Vector2f light, float maxIntensity) {
 			//debug->addDot(light + point);
 			//debug->addDot(square);
 			//debug->addDot(light + point*r + edge);
-			if(indexes.inBounds(light + point*r + edge) && distance(point*r + edge) < maxRange)
+			if(indexes.inBounds(light + point*r + edge) && distance(point*r + edge) < maxRange) {
 				points.push_back(point*r + edge);
-			else
+
+				//Queue partial transparent shadow past tile
+				int tileValue = indexes.getTile(square);
+				if(tileValue < 0 && tileValue > -100) {
+					if(tileValue == transparentValue)
+						transparencies.back().count++;
+					else {
+						SubShadow sub;
+						sub.points = &points.back();
+						sub.count = 1;
+						sub.intensity = -tileValue;
+						transparencies.push_back(sub);
+						transparentValue = tileValue;
+					}
+				} else
+					transparentValue = 0;
+			} else
 				points.push_back(vectorLength(point, maxRange));
 		} else
 			points.push_back(vectorLength(point, maxRange));
 	}
 
-	createShape(light, points, maxIntensity);
+	createCircle(light + tileOffset, points, maxIntensity);
 }
 
 LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexer _indexes, 
@@ -128,7 +172,7 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 	tileX = _tileX;
 	tileY = _tileY;
 	ambientIntensity = _ambient;
-	absorb = _absorb;
+	absorb = _absorb / tileX;
 	lightColor = _lightColor;
 	blendMode = sf::BlendMultiply;
 
@@ -144,7 +188,8 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 	debug = new DebugLayer("res/small_pixel.ttf", getSize(), layer);
 	UpdateList::addNode(debug);
 
-	vertices.setPrimitiveType(sf::Quads);
+	vertices[0].setPrimitiveType(sf::Quads);
+	vertices[1].setPrimitiveType(sf::Quads);
 	//vertices.resize((width + 1) * (height + 1) * 4);
 
 	for(float a = -1; a < 1; a += 0.02)
@@ -167,9 +212,18 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 	reload();
 }
 
+/*void LightMap::reload() {
+	if(reloadThread != NULL && reloadThread->joinable()) {
+		reloadThread->join();
+		reloadThread = NULL;
+	}
+	if(reloadThread == NULL)
+		reloadThread = new std::thread(&LightMap::reloadCalc, this);
+}*/
+
 void LightMap::reload() {
 	int shapesI = swapShapes ? 1 : 0;
-	vertices.clear();
+	vertices[shapesI].clear();
 	lightShapes[shapesI].clear();
 	debug->clear();
 	usedQuads = 0;
@@ -182,7 +236,7 @@ void LightMap::reload() {
 		//	lightOctant(light, octant, sourceIntensity[i]);
 		lightRays(light, sourceIntensity[i]);
 	}
-	vertices.resize(usedQuads * 4);
+	vertices[shapesI].resize(usedQuads * 4);
 	swapShapes = !swapShapes;
 
 	UpdateList::scheduleReload(this);
@@ -195,8 +249,9 @@ void LightMap::reloadBuffer() {
 
 	//Update buffer
 	buffer.clear(applyIntensity(ambientIntensity));
-	for(sf::ConvexShape s : lightShapes[shapesI])
-		buffer.draw(s, sf::BlendAdd);
+	//for(sf::ConvexShape s : lightShapes[shapesI])
+	//	buffer.draw(s, sf::BlendAdd);
+	buffer.draw(vertices[shapesI], sf::BlendAdd);
 	buffer.display();
 	//std::cout << "Redraw lightmap\n";
 }

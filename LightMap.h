@@ -39,7 +39,9 @@ private:
 	std::vector<sf::ConvexShape> lightShapes[2];
 	bool swapShapes = false;
 
-	sf::VertexArray vertices;
+	std::thread *reloadThread = NULL;
+
+	sf::VertexArray vertices[2];
 	int usedQuads = 0;
     sf::RenderTexture buffer;
     Node *collection = NULL;
@@ -54,7 +56,7 @@ private:
 	sf::Color applyIntensity(float intensity);
 	sf::Vector2f getTilePos(unsigned int x, unsigned int y);
 	sf::Vector2f transformOctant(int row, int col, int octant);
-	void createShape(sf::Vector2f pos, std::vector<sf::Vector2f> shape, float intensity);
+	void createCircle(sf::Vector2f pos, std::vector<sf::Vector2f> shape, float intensity);
 	void lightOctant(sf::Vector2f light, int octant, float maxIntensity);
 	void lightRays(sf::Vector2f light, float maxIntensity);
 
@@ -69,6 +71,7 @@ public:
 	}
 
 	void reload();
+	void reloadCalc();
 	void reloadBuffer();
 
 	//Moving lights
