@@ -9,6 +9,7 @@
 class LightMap : public Node {
 private:
 	const sf::Vector2f offset = sf::Vector2f(-1,-1);
+	sf::Vector2f tileSize;
 	int tileX;
 	int tileY;
 	unsigned int width;
@@ -26,7 +27,7 @@ private:
 	//Light sources
 	std::vector<sf::Vector2f> sourcePosition;
 	std::vector<float> sourceIntensity;
-	int nextIndex = 0;
+	unsigned int nextIndex = 0;
 
 	//Graphical storage
 	sf::VertexArray vertices;
@@ -54,8 +55,7 @@ public:
 	void reloadBuffer();
 
 	//Moving lights
-	sf::Vector2f scalePosition(sf::Vector2f pos);
-	int addSource(sf::Vector2f light, float intensity, bool scale=true);
+	int addSource(sf::Vector2f light, float intensity);
 	void moveSource(int i, sf::Vector2f light);
 	void deleteSource(int i);
 	void markCollection(Node *node);

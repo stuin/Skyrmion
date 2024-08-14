@@ -7,17 +7,27 @@ class Shadow {
 public:
 	float start;
 	float end;
-	int strength;
+	int strength = 0;
+	int distance;
 
-	Shadow(float _start, float _end, int _strength) {
+	Shadow(float _start, float _end, int _distance) {
 		start = _start;
 		end = _end;
-		strength = _strength;
+		distance = _distance;
 	}
 
 	/// Returns `true` if [other] is completely covered by this shadow.
+	bool covers(Shadow other) {
+		return start <= other.start && end >= other.end;
+	}
+
+	/// Returns `true` if [other] is partially covered by this shadow.
 	bool contains(Shadow other) {
 		return start <= other.end && end >= other.start;
+	}
+
+	bool contains(Shadow other, bool full) {
+		return full ? covers(other) : contains(other);
 	}
 };
 
@@ -27,10 +37,10 @@ private:
 
 public:
 
-	float visibility(Shadow projection) {
+	float visibility(Shadow projection, bool full) {
 		int strength = 0;
 		for(Shadow shadow : shadows)
-			if(strength < 100 && shadow.contains(projection))
+			if(strength < 100 && shadow.contains(projection, full))
 				strength += shadow.strength;
 
 		return (100 - std::min(strength, 100)) / 100.0;
@@ -60,18 +70,18 @@ public:
 
 		// The new shadow is going here. See if it overlaps the
 		// previous or next.
+		int strength = shadow.strength;
 		Shadow *overlappingPrevious = NULL;
-		if(index > 0 && shadows[index - 1].end >= shadow.start)
+		if(index > 0 && shadows[index - 1].end >= shadow.start && shadows[index - 1].strength == strength)
 			overlappingPrevious = &(shadows[index - 1]);
 
 		Shadow *overlappingNext = NULL;
-		if(index < shadows.size() && shadows[index].start <= shadow.end)
+		if(index < shadows.size() && shadows[index].start <= shadow.end && shadows[index].strength == strength)
 			overlappingNext = &(shadows[index]);
 
 		// Insert and unify with overlapping shadows.
-		int strength = shadow.strength;
-		if(overlappingNext != NULL && overlappingNext->strength == strength) {
-			if(overlappingPrevious != NULL && overlappingPrevious->strength == strength) {
+		if(overlappingNext != NULL) {
+			if(overlappingPrevious != NULL) {
 				// Overlaps both, so unify one and delete the other.
 				overlappingPrevious->end = overlappingNext->end;
 				shadows.erase(shadows.begin() + index);
@@ -80,7 +90,7 @@ public:
 				overlappingNext->start = shadow.start;
 			}
 		} else {
-			if(overlappingPrevious != NULL && overlappingPrevious->strength == strength) {
+			if(overlappingPrevious != NULL) {
 				// Overlaps the previous one, so unify it with that.
 				overlappingPrevious->end = shadow.end;
 			} else {
@@ -99,10 +109,10 @@ public:
 
 // Creates a [Shadow] that corresponds to the projected
 // silhouette of the tile at [row], [col].
-Shadow projectTile(float row, float col, int _absorb) {
+Shadow projectTile(float row, float col) {
 	float topLeft = col / (row + 2);
 	float bottomRight = (col + 1) / (row + 1);
-	return Shadow(topLeft, bottomRight, _absorb);
+	return Shadow(topLeft, bottomRight, col);
 }
 
 sf::Color LightMap::applyIntensity(unsigned int x, unsigned int y) {
@@ -156,7 +166,7 @@ void LightMap::lightOctant(sf::Vector2f light, int octant, float maxIntensity) {
 	while(true) {
 		// Stop once we go out of bounds.
 		sf::Vector2f pos = light + transformOctant(row, 0, octant);
-		if(!indexes.inBounds(pos + offset) || maxIntensity < ambientIntensity)
+		if(!indexes.inBounds(pos) || maxIntensity < ambientIntensity)
 			break;
 
 		float intensity = maxIntensity;
@@ -165,26 +175,27 @@ void LightMap::lightOctant(sf::Vector2f light, int octant, float maxIntensity) {
 			pos = light + transformOctant(row, col, octant);
 
 			// If we've traversed out of bounds, bail on this row.
-			if(!indexes.inBounds(pos + offset) || intensity < ambientIntensity) 
+			if(!indexes.inBounds(pos) || intensity < ambientIntensity) 
 				break;
 
-			Shadow projection = projectTile(row, col, 0);
+			Shadow projection = projectTile(row, col);
 
 			// Set the visibility of this tile.
-			float visible = line.visibility(projection);
+			float visible = line.visibility(projection, false);
 			float tileIntensity = std::max(visible * intensity, ambientIntensity);
 
 			if(tileIntensity > tiles[(int)pos.x][(int)pos.y])
 				tiles[(int)pos.x][(int)pos.y] = tileIntensity;
 
 			// Remove shadows on top of lights
-			int tileValue = indexes.getTile(pos + offset);
+			int tileValue = indexes.getTile(pos);
 			if(tileValue / 100.0 > tiles[(int)pos.x][(int)pos.y])
 				tiles[(int)pos.x][(int)pos.y] = tileValue / 100.0;
 
 			// Add any opaque tiles to the shadow map.
 			if(visible > 0 && tileValue < 0) {
-				projection.strength = -tileValue;
+				tileValue /= std::sqrt(indexes.getScale().x);
+				projection.strength = line.visibility(projection, true)-tileValue;
 				line.add(projection);
 				if(line.isFullShadow())
 					return;
@@ -202,18 +213,19 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 		: Node(layer), indexes(_indexes) {
 
 	//Set arguments
-	tileX = _tileX;
-	tileY = _tileY;
+	tileX = _tileX / indexes.getScale().x;
+	tileY = _tileY / indexes.getScale().y;
+	tileSize = sf::Vector2f(tileX, tileY);
 	ambientIntensity = _ambient;
-	absorb = _absorb;
+	absorb = _absorb / indexes.getScale().x;
 	lightColor = _lightColor;
 	blendMode = sf::BlendMultiply;
 
 	//Set sizing
-	width = indexes.getSize().x * indexes.getScale().x + 1;
-	height = indexes.getSize().y * indexes.getScale().y + 1;
+	width = (indexes.getSize().x + 1) * indexes.getScale().x;
+	height = (indexes.getSize().y + 1) * indexes.getScale().y;
 	setSize(sf::Vector2i(tileX * width, tileY * height));
-	setOrigin(0, 0);
+	setOrigin(-_tileX / 2, -_tileY / 2);
 
 	vertices.setPrimitiveType(sf::Quads);
 	vertices.resize((width + 1) * (height + 1) * 4);
@@ -233,9 +245,9 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 			//Add static lights
 			if(indexLights) {
 				sf::Vector2f pos(x, y);
-				int tileValue = indexes.getTile(pos + offset);
+				int tileValue = indexes.getTile(pos);
 				if(tileValue > 0)
-					addSource(pos, tileValue / 100.0, false);
+					addSource(pos * tileSize, tileValue / 100.0);
 			}
 		}
 	}
@@ -252,7 +264,8 @@ void LightMap::reload() {
 	//Propogate Sources
 	for(long unsigned int i = 0; i < sourcePosition.size(); i++) {
 		sf::Vector2f light = sourcePosition[i];
-		tiles[(int)light.x][(int)light.y] = sourceIntensity[i];
+		if(indexes.inBounds(light))
+			tiles[(int)light.x][(int)light.y] = sourceIntensity[i];
 
 		for(int octant = 0; octant < 8; octant++)
 			lightOctant(light, octant, sourceIntensity[i]);
@@ -287,13 +300,8 @@ void LightMap::reloadBuffer() {
 	//std::cout << "Redraw lightmap\n";
 }
 
-sf::Vector2f LightMap::scalePosition(sf::Vector2f pos) {
-	return sf::Vector2f((int)(pos.x / tileX) - offset.x, (int)(pos.y / tileY) - offset.y);
-}
-
-int LightMap::addSource(sf::Vector2f light, float intensity, bool scale) {
-	if(scale)
-		light = scalePosition(light);
+int LightMap::addSource(sf::Vector2f light, float intensity) {
+	light = light / tileSize;
 	int lastIndex = nextIndex;
 	if(nextIndex < sourcePosition.size()) {
 		sourcePosition[nextIndex] = light;
@@ -309,7 +317,7 @@ int LightMap::addSource(sf::Vector2f light, float intensity, bool scale) {
 }
 
 void LightMap::moveSource(int i, sf::Vector2f light) {
-	sourcePosition[i] = scalePosition(light);
+	sourcePosition[i] = light / tileSize;
 }
 
 void LightMap::deleteSource(int i) {
