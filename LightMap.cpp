@@ -17,7 +17,7 @@ public:
 
 	/// Returns `true` if [other] is completely covered by this shadow.
 	bool contains(Shadow other) {
-		return start <= other.start && end >= other.end;
+		return start <= other.end && end >= other.start;
 	}
 };
 
@@ -37,10 +37,15 @@ public:
 	}
 
 	bool isFullShadow() {
-		return shadows.size() == 1 &&
-			shadows[0].start == 0 &&
-			shadows[0].end == 1 &&
-			shadows[0].strength == 100;
+		if(shadows.size() == 1)
+			return shadows[0].start == 0 &&
+			shadows[0].end == 1 && shadows[0].strength == 100;
+
+		float pos = 0;
+		for(Shadow shadow : shadows)
+			if(shadow.strength == 100 && shadow.start <= pos)
+				pos = shadow.end;
+		return pos >= 1;
 	}
 
 	void add(Shadow shadow) {
@@ -55,35 +60,40 @@ public:
 
 		// The new shadow is going here. See if it overlaps the
 		// previous or next.
-		if(shadow.strength == 100) {
-			Shadow *overlappingPrevious = NULL;
-			if(index > 0 && shadows[index - 1].end > shadow.start && shadows[index - 1].strength == 100)
-				overlappingPrevious = &(shadows[index - 1]);
+		Shadow *overlappingPrevious = NULL;
+		if(index > 0 && shadows[index - 1].end >= shadow.start)
+			overlappingPrevious = &(shadows[index - 1]);
 
-			Shadow *overlappingNext = NULL;
-			if(index < shadows.size() && shadows[index].start < shadow.end && shadows[index].strength == 100)
-				overlappingNext = &(shadows[index]);
+		Shadow *overlappingNext = NULL;
+		if(index < shadows.size() && shadows[index].start <= shadow.end)
+			overlappingNext = &(shadows[index]);
 
-			// Insert and unify with overlapping shadows.
-			if(overlappingNext != NULL) {
-				if(overlappingPrevious != NULL) {
-					// Overlaps both, so unify one and delete the other.
-					overlappingPrevious->end = overlappingNext->end;
-					shadows.erase(shadows.begin() + index);
-				} else {
-					// Overlaps the next one, so unify it with that.
-					overlappingNext->start = shadow.start;
-				}
+		// Insert and unify with overlapping shadows.
+		int strength = shadow.strength;
+		if(overlappingNext != NULL && overlappingNext->strength == strength) {
+			if(overlappingPrevious != NULL && overlappingPrevious->strength == strength) {
+				// Overlaps both, so unify one and delete the other.
+				overlappingPrevious->end = overlappingNext->end;
+				shadows.erase(shadows.begin() + index);
 			} else {
-				if(overlappingPrevious != NULL) {
-					// Overlaps the previous one, so unify it with that.
-					overlappingPrevious->end = shadow.end;
-				} else {
-					// Does not overlap anything, so insert.
-					shadows.insert(shadows.begin() + index, shadow);
-				}
+				// Overlaps the next one, so unify it with that.
+				overlappingNext->start = shadow.start;
+			}
+		} else {
+			if(overlappingPrevious != NULL && overlappingPrevious->strength == strength) {
+				// Overlaps the previous one, so unify it with that.
+				overlappingPrevious->end = shadow.end;
+			} else {
+				// Does not overlap anything, so insert.
+				shadows.insert(shadows.begin() + index, shadow);
 			}
 		}
+	}
+
+	void darkenPartialShadows(float absorb) {
+		for(Shadow shadow : shadows)
+			if(shadow.strength < 100)
+				shadow.strength += absorb * 100;
 	}
 };
 
@@ -167,6 +177,7 @@ void LightMap::lightOctant(sf::Vector2f light, int octant, float maxIntensity) {
 			if(tileIntensity > tiles[(int)pos.x][(int)pos.y])
 				tiles[(int)pos.x][(int)pos.y] = tileIntensity;
 
+			// Remove shadows on top of lights
 			int tileValue = indexes.getTile(pos + offset);
 			if(tileValue / 100.0 > tiles[(int)pos.x][(int)pos.y])
 				tiles[(int)pos.x][(int)pos.y] = tileValue / 100.0;
@@ -182,6 +193,7 @@ void LightMap::lightOctant(sf::Vector2f light, int octant, float maxIntensity) {
 		}
 		++row;
 		maxIntensity -= absorb;
+		line.darkenPartialShadows(absorb);
 	}
 }
 
