@@ -8,7 +8,7 @@
  */
 
 //Static variables
-Node *UpdateList::screen[MAXLAYER];
+Node *UpdateList::screen[MAXLAYER] = {NULL};
 std::bitset<MAXLAYER> UpdateList::staticLayers;
 std::bitset<MAXLAYER> UpdateList::pausedLayers;
 std::vector<Node *> UpdateList::deleted;
@@ -22,7 +22,7 @@ sf::View UpdateList::viewPlayer;
 WindowSize UpdateList::windowSize;
 std::bitset<MAXLAYER> UpdateList::hiddenLayers;
 
-Layer UpdateList::max = MAXLAYER;
+Layer UpdateList::max = 0;
 bool UpdateList::running = true;
 
 //Add node to update cycle

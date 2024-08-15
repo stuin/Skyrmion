@@ -12,7 +12,7 @@ void InputHandler::add_listeners() {
 	UpdateList::addListener(this, sf::Event::JoystickMoved);
 }
 
-InputHandler::InputHandler(std::vector<int> _controls, int layer, Node *parent) 
+InputHandler::InputHandler(std::vector<int> _controls, int layer, Node *parent)
 : Node(layer, sf::Vector2i(16, 16), true, parent), controls(_controls) {
 	keycodes.assign(_controls.size(), "");
 	pressed.assign(_controls.size(), false);
@@ -66,11 +66,13 @@ void InputHandler::updateKey(int code, bool press) {
 		return;
 	}
 
+	//Find key
 	sint i = 0;
-	while(i < pressed.size() && code != controls[i])
+	while(i < controls.size() && code != controls[i])
 		i++;
 
-	if(i < pressed.size() && held[i] != press) {
+	//Update key value
+	if(i < controls.size()) {
 		pressed[i] = press;
 		held[i] = press;
 	}
@@ -112,7 +114,7 @@ void InputHandler::recieveEvent(sf::Event event, WindowSize *windowSize) {
 			//Joysticks
 			press = std::abs(event.joystickMove.position) > JOYSTICK_ZONE;
 			code = JOYSTICK_OFFSET + 50 + (event.joystickMove.joystickId * 4) +
-				Settings::JOYSTICKID[event.joystickMove.axis] * 2 + 
+				Settings::JOYSTICKID[event.joystickMove.axis] * 2 +
 				(event.joystickMove.position > 0);
 			updateKey(code, press);
 			break;
@@ -156,7 +158,7 @@ void DirectionHandler::update(double time) {
 
 	//Button Input
 	for(sint i = 0; i < held.size(); i++) {
-		if(held[i]) {
+		if(held[i] && i != moving) {
 			joystickMovement = false;
 			//Update direction
 			switch(i % count) {
