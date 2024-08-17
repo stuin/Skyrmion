@@ -5,7 +5,7 @@
  * Generates and stores main tilemap
  */
 
-//Convert file to char[][]
+//Convert file to uint[][]
 GridMaker::GridMaker(std::string file) {
 	std::string line;
 	std::ifstream mapFile(file);
@@ -19,21 +19,24 @@ GridMaker::GridMaker(std::string file) {
 	mapFile.close();
 
 	//Build array
-	this->tiles = new char*[height];
-	for(unsigned int i = 0; i < height; i++)
-		tiles[i] = new char[width];
+	this->tiles = new uint*[height];
+	for(unsigned int i = 0; i < height; i++) {
+		tiles[i] = new uint[width];
+		for(unsigned int j = 0; j < width; j++)
+			tiles[i][j] = ' ';
+	}
 	reload(file);
 }
 
-//Create blank char[][]
+//Create blank uint[][]
 GridMaker::GridMaker(unsigned int width, unsigned int height) {
 	this->width = width;
 	this->height = height;
 
 	//Build array
-	this->tiles = new char*[height];
+	this->tiles = new uint*[height];
 	for(unsigned int i = 0; i < height; i++) {
-		tiles[i] = new char[width];
+		tiles[i] = new uint[width];
 		for(unsigned int j = 0; j < width; j++)
 			tiles[i][j] = ' ';
 	}
@@ -45,52 +48,46 @@ GridMaker::~GridMaker() {
 	delete[] tiles;
 }
 
-void GridMaker::reload(std::string file) {
+void GridMaker::reload(std::string file, uint offset, unsigned int x, unsigned int y,
+	unsigned int _width, unsigned int _height) {
+	if(x+_width > width)
+		_width = width-x;
+	if(y+_height > height)
+		_height = height-y;
+
 	//Set reading variables
-	unsigned int i = 0;
+	unsigned int i = y;
 	std::string line;
 	std::ifstream mapFile(file);
 
 	//Read file by line
-	while(std::getline(mapFile, line) && i < height) {
+	while(std::getline(mapFile, line) && i < y + _height) {
 		//Copy string
-		unsigned int j = 0;
-		while(line[j] != '\0' && line[j] != '\n' && j < width) {
-			tiles[i][j] = line[j];
+		unsigned int j = x;
+		while(line[j-x] != '\0' && line[j-x] != '\n' && j < x + _width) {
+			tiles[i][j] = line[j-x] + offset;
 			++j;
 		}
-
-		//Blank out rest of line
-		while(j < width)
-			tiles[i][j++] = ' ';
 		i++;
 	}
 	mapFile.close();
-
-	//Blank out rest of grid
-	while(i < height) {
-		unsigned int j = 0;
-		while(j < width)
-			tiles[i][j++] = ' ';
-		i++;
-	}
 }
 
 //Set tile value
-void GridMaker::setTile(unsigned int x, unsigned int y, char value) {
+void GridMaker::setTile(unsigned int x, unsigned int y, uint value) {
 	if(inBounds(x, y))
 		tiles[y][x] = value;
 }
 
 //Get tile value
-char GridMaker::getTile(unsigned int x, unsigned int y) {
+uint GridMaker::getTile(unsigned int x, unsigned int y) {
 	if(inBounds(x, y))
 		return tiles[y][x];
 	else return ' ';
 }
 
 //Set all tiles
-void GridMaker::clearTiles(char value) {
+void GridMaker::clearTiles(uint value) {
 	for(unsigned int y = 0; y < height; y++)
 		for(unsigned int x = 0; x < width; x++)
 			tiles[y][x] = value;
@@ -106,15 +103,23 @@ bool GridMaker::inBounds(unsigned int x, unsigned int y) const {
 	return x < width && y < height;
 }
 
+void GridMaker::printGrid() {
+	for(unsigned int y = 0; y < height; y++) {
+		for(unsigned int x = 0; x < width; x++)
+			std::cout << tiles[y][x];
+		std::cout << "\n";
+	}
+}
+
 //Get value of tile
-int Indexer::getTile(char c) {
+int Indexer::getTile(uint c) {
 	auto tile = indexes.find(c);
 	if(tile != indexes.end())
 		return tile->second;
 	return fallback;
 }
 
-//Get tile char from grid
+//Get tile uint from grid
 int Indexer::getTile(sf::Vector2f position) {
 	unsigned int x = position.x / scale.x;
 	unsigned int y = position.y / scale.y;
@@ -131,7 +136,7 @@ void Indexer::setTile(sf::Vector2f position, int value) {
 		grid->setTile(x, y, value);
 }
 
-//Convert char[][] to int[][]
+//Convert uint[][] to int[][]
 int* Indexer::indexGrid() {
 	const unsigned int width = grid->getSize().x;
 	const unsigned int height = grid->getSize().y;
@@ -147,7 +152,7 @@ int* Indexer::indexGrid() {
 }
 
 //Run function on every square in grid
-void Indexer::mapGrid(std::function<void(char, sf::Vector2f)> func) {
+void Indexer::mapGrid(std::function<void(uint, sf::Vector2f)> func) {
 	const unsigned int width = grid->getSize().x;
 	const unsigned int height = grid->getSize().y;
 	//Loop through tiles
@@ -162,6 +167,12 @@ bool Indexer::inBounds(sf::Vector2f position) {
 	unsigned int x = position.x / scale.x;
 	unsigned int y = position.y / scale.y;
 	return grid->inBounds(x, y);
+}
+
+sf::Vector2f Indexer::snapPosition(sf::Vector2f position) {
+	unsigned int x = position.x / scale.x;
+	unsigned int y = position.y / scale.y;
+	return sf::Vector2f(x * scale.x, y * scale.y);
 }
 
 //Get size of grid

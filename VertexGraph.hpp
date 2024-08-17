@@ -2,7 +2,7 @@
 
 using Edge = unsigned short;
 
-template<Edge size> 
+template<Edge size>
 class Vertex {
 private:
 	Vertex<size> *root;
@@ -11,6 +11,7 @@ private:
 
 public:
 	int count = 0;
+	bool printed = false;
 
 	Vertex(Vertex<size> *_root) {
 		if(_root == NULL) {
@@ -51,6 +52,10 @@ public:
 		return *selected == this;
 	}
 
+	bool hasEdge(Edge edge) {
+		return edges[edge % size] != NULL;
+	}
+
 	Vertex<size> *getVertex(Edge edge) {
 		return edges[edge % size];
 	}
@@ -71,45 +76,52 @@ public:
 		return edges[edge % size]->select();
 	}
 
-	void setVertex(Edge edge, Vertex<size> *vertex) {
+	Vertex<size> *setVertex(Edge edge, Vertex<size> *vertex) {
 		edges[edge % size] = vertex;
+		return vertex;
 	}
 
-	void setVertex(Edge edge, Vertex<size> *vertex, Edge opposite) {
+	Vertex<size> *setVertex(Edge edge, Vertex<size> *vertex, Edge opposite) {
 		setVertex(edge, vertex);
 		vertex->setVertex(opposite, this);
+		return vertex;
 	}
 
-	void addVertex(Edge edge, Vertex<size> *vertex, Edge opposite) {
+	Vertex<size> *addVertex(Edge edge, Vertex<size> *vertex, Edge opposite) {
 		if(vertex == NULL || selected != vertex->selected)
-			return;
+			return NULL;
 
 		edge = edge % size;
 		if(edges[edge] == NULL)
 			setVertex(edge, vertex, opposite);
 		else
 			edges[edge]->addVertex(edge, vertex, opposite);
+		return vertex;
 	}
 
-	void addVertex(Edge edge, Edge opposite) {
-		addVertex(edge, new Vertex<size>(root), opposite);
+	Vertex<size> *addVertex(Edge edge, Edge opposite) {
+		return addVertex(edge, new Vertex<size>(root), opposite);
 	}
 
 	void printAddress() {
+		printed = true;
 		std::cout << displayName() << ": [";
 		for(Edge e = 0; e < size; e++) {
-			if(edges[e] != NULL)
-				std::cout << edges[e]->displayName();
-			else
+			if(edges[e] != NULL) {
+				if(!edges[e]->printed)
+					edges[e]->printAddress();
+				else
+					std::cout << edges[e]->displayName();
+			} else
 				std::cout << "_";
 			std::cout << ",";
 		}
-		std::cout << "]\n";
+		std::cout << "]";
 	}
 
 	void printEdge(Edge edge, Vertex<size> *vertex) {
 		std::cout << "\t" << displayName() << "->";
-		std::cout << vertex->displayName(); 
+		std::cout << vertex->displayName();
 		if(edge % 2 == 1)
 			std::cout << " [color = red]";
 		std::cout << "\n";

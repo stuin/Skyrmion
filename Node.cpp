@@ -22,7 +22,7 @@ int Node::getLayer() {
 }
 
 sf::Vector2i Node::getSize() {
-	return size;
+	return sf::Vector2i(size.x * getScale().x, size.y * getScale().y);
 }
 
 //Create full collision box
@@ -31,8 +31,8 @@ sf::FloatRect Node::getRect() {
 	sf::FloatRect rec;
 	rec.left = pos.x - (this->getOrigin().x * this->getScale().x);
 	rec.top = pos.y - (this->getOrigin().y * this->getScale().y);
-	rec.width = this->size.x * this->getScale().x;
-	rec.height = this->size.y * this->getScale().y;
+	rec.width = this->getSize().x;
+	rec.height = this->getSize().y;
 	return rec;
 }
 
@@ -107,7 +107,7 @@ sf::Vector2f Node::move(sf::Vector2f dir, double distance, int collideOffset) {
 }
 
 sf::Vector2f Node::move(sf::Vector2f dir, Indexer *indexes, double distance, int collideOffset) {
-	sf::Vector2f target = gridCollision(getPosition(), 
+	sf::Vector2f target = gridCollision(getPosition(),
 		vectorLength(dir, distance), indexes, collideOffset);
 	setPosition(target);
 	return target;
@@ -121,7 +121,7 @@ sf::Vector2f Node::gridCollision(sf::Vector2f start, sf::Vector2f move, Indexer 
 		sf::Vector2f horizontal = sf::Vector2f(start.x, end.y);
 		sf::Vector2f vertical = sf::Vector2f(end.x, start.y);
 
-		if(indexes->getTile(horizontal) > collideOffset && 
+		if(indexes->getTile(horizontal) > collideOffset &&
 			indexes->getTile(vertical) > collideOffset)
 			end = (abs(move.x) > abs(move.y)) ? horizontal : vertical;
 		else if(indexes->getTile(horizontal) > collideOffset)

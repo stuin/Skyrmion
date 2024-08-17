@@ -6,7 +6,10 @@
 
 #include <functional>
 #include <fstream>
+#include <iostream>
 #include <string>
+
+using uint = unsigned int;
 
 /*
  * Created by Stuart Irwin on 4/15/2019.
@@ -17,34 +20,36 @@ class GridMaker {
 public:
 	//Build and convert grid
 	GridMaker(std::string file);
-	GridMaker(unsigned int width, unsigned int height);
+	GridMaker(uint width, uint height);
 	~GridMaker();
-	void reload(std::string file);
+	void reload(std::string file, uint offset=0, uint x=0, uint y=0, uint _width=0, uint _height=0);
 
 	//Set or get tiles
-	void setTile(unsigned int x, unsigned int y, char value);
-	char getTile(unsigned int x, unsigned int y);
-	void clearTiles(char value);
+	void setTile(uint x, uint y, uint value);
+	uint getTile(uint x, uint y);
+	void clearTiles(uint value);
 
 	//Check grid size
 	sf::Vector2i getSize() const;
 	bool inBounds(unsigned int x, unsigned int y) const;
 
+	void printGrid();
+
 private:
 	unsigned int height = 0;
 	unsigned int width = 0;
-	char **tiles;
+	uint **tiles;
 };
 
 class Indexer {
 private:
 	GridMaker *grid;
-	const std::map<char, int> indexes;
+	const std::map<uint, int> indexes;
 	const int fallback;
 	const sf::Vector2i scale;
 
 public:
-	Indexer(GridMaker *new_grid, std::map<char, int> new_indexes, int new_fallback,
+	Indexer(GridMaker *new_grid, std::map<uint, int> new_indexes, int new_fallback,
 		int scaleX = 1, int scaleY = 1)
 		: grid(new_grid), indexes(new_indexes), fallback(new_fallback),
 			scale(sf::Vector2i(scaleX, scaleY)) {
@@ -52,14 +57,15 @@ public:
 	}
 
 	//Index use functions
-	int getTile(char c);
+	int getTile(uint c);
 	int getTile(sf::Vector2f position);
 	void setTile(sf::Vector2f position, int value);
 	int* indexGrid();
-	void mapGrid(std::function<void(char, sf::Vector2f)> func);
+	void mapGrid(std::function<void(uint, sf::Vector2f)> func);
 
 	//Check grid size
 	bool inBounds(sf::Vector2f position);
+	sf::Vector2f snapPosition(sf::Vector2f position);
 	sf::Vector2i getScale();
 	sf::Vector2i getSize();
 };

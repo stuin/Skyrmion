@@ -12,7 +12,7 @@ void InputHandler::add_listeners() {
 	UpdateList::addListener(this, sf::Event::JoystickMoved);
 }
 
-InputHandler::InputHandler(std::vector<int> _controls, int layer, Node *parent) 
+InputHandler::InputHandler(std::vector<int> _controls, int layer, Node *parent)
 : Node(layer, sf::Vector2i(16, 16), true, parent), controls(_controls) {
 	keycodes.assign(_controls.size(), "");
 	pressed.assign(_controls.size(), false);
@@ -66,10 +66,12 @@ void InputHandler::updateKey(int code, bool press) {
 		return;
 	}
 
+	//Find key in controls
 	sint i = 0;
 	while(i < pressed.size() && code != controls[i])
 		i++;
 
+	//Update press/held
 	if(i < pressed.size() && held[i] != press) {
 		pressed[i] = press;
 		held[i] = press;
@@ -78,6 +80,11 @@ void InputHandler::updateKey(int code, bool press) {
 
 void InputHandler::clearPressed() {
 	pressed.assign(pressed.size(), false);
+
+	//Mouse wheel special case
+	for(long unsigned int i = 0; i < controls.size(); i++)
+		if(controls[i] == MOUSE_OFFSET+5 || controls[i] == MOUSE_OFFSET+6)
+			held[i] = false;
 }
 
 void InputHandler::recieveEvent(sf::Event event, WindowSize *windowSize) {
@@ -98,7 +105,6 @@ void InputHandler::recieveEvent(sf::Event event, WindowSize *windowSize) {
 			break;
 		case sf::Event::MouseWheelScrolled:
 			//Mouse Wheel
-			std::cout << event.mouseWheelScroll.delta << std::endl;
 			updateKey(MOUSE_OFFSET+5, event.mouseWheelScroll.delta > 0);
 			updateKey(MOUSE_OFFSET+6, event.mouseWheelScroll.delta < 0);
 			break;
@@ -112,7 +118,7 @@ void InputHandler::recieveEvent(sf::Event event, WindowSize *windowSize) {
 			//Joysticks
 			press = std::abs(event.joystickMove.position) > JOYSTICK_ZONE;
 			code = JOYSTICK_OFFSET + 50 + (event.joystickMove.joystickId * 4) +
-				Settings::JOYSTICKID[event.joystickMove.axis] * 2 + 
+				Settings::JOYSTICKID[event.joystickMove.axis] * 2 +
 				(event.joystickMove.position > 0);
 			updateKey(code, press);
 			break;
