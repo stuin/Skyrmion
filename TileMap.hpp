@@ -76,6 +76,8 @@ public:
                 // get the current tile number
                 int tileNumber = (tiles[i + j * width] % numTextures) + offset;
                 int rotations = (tiles[i + j * width] / numTextures);
+                int fliph = rotations / 4 % 2;
+                int flipv = rotations / 8;
 
                 // find its position in the tileset texture
                 int tu = tileNumber % (tileset->getSize().x / tileX);
@@ -86,10 +88,10 @@ public:
 
                 if(tileNumber - offset != -1) {
                     // define its 4 texture coordinates
-                    quad[(0 + rotations) % 4].texCoords = sf::Vector2f(tu * tileX, tv * tileY);
-                    quad[(1 + rotations) % 4].texCoords = sf::Vector2f((tu + 1) * tileX, tv * tileY);
-                    quad[(2 + rotations) % 4].texCoords = sf::Vector2f((tu + 1) * tileX, (tv + 1) * tileY);
-                    quad[(3 + rotations) % 4].texCoords = sf::Vector2f(tu * tileX, (tv + 1) * tileY);
+                    quad[(0 + rotations + fliph - flipv) % 4].texCoords = sf::Vector2f(tu * tileX, tv * tileY);
+                    quad[(1 + rotations - fliph + flipv) % 4].texCoords = sf::Vector2f((tu + 1) * tileX, tv * tileY);
+                    quad[(2 + rotations + fliph - flipv) % 4].texCoords = sf::Vector2f((tu + 1) * tileX, (tv + 1) * tileY);
+                    quad[(3 + rotations - fliph + flipv) % 4].texCoords = sf::Vector2f(tu * tileX, (tv + 1) * tileY);
 
                     // define its 4 corners
                     quad[0].position = sf::Vector2f(i * tileX, j * tileY);

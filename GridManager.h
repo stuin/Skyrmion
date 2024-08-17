@@ -4,6 +4,7 @@ using json = nlohmann::json;
 
 #include "GridMaker.h"
 #include "VertexGraph.hpp"
+#include "UpdateList.h"
 
 enum sides {
 	UP,
@@ -12,12 +13,14 @@ enum sides {
 	LEFT
 };
 
-class GridSection : public Vertex<4> {
+class GridSection : public Vertex<4>, public DrawNode {
 	int id;
 
 public:
 	std::string file;
 	int tileOffset = 0;
+	bool grabCamera = false;
+	bool resettable = false;
 
 	int upId = 0;
 	int rightId = 0;
@@ -29,7 +32,11 @@ public:
 	int x = 0;
 	int y = 0;
 
-	GridSection(GridSection *root, json data) : Vertex(root) {
+	sf::RectangleShape rect;
+
+	GridSection(GridSection *root, json data, Layer layer1, Layer layer2) : Vertex(root),
+	DrawNode(rect, (data.value("grab_camera", false)) ? layer2 : layer1) {
+
 		id = data.value("id", 0);
 		file = data.value("file", "");
 		tileOffset = data.value("tile_offset", 0);
@@ -42,6 +49,9 @@ public:
 		x = data.value("x_offset", 0);
 		y = data.value("y_offset", 0);
 
+		grabCamera = data.value("grab_camera", false);
+		resettable = data.value("can_reset", false);
+
 		std::string line;
 		std::ifstream mapFile(file);
 
@@ -52,6 +62,19 @@ public:
 			++height;
 		}
 		mapFile.close();
+
+		setSize(sf::Vector2i(width, height));
+		setHidden(true);
+	}
+
+	void updateSize(sf::Vector2i scale) {
+		setPosition((x + width/2.0) * scale.x, (y + height/2.0) * scale.y);
+		setSize(sf::Vector2i(width * scale.x, height * scale.y));
+		rect.setSize(sf::Vector2f(width * scale.x, height * scale.y));
+		//rect.setPosition(getPosition() - sf::Vector2f(width/2, height/2));
+		rect.setOutlineColor(sf::Color::Black);
+		rect.setOutlineThickness(1);
+		rect.setFillColor(sf::Color::Transparent);
 	}
 };
 
@@ -68,17 +91,17 @@ class GridManager {
 public:
 	GridMaker *grid;
 
-	GridManager(std::string file) {
+	GridManager(std::string file, Layer _layer1, Layer _layer2, sf::Vector2i scale) {
 		std::ifstream f(file);
 		world = json::parse(f);
-		root = new GridSection(NULL, world["maps"][0]);
+		root = new GridSection(NULL, world["maps"][0], _layer1, _layer2);
 		sections.push_back(root);
 		width = root->width;
 		height = root->height;
 
 		GridSection *next;
 		for(int i = 1; i < world["maps"].size(); i++) {
-			next = new GridSection(root, world["maps"][i]);
+			next = new GridSection(root, world["maps"][i], _layer1, _layer2);
 			sections.push_back(next);
 		}
 
@@ -89,9 +112,14 @@ public:
 		grid = new GridMaker(width-x, height-y);
 		for(int i = 0; i < sections.size(); i++) {
 			next = sections[i];
+			next->x -= x;
+			next->y -= y;
+			next->updateSize(scale);
+			UpdateList::addNode(next);
+
 			//std::cout << next->file << " " << next->tileOffset << "\n";
 			//std::cout << next->x-x << "," << next->y-y << "," << next->width << "," << next->height << "\n";
-			grid->reload(next->file, next->tileOffset, next->x-x, next->y-y, next->width, next->height);
+			grid->reload(next->file, next->tileOffset, next->x, next->y, next->width, next->height);
 		}
 		//grid->printGrid();
 	}

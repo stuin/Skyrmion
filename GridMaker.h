@@ -48,6 +48,8 @@ private:
 	const int fallback;
 	const sf::Vector2i scale;
 
+	std::map<uint, int> *random = NULL;
+
 public:
 	Indexer(GridMaker *new_grid, std::map<uint, int> new_indexes, int new_fallback,
 		int scaleX = 1, int scaleY = 1)
@@ -62,6 +64,8 @@ public:
 	void setTile(sf::Vector2f position, int value);
 	int* indexGrid();
 	void mapGrid(std::function<void(uint, sf::Vector2f)> func);
+
+	void addRandomizer(std::map<uint, int> *_limits);
 
 	//Check grid size
 	bool inBounds(sf::Vector2f position);
