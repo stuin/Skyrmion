@@ -50,6 +50,7 @@ private:
 public:
 	//Manage node lists
 	static void addNode(Node *next);
+	static void addNodes(std::vector<Node *> nodes);
 	static Node *getNode(Layer layer);
 	static void clearLayer(Layer layer);
 	static void addListener(Node *item, sf::Event::EventType type);

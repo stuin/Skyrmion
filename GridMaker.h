@@ -22,7 +22,7 @@ public:
 	GridMaker(std::string file);
 	GridMaker(uint width, uint height);
 	~GridMaker();
-	void reload(std::string file, uint offset=0, uint x=0, uint y=0, uint _width=0, uint _height=0);
+	void reload(std::string file, uint offset=0, sf::Rect<uint> border=sf::Rect<uint>());
 
 	//Set or get tiles
 	void setTile(uint x, uint y, uint value);

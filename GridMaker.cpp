@@ -48,24 +48,23 @@ GridMaker::~GridMaker() {
 	delete[] tiles;
 }
 
-void GridMaker::reload(std::string file, uint offset, unsigned int x, unsigned int y,
-	unsigned int _width, unsigned int _height) {
-	if(x+_width > width)
-		_width = width-x;
-	if(y+_height > height)
-		_height = height-y;
+void GridMaker::reload(std::string file, uint offset, sf::Rect<uint> border) {
+	if(border.width == 0 || border.left + border.width > width)
+		border.width = width-border.left;
+	if(border.height == 0 || border.top + border.height > height)
+		border.height = height-border.top;
 
 	//Set reading variables
-	unsigned int i = y;
+	unsigned int i = border.top;
 	std::string line;
 	std::ifstream mapFile(file);
 
 	//Read file by line
-	while(std::getline(mapFile, line) && i < y + _height) {
+	while(std::getline(mapFile, line) && i < border.top + border.height) {
 		//Copy string
-		unsigned int j = x;
-		while(line[j-x] != '\0' && line[j-x] != '\n' && j < x + _width) {
-			tiles[i][j] = line[j-x] + offset;
+		unsigned int j = border.left;
+		while(line[j-border.left] != '\0' && line[j-border.left] != '\n' && j < border.left + border.width) {
+			tiles[i][j] = line[j-border.left] + offset;
 			++j;
 		}
 		i++;
@@ -106,7 +105,7 @@ bool GridMaker::inBounds(unsigned int x, unsigned int y) const {
 void GridMaker::printGrid() {
 	for(unsigned int y = 0; y < height; y++) {
 		for(unsigned int x = 0; x < width; x++)
-			std::cout << tiles[y][x];
+			std::cout << (char)tiles[y][x];
 		std::cout << "\n";
 	}
 }

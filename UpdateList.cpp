@@ -39,6 +39,11 @@ void UpdateList::addNode(Node *next) {
 		screen[layer]->addNode(next);
 }
 
+void UpdateList::addNodes(std::vector<Node *> nodes) {
+	for(Node *node : nodes)
+		addNode(node);
+}
+
 //Get node in specific layer
 Node *UpdateList::getNode(Layer layer) {
 	if(layer >= MAXLAYER)

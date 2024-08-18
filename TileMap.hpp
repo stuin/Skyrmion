@@ -22,6 +22,9 @@ private:
     sf::Texture *tileset;
     sf::RenderTexture *buffer;
 
+    uint width = 0;
+    uint height = 0;
+
     /*virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
         states.transform *= getTransform();
         states.texture = tileset;
@@ -30,14 +33,20 @@ private:
 
 public:
 
-    TileMap(sf::Texture *_tileset, int _tileX, int _tileY, Indexer *_indexes, Layer layer = 0, int _offset = 0)
+    TileMap(sf::Texture *_tileset, int _tileX, int _tileY, Indexer *_indexes, Layer layer = 0, int _offset = 0, sf::Rect<uint> border=sf::Rect<uint>())
      : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes), offset(_offset), tileset(_tileset) {
 
         //Set sizing
-        unsigned int width = indexes->getSize().x;
-        unsigned int height = indexes->getSize().y;
+        width = indexes->getSize().x;
+        height = indexes->getSize().y;
+        if(border.width != 0 && border.width < width)
+            width = border.width;
+        if(border.height != 0 && border.height < height)
+            height = border.height;
+
         setSize(sf::Vector2i(tileX * width, tileY * height));
         setOrigin(0, 0);
+        setPosition(border.left * tileX, border.top * tileY);
 
         //Set up buffer texture
         buffer = new sf::RenderTexture();
@@ -65,8 +74,6 @@ public:
     }
 
     void reload() {
-        unsigned int width = indexes->getSize().x;
-        unsigned int height = indexes->getSize().y;
         int *tiles = indexes->indexGrid();
         int numTextures = countTextures();
 
@@ -153,6 +160,7 @@ public:
         for(int i = 0; i < frames; i++) {
             //Load new tilemap
             TileMap *map = new TileMap(tileset, tileX, tileY, indexes, layer, i * numTiles);
+            map->setParent(this);
             tilemaps.push_back(map);
 
             if(i == 0)
@@ -169,6 +177,28 @@ public:
 
         setSize(size);
         setOrigin(0, 0);
+    }
+
+    //Update timer
+    void update(double time) {
+        //Every half second
+        if(!paused) {
+            if((nextTime -= time) <= 0) {
+                nextTime = delay;
+                frame++;
+
+                //Pause at certain frame
+                if(pauseAfter > 0) {
+                    pauseAfter--;
+                    if(pauseAfter == 0)
+                        paused = true;
+                }
+
+                //Reset to start frame
+                if(frame == maxFrames)
+                    frame = 0;
+            }
+        }
     }
 
     void addFrame(TileMap *map) {
@@ -203,25 +233,65 @@ public:
             tilemaps[i]->reload();
     }
 
-    //Update timer
-    void update(double time) {
-        //Every half second
-        if(!paused) {
-            if((nextTime -= time) <= 0) {
-                nextTime = delay;
-                frame++;
+    std::vector<Node *> getNodes() {
+        std::vector<Node *> nodes;
+        for(TileMap *map : tilemaps)
+            nodes.push_back(map);
+        return nodes;
+    }
+};
 
-                //Pause at certain frame
-                if(pauseAfter > 0) {
-                    pauseAfter--;
-                    if(pauseAfter == 0)
-                        paused = true;
-                }
+class LargeTileMap : public Node {
+private:
+    std::vector<TileMap *> tilemaps;
 
-                //Reset to start frame
-                if(frame == maxFrames)
-                    frame = 0;
+    uint fullWidth;
+    uint fullHeight;
+    uint sectionWidth;
+    uint sectionHeight;
+    uint countX;
+    uint countY;
+
+public:
+    LargeTileMap(sf::Texture *tileset, int tileX, int tileY, Indexer *indexes, Layer layer) : Node(layer) {
+        fullWidth = tileX * indexes->getSize().x;
+        fullHeight = tileY * indexes->getSize().y;
+        setSize(sf::Vector2i(fullWidth, fullHeight));
+        setOrigin(0, 0);
+
+        countX = fullWidth / 16000 + 1;
+        countY = fullHeight / 16000 + 1;
+        sectionWidth = fullWidth / countX;
+        sectionHeight = fullHeight / countY;
+
+        //Build each frame
+        for(int x = 0; x < countX; x++) {
+            for(int y = 0; y < countY; y++) {
+                //Add new tilemap
+                sf::Rect<uint> border(x * sectionWidth / tileX, y * sectionHeight / tileY, sectionWidth / tileX, sectionHeight / tileY);
+                TileMap *map = new TileMap(tileset, tileX, tileY, indexes, layer, 0, border);
+                map->setParent(this);
+                tilemaps.push_back(map);
             }
         }
+    }
+
+    void setScales(sf::Vector2f scale) {
+        setScale(scale);
+        for(TileMap *map : tilemaps)
+            map->setScale(scale);
+    }
+
+    //Reload all tilemaps
+    void reload() {
+        for(TileMap *map : tilemaps)
+            map->reload();
+    }
+
+    std::vector<Node *> getNodes() {
+        std::vector<Node *> nodes;
+        for(TileMap *map : tilemaps)
+            nodes.push_back(map);
+        return nodes;
     }
 };
