@@ -22,15 +22,15 @@ int Node::getLayer() {
 }
 
 sf::Vector2i Node::getSize() {
-	return sf::Vector2i(size.x * getScale().x, size.y * getScale().y);
+	return sf::Vector2i(size.x * std::abs(getScale().x), size.y * std::abs(getScale().y));
 }
 
 //Create full collision box
 sf::FloatRect Node::getRect() {
 	sf::Vector2f pos = this->getGPosition();
 	sf::FloatRect rec;
-	rec.left = pos.x - (this->getOrigin().x * this->getScale().x);
-	rec.top = pos.y - (this->getOrigin().y * this->getScale().y);
+	rec.left = pos.x - (this->getOrigin().x * std::abs(this->getScale().x));
+	rec.top = pos.y - (this->getOrigin().y * std::abs(this->getScale().y));
 	rec.width = this->getSize().x;
 	rec.height = this->getSize().y;
 	return rec;

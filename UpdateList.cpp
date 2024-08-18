@@ -23,7 +23,7 @@ WindowSize UpdateList::windowSize;
 std::bitset<MAXLAYER> UpdateList::hiddenLayers;
 std::vector<Node *> UpdateList::reloadBuffer;
 
-Layer UpdateList::max = MAXLAYER;
+Layer UpdateList::max = 0;
 bool UpdateList::running = true;
 
 //Add node to update cycle
