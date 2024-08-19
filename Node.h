@@ -131,7 +131,8 @@ public:
 	}
 };
 
+sf::Vector2f vectorLength(sf::Vector2f dir, double distance);
 sf::Vector2f operator*(const sf::Vector2f &first, const sf::Vector2f &second);
 sf::Vector2f operator/(const sf::Vector2f &first, const sf::Vector2f &second);
-sf::Vector2f vectorLength(sf::Vector2f dir, double distance);
+float distance(sf::Vector2f start, sf::Vector2f end=sf::Vector2f(0,0));
 std::string getString(sf::Vector2f pos);

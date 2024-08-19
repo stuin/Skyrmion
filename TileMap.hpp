@@ -254,21 +254,22 @@ private:
 
 public:
     LargeTileMap(sf::Texture *tileset, int tileX, int tileY, Indexer *indexes, Layer layer) : Node(layer) {
-        fullWidth = tileX * indexes->getSize().x;
-        fullHeight = tileY * indexes->getSize().y;
-        setSize(sf::Vector2i(fullWidth, fullHeight));
+        fullWidth = indexes->getSize().x;
+        fullHeight = indexes->getSize().y;
+        setSize(sf::Vector2i(tileY * fullWidth, tileY * fullHeight));
         setOrigin(0, 0);
 
-        countX = fullWidth / 16000 + 1;
-        countY = fullHeight / 16000 + 1;
+        countX = fullWidth / (16000 / tileX) + 1;
+        countY = fullHeight / (16000 / tileY) + 1;
         sectionWidth = fullWidth / countX;
         sectionHeight = fullHeight / countY;
+        //std::cout << countX << "," << countY << "\n";
 
         //Build each frame
         for(int x = 0; x < countX; x++) {
             for(int y = 0; y < countY; y++) {
                 //Add new tilemap
-                sf::Rect<uint> border(x * sectionWidth / tileX, y * sectionHeight / tileY, sectionWidth / tileX, sectionHeight / tileY);
+                sf::Rect<uint> border(x * sectionWidth, y * sectionHeight, sectionWidth, sectionHeight);
                 TileMap *map = new TileMap(tileset, tileX, tileY, indexes, layer, 0, border);
                 map->setParent(this);
                 tilemaps.push_back(map);

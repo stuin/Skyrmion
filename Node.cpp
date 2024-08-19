@@ -182,6 +182,9 @@ sf::Vector2f operator*(const sf::Vector2f &first, const sf::Vector2f &second) {
 sf::Vector2f operator/(const sf::Vector2f &first, const sf::Vector2f &second) {
 	return sf::Vector2f(first.x / second.x, first.y / second.y);
 }
+float distance(sf::Vector2f start, sf::Vector2f end) {
+	return std::sqrt(std::pow(end.x - start.x, 2) + std::pow(end.y - start.y, 2));
+}
 
 std::string getString(sf::Vector2f pos) {
 	return "(" + std::to_string(pos.x) + "," + std::to_string(pos.y) + ")";

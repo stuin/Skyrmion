@@ -63,7 +63,9 @@ void GridMaker::reload(std::string file, uint offset, sf::Rect<uint> border) {
 	while(std::getline(mapFile, line) && i < border.top + border.height) {
 		//Copy string
 		unsigned int j = border.left;
-		while(line[j-border.left] != '\0' && line[j-border.left] != '\n' && j < border.left + border.width) {
+		while(line[j-border.left] != '\0' && line[j-border.left] != '\n' &&
+			line[j-border.left] != '\r' && j < border.left + border.width) {
+
 			tiles[i][j] = line[j-border.left] + offset;
 			++j;
 		}
