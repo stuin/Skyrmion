@@ -43,16 +43,21 @@ public:
         //Set sizing
         fullWidth = width = indexes->getSize().x;
         fullHeight = height = indexes->getSize().y;
-        if(border.width != 0 && border.width < width)
-            width = border.width;
-        if(border.height != 0 && border.height < height)
-            height = border.height;
         startX = border.left;
         startY = border.top;
+        if(border.width != 0)
+            width = border.width;
+        if(border.height != 0)
+            height = border.height;
+        if(width + startX > fullWidth)
+            width = fullWidth - startX;
+        if(height + startY > fullHeight)
+            height = fullHeight - startY;
+        //std::cout << " " << startX << "," << startY << ", " << width << "," << height << "\n";
 
         setSize(sf::Vector2i(tileX * width, tileY * height));
         setOrigin(0, 0);
-        setPosition(border.left * tileX, border.top * tileY);
+        setPosition(startX * tileX, startY * tileY);
 
         //Set up buffer texture
         buffer = new sf::RenderTexture();
@@ -107,10 +112,10 @@ public:
                     quad[(3 + rotations - fliph + flipv) % 4].texCoords = sf::Vector2f(tu * tileX, (tv + 1) * tileY);
 
                     // define its 4 corners
-                    quad[0].position = sf::Vector2f(i * tileX, j * tileY);
-                    quad[1].position = sf::Vector2f((i + 1) * tileX, j * tileY);
-                    quad[2].position = sf::Vector2f((i + 1) * tileX, (j + 1) * tileY);
-                    quad[3].position = sf::Vector2f(i * tileX, (j + 1) * tileY);
+                    quad[0].position = sf::Vector2f((i + startX) * tileX, (j + startY) * tileY);
+                    quad[1].position = sf::Vector2f((i + startX + 1) * tileX, (j + startY) * tileY);
+                    quad[2].position = sf::Vector2f((i + startX + 1) * tileX, (j + startY + 1) * tileY);
+                    quad[3].position = sf::Vector2f((i + startX) * tileX, (j + startY + 1) * tileY);
                 } else {
                     quad[0].position = sf::Vector2f(0, 0);
                     quad[1].position = sf::Vector2f(0, 0);
@@ -269,7 +274,7 @@ public:
         countY = fullHeight / (16000 / tileY) + 1;
         sectionWidth = fullWidth / countX;
         sectionHeight = fullHeight / countY;
-        //std::cout << countX << "," << countY << ": " << sectionWidth << "," << sectionHeight << "\n";
+        //std::cout << countX << "," << countY << ": " << fullWidth << "," << fullHeight << "\n";
 
         //Build each frame
         for(int x = 0; x < countX; x++) {
