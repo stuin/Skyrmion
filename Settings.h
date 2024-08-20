@@ -58,4 +58,9 @@ public:
 	static void setString(std::string field, std::string value) {
 		data[json_pointer(field)] = value;
 	}
+
+	static void save(std::string filename) {
+		std::ofstream o(filename);
+		o << std::setw(4) << data << std::endl;
+	}
 };
