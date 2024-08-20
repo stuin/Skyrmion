@@ -22,8 +22,12 @@ private:
     sf::Texture *tileset;
     sf::RenderTexture *buffer;
 
+    uint fullWidth = 0;
+    uint fullHeight = 0;
     uint width = 0;
     uint height = 0;
+    uint startX = 0;
+    uint startY = 0;
 
     /*virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
         states.transform *= getTransform();
@@ -37,12 +41,14 @@ public:
      : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes), offset(_offset), tileset(_tileset) {
 
         //Set sizing
-        width = indexes->getSize().x;
-        height = indexes->getSize().y;
+        fullWidth = width = indexes->getSize().x;
+        fullHeight = height = indexes->getSize().y;
         if(border.width != 0 && border.width < width)
             width = border.width;
         if(border.height != 0 && border.height < height)
             height = border.height;
+        startX = border.left;
+        startY = border.top;
 
         setSize(sf::Vector2i(tileX * width, tileY * height));
         setOrigin(0, 0);
@@ -81,8 +87,8 @@ public:
         for(unsigned int i = 0; i < width; ++i)
             for(unsigned int j = 0; j < height; ++j) {
                 // get the current tile number
-                int tileNumber = (tiles[i + j * width] % numTextures) + offset;
-                int rotations = (tiles[i + j * width] / numTextures);
+                int tileNumber = (tiles[i + startX + (j + startY) * fullWidth] % numTextures) + offset;
+                int rotations = (tiles[i + startX + (j + startY) * fullWidth] / numTextures);
                 int fliph = rotations / 4 % 2;
                 int flipv = rotations / 8;
 
@@ -263,7 +269,7 @@ public:
         countY = fullHeight / (16000 / tileY) + 1;
         sectionWidth = fullWidth / countX;
         sectionHeight = fullHeight / countY;
-        //std::cout << countX << "," << countY << "\n";
+        //std::cout << countX << "," << countY << ": " << sectionWidth << "," << sectionHeight << "\n";
 
         //Build each frame
         for(int x = 0; x < countX; x++) {
