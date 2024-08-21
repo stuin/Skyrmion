@@ -34,10 +34,11 @@ struct WindowSize {
 
 class Node : public sf::Sprite {
 private:
-	//Base public variables
+	//Base semi-public variables
 	Layer layer;
 	Node *parent = NULL;
 	bool hidden = false;
+	sf::BlendMode blendMode;
 
 	//Collision
 	sf::Vector2i size;
@@ -48,7 +49,6 @@ private:
 	Node *next = NULL;
 
 public:
-	sf::BlendMode blendMode;
 
 	//Node constructors
 	Node(Layer layer=0,
@@ -63,6 +63,7 @@ public:
 	bool isHidden();
 	Node *getParent();
 	sf::Vector2f getGPosition();
+	sf::BlendMode getBlendMode();
 
 	//General setters
 	void setSize(sf::Vector2i size);
@@ -70,6 +71,7 @@ public:
 	void setParent(Node *parent);
 	void setGPosition(sf::Vector2f pos);
 	void setGPosition(float x, float y);
+	void setBlendMode(sf::BlendMode blendMode);
 
 	//Collision system
 	std::bitset<MAXLAYER> getCollisionLayers();
@@ -106,6 +108,7 @@ public:
 	virtual void reloadBuffer() {}
 };
 
+// Use SFML drawable instead of texture
 class DrawNode : public Node {
 private:
 	sf::Drawable *image = NULL;
@@ -131,6 +134,7 @@ public:
 	}
 };
 
+//Handles simple animations with horizontal spritesheets
 class AnimatedNode : public Node {
 	int frameWidth = 0;
 	int frameHeight = 0;
@@ -149,9 +153,13 @@ public:
 		frameHeight = texture.getSize().y;
 	}
 
-	//Update timer
     void update(double time) {
-        if(!paused) {
+        updateAnimation(time);
+    }
+
+    //Update timer
+    void updateAnimation(double time) {
+    	if(!paused) {
             if((nextTime -= time) <= 0) {
                 nextTime = delay;
                 frame++;
@@ -168,7 +176,7 @@ public:
 
 //Essential vector functions
 sf::Vector2f vectorLength(sf::Vector2f dir, double distance);
+float distance(sf::Vector2f start, sf::Vector2f end=sf::Vector2f(0,0));
 sf::Vector2f operator*(const sf::Vector2f &first, const sf::Vector2f &second);
 sf::Vector2f operator/(const sf::Vector2f &first, const sf::Vector2f &second);
-float distance(sf::Vector2f start, sf::Vector2f end=sf::Vector2f(0,0));
 std::string getString(sf::Vector2f pos);

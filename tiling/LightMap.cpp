@@ -219,7 +219,7 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 	ambientIntensity = _ambient;
 	absorb = _absorb / indexes.getScale().x;
 	lightColor = _lightColor;
-	blendMode = sf::BlendMultiply;
+	setBlendMode(sf::BlendMultiply);
 
 	//Set sizing
 	width = (indexes.getSize().x + 1) * indexes.getScale().x;

@@ -17,6 +17,11 @@ using uint = unsigned int;
  */
 
 class GridMaker {
+private:
+	uint height = 0;
+	uint width = 0;
+	uint **tiles;
+
 public:
 	//Build and convert grid
 	GridMaker(std::string file);
@@ -34,27 +39,21 @@ public:
 	bool inBounds(unsigned int x, unsigned int y) const;
 
 	void printGrid();
-
-private:
-	unsigned int height = 0;
-	unsigned int width = 0;
-	uint **tiles;
 };
 
 class Indexer {
 private:
-	GridMaker *grid;
 	const std::map<uint, int> indexes;
 	const int fallback;
 	const sf::Vector2i scale;
-
-	std::map<uint, int> *random = NULL;
+	GridMaker *grid;
+	std::map<uint, int> random;
 
 public:
 	Indexer(GridMaker *new_grid, std::map<uint, int> new_indexes, int new_fallback,
 		int scaleX = 1, int scaleY = 1)
-		: grid(new_grid), indexes(new_indexes), fallback(new_fallback),
-			scale(sf::Vector2i(scaleX, scaleY)) {
+		: indexes(new_indexes), fallback(new_fallback),
+			scale(sf::Vector2i(scaleX, scaleY)), grid(new_grid) {
 
 	}
 
@@ -63,8 +62,7 @@ public:
 	int getTile(sf::Vector2f position);
 	void setTile(sf::Vector2f position, int value);
 	void mapGrid(std::function<void(uint, sf::Vector2f)> func);
-
-	void addRandomizer(std::map<uint, int> *_limits);
+	void addRandomizer(std::map<uint, int> limits);
 
 	//Check grid size
 	bool inBounds(sf::Vector2f position);

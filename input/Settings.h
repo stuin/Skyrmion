@@ -17,16 +17,19 @@ private:
 	static nlohmann::json data;
 
 public:
+	//Full lists in Keylist.cpp
 	static std::map<std::string, int> KEYMAP;
 	static std::map<sf::Mouse::Button, int> MOUSEBUTTON;
 	static std::map<int, sf::Joystick::Axis> JOYSTICKAXIS;
 	static std::map<sf::Joystick::Axis, int> JOYSTICKID;
 
+	//Load settings from file
 	static void loadSettings(std::string filename) {
 		std::ifstream file(filename);
 		data = nlohmann::json::parse(file);
 	}
 
+	//Get value functions
 	static bool getBool(std::string field) {
 		return data.value(json_pointer(field), false);
 	}
@@ -39,6 +42,7 @@ public:
 		return data.value(json_pointer(field), "");
 	}
 
+	//Get key number from settings field
 	static int getControl(std::string field) {
 		std::string keyname = data.value(json_pointer(field), "");
 		//Convert to uppercase
@@ -47,6 +51,7 @@ public:
 		return KEYMAP[keyname];
 	}
 
+	//Set value in memory
 	static void setBool(std::string field, bool value) {
 		data[json_pointer(field)] = value;
 	}
@@ -59,6 +64,7 @@ public:
 		data[json_pointer(field)] = value;
 	}
 
+	//Save edited values back to file (reorders alphabetically)
 	static void save(std::string filename) {
 		std::ofstream o(filename);
 		o << std::setw(4) << data << std::endl;

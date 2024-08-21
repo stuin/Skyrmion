@@ -270,8 +270,8 @@ public:
         //std::cout << countX << "," << countY << ": " << fullWidth << "," << fullHeight << "\n";
 
         //Build each frame
-        for(int x = 0; x < countX; x++) {
-            for(int y = 0; y < countY; y++) {
+        for(uint x = 0; x < countX; x++) {
+            for(uint y = 0; y < countY; y++) {
                 //Add new tilemap
                 sf::Rect<uint> border(x * sectionWidth, y * sectionHeight, sectionWidth, sectionHeight);
                 TileMap *map = new TileMap(tileset, tileX, tileY, indexes, layer, 0, border);

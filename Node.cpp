@@ -16,11 +16,12 @@ Node::Node(Layer layer, sf::Vector2i size, bool hidden, Node *parent) {
 	setParent(parent);
 }
 
-//Get node layer variable
+//Get layer node is attached to
 int Node::getLayer() {
 	return layer;
 }
 
+//Get scaled size of node
 sf::Vector2i Node::getSize() {
 	return sf::Vector2i(size.x * std::abs(getScale().x), size.y * std::abs(getScale().y));
 }
@@ -46,6 +47,11 @@ sf::Vector2f Node::getGPosition() {
 	if(parent != NULL)
 		return getPosition() + parent->getGPosition();
 	return getPosition();
+}
+
+//Get blend mode for rendering
+sf::BlendMode Node::getBlendMode() {
+	return blendMode;
 }
 
 //Check if node is hidden
@@ -80,7 +86,12 @@ void Node::setGPosition(float x, float y) {
 	setGPosition(sf::Vector2f(x, y));
 }
 
-//Get full collision bitset
+//Set blend mode to use in rendering
+void Node::setBlendMode(sf::BlendMode blendMode) {
+	this->blendMode = blendMode;
+}
+
+//Get list of layers node collides with
 std::bitset<MAXLAYER> Node::getCollisionLayers() {
 	return collisionLayers;
 }
@@ -176,14 +187,16 @@ sf::Vector2f vectorLength(sf::Vector2f dir, double distance) {
 	return sf::Vector2f(xOffset, yOffset);
 }
 
+//Get length of a vector or distance between points
+float distance(sf::Vector2f start, sf::Vector2f end) {
+	return std::sqrt(std::pow(end.x - start.x, 2) + std::pow(end.y - start.y, 2));
+}
+
 sf::Vector2f operator*(const sf::Vector2f &first, const sf::Vector2f &second) {
 	return sf::Vector2f(first.x * second.x, first.y * second.y);
 }
 sf::Vector2f operator/(const sf::Vector2f &first, const sf::Vector2f &second) {
 	return sf::Vector2f(first.x / second.x, first.y / second.y);
-}
-float distance(sf::Vector2f start, sf::Vector2f end) {
-	return std::sqrt(std::pow(end.x - start.x, 2) + std::pow(end.y - start.y, 2));
 }
 
 std::string getString(sf::Vector2f pos) {

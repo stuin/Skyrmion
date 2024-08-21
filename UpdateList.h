@@ -38,6 +38,7 @@ private:
 	//Display special cases
 	static std::bitset<MAXLAYER> hiddenLayers;
 	static std::vector<Node *> reloadBuffer;
+	static std::vector<sf::Texture *> textureSet;
 
 	static Layer max;
 	static bool running;
@@ -67,8 +68,8 @@ public:
 	static void hideLayer(Layer layer, bool hidden=true);
 
 	//Utility Functions
-	static void loadTexture(sf::Texture *texture, std::string filename);
-	static sf::Texture *getTexture(int index);
+	static sf::Texture *loadTexture(sf::Texture *texture, std::string filename, sint index=0);
+	static sf::Texture *getTexture(sint index);
 
 	//Start engine
 	static void startEngine(std::string title);

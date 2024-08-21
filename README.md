@@ -1,6 +1,6 @@
 # Skyrmion
-A 2D Game Engine built in C++, focused on tilemaps
-Requires [SFML](https://www.sfml-dev.org/) and [nlohmann json](https://json.nlohmann.me/)
+A 2D Game Engine built in C++, very focused on tilemaps.
+Requires [SFML](https://www.sfml-dev.org/) and [nlohmann json](https://json.nlohmann.me/).
 
 ## Tilemaps
 
@@ -37,12 +37,16 @@ Each node is attached to a specific layer in UpdateList, usually ordered and nam
 - Nodes can be deleted on mass by layer
 - Camera can be static or attached to any node
 - Parent a node to any other node in a tree
+- Uses centered position by default
 - Set and get position relative to parent or globally
 - Limited light emmision
 - Collision with tiles
 - Collision with other nodes by layer
 - Send signals to any nodes by layer
 - Subscribe to window events by type (resizing, mouse, keyboard, etc)
+- Thread safe deletion and render texture drawing
+
+Updates are run as often as possible, with a time delta variable provided for consistency. Draw calls are done in a separate  read-only thread at maximum ~60 fps.
 
 #### Sources
 - [Node.h](https://github.com/stuin/Skyrmion/blob/main/Node.h)
@@ -65,7 +69,7 @@ Each node is attached to a specific layer in UpdateList, usually ordered and nam
 - [Canvas.hpp](https://github.com/stuin/Skyrmion/blob/main/util/Canvas.hpp)
 
 ## Example games:
-- The engine was originally built with a group as the core systems of [Temple-of-Pele](https://github.com/skyrmiongames/Temple-of-Pele), and later extracted into it's own project. As more game jam type projects were created with it I added more features.
-- Lighting was added with (The Path Below)[https://stuin.itch.io/the-path-below] : [Source](https://github.com/stuin/ThePathBelow)
+- The engine was originally built with a group as the core systems of [Temple-of-Pele](https://github.com/skyrmiongames/Temple-of-Pele), and later extracted into it's own project. As more game jam type projects were created with it I added more features
+- Lighting was added with [The Path Below](https://stuin.itch.io/the-path-below) : [Source](https://github.com/stuin/ThePathBelow)
 - For GMTK 2022, Roll of the Dice, I created [Rolling Labyrinth](https://stuin.itch.io/rolling-labyrinth) : [Source](https://github.com/stuin/RollingLabyrinth)
 - For GMTK 2024 Built to Scale, I designed a side-scrolling physics engine (Soon to be moved into the engine proper) [Climbing Blocks](https://stuin.itch.io/climbing-blocks) : [Source](https://github.com/stuin/ClimbingBlocks)

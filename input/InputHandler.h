@@ -37,6 +37,7 @@ public:
 	void update(double time);
 };
 
+//Input with built in joystick and directional keyboard support
 class DirectionHandler : public InputHandler {
 private:
 	sf::Vector2f direction = sf::Vector2f(0, 0);

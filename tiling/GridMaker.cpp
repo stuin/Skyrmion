@@ -115,9 +115,9 @@ void GridMaker::printGrid() {
 //Get value of tile
 int Indexer::getTile(uint c) {
 	int rOffset = 0;
-	if(random != NULL) {
-		auto limit = random->find(c);
-		if(limit != random->end() && limit->second > 1)
+	if(!random.empty()) {
+		auto limit = random.find(c);
+		if(limit != random.end() && limit->second > 1)
 			rOffset = std::rand() / ((RAND_MAX + 1u) / limit->second);
 	}
 
@@ -156,8 +156,8 @@ void Indexer::mapGrid(std::function<void(uint, sf::Vector2f)> func) {
 		}
 }
 
-void Indexer::addRandomizer(std::map<uint, int> *_limits) {
-	random = _limits;
+void Indexer::addRandomizer(std::map<uint, int> limits) {
+	random = limits;
 }
 
 bool Indexer::inBounds(sf::Vector2f position) {

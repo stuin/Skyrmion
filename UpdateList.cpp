@@ -1,6 +1,6 @@
 #include "UpdateList.h"
 
-#define FRAME_DELAY sf::milliseconds(15)
+#define FRAME_DELAY sf::milliseconds(16.6)
 
 /*
  * Created by Stuart Irwin on 4/15/2019.
@@ -22,6 +22,7 @@ sf::View UpdateList::viewPlayer;
 WindowSize UpdateList::windowSize;
 std::bitset<MAXLAYER> UpdateList::hiddenLayers;
 std::vector<Node *> UpdateList::reloadBuffer;
+std::vector<sf::Texture *> UpdateList::textureSet;
 
 Layer UpdateList::max = 0;
 bool UpdateList::running = true;
@@ -63,7 +64,7 @@ void UpdateList::clearLayer(Layer layer) {
 	}
 }
 
-//Add node to list connected to cetain event
+//Subscribe node to cetain event type
 void UpdateList::addListener(Node *item, sf::Event::EventType type) {
 	auto it = listeners.find(type);
 	if(it == listeners.end()) {
@@ -100,33 +101,51 @@ void UpdateList::sendSignal(int id, Node *sender) {
 		sendSignal(layer, id, sender);
 }
 
-//Schedule reload call before draw
+//Schedule reload call before next draw
 void UpdateList::scheduleReload(Node *buffer) {
 	if(buffer != NULL)
 		reloadBuffer.push_back(buffer);
 }
 
+//Update nodes event when not in camera
 void UpdateList::staticLayer(Layer layer, bool _static) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	staticLayers[layer] = _static;
 }
 
+//Do not update nodes
 void UpdateList::pauseLayer(Layer layer, bool pause) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	pausedLayers[layer] = pause;
 }
 
+//Do not render nodes
 void UpdateList::hideLayer(Layer layer, bool hidden) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	hiddenLayers[layer] = hidden;
 }
 
-void UpdateList::loadTexture(sf::Texture* texture, std::string filename) {
+//Load texture from file and add to set
+sf::Texture *UpdateList::loadTexture(sf::Texture *texture, std::string filename, sint index) {
+	if(index == 0)
+		index = textureSet.size();
+	while(index >= textureSet.size())
+		textureSet.push_back(NULL);
+	textureSet[index] = texture;
+
 	if(!texture->loadFromFile(filename))
 		throw std::invalid_argument("Texture " + filename + " not found");
+	return texture;
+}
+
+//Get texture from set
+sf::Texture *UpdateList::getTexture(sint index) {
+	if(index > textureSet.size())
+		throw std::invalid_argument("Texture " + std::to_string(index) + " not found");
+	return textureSet[index];
 }
 
 //Update all nodes in list
@@ -208,7 +227,7 @@ void UpdateList::draw(sf::RenderTarget &window, sf::Vector2f offset) {
 			while(source != NULL) {
 				if(!source->isHidden() &&
 					(staticLayers[layer] || source->getRect().intersects(cameraRect))) {
-					sf::RenderStates state(source->blendMode);
+					sf::RenderStates state(source->getBlendMode());
 					//Check for parent node
 					if(source->getParent() != NULL)
 						state.transform.translate(source->getParent()->getGPosition());

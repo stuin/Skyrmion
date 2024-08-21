@@ -1,17 +1,6 @@
 #include "InputHandler.h"
 
-void InputHandler::add_listeners() {
-	UpdateList::addNode(this);
-	UpdateList::addListener(this, sf::Event::KeyPressed);
-	UpdateList::addListener(this, sf::Event::KeyReleased);
-	UpdateList::addListener(this, sf::Event::MouseButtonPressed);
-	UpdateList::addListener(this, sf::Event::MouseButtonReleased);
-	UpdateList::addListener(this, sf::Event::MouseWheelScrolled);
-	UpdateList::addListener(this, sf::Event::JoystickButtonPressed);
-	UpdateList::addListener(this, sf::Event::JoystickButtonReleased);
-	UpdateList::addListener(this, sf::Event::JoystickMoved);
-}
-
+//Set controls directly
 InputHandler::InputHandler(std::vector<int> _controls, int layer, Node *parent)
 : Node(layer, sf::Vector2i(16, 16), true, parent), controls(_controls) {
 	keycodes.assign(_controls.size(), "");
@@ -22,6 +11,7 @@ InputHandler::InputHandler(std::vector<int> _controls, int layer, Node *parent)
 	add_listeners();
 }
 
+//Set controls through configurable settings
 InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *parent)
 : Node(layer, sf::Vector2i(16, 16), true, parent) {
 	pressed.assign(keys.size() * MAXALTS, false);
@@ -45,6 +35,27 @@ InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *paren
 	add_listeners();
 }
 
+//Subscribe to all input types
+void InputHandler::add_listeners() {
+	UpdateList::addNode(this);
+	UpdateList::addListener(this, sf::Event::KeyPressed);
+	UpdateList::addListener(this, sf::Event::KeyReleased);
+	UpdateList::addListener(this, sf::Event::MouseButtonPressed);
+	UpdateList::addListener(this, sf::Event::MouseButtonReleased);
+	UpdateList::addListener(this, sf::Event::MouseWheelScrolled);
+	UpdateList::addListener(this, sf::Event::JoystickButtonPressed);
+	UpdateList::addListener(this, sf::Event::JoystickButtonReleased);
+	UpdateList::addListener(this, sf::Event::JoystickMoved);
+}
+
+//Register key through configurable settings
+int InputHandler::addKey(std::string key) {
+	int i = addKey(Settings::getControl(key));
+	keycodes[i] = key;
+	return i;
+}
+
+//Register key with pressed/held states
 int InputHandler::addKey(int code) {
 	controls.insert(controls.begin() + count, code);
 	keycodes.insert(keycodes.begin() + count, "");
@@ -53,12 +64,7 @@ int InputHandler::addKey(int code) {
 	return count++;
 }
 
-int InputHandler::addKey(std::string key) {
-	int i = addKey(Settings::getControl(key));
-	keycodes[i] = key;
-	return i;
-}
-
+//Find if key is used and update pressed/held states
 void InputHandler::updateKey(int code, bool press) {
 	if(remap != -1) {
 		controls[remap] = code;
@@ -78,6 +84,7 @@ void InputHandler::updateKey(int code, bool press) {
 	}
 }
 
+//Clear pressed to separate newly pressed keys from held keys
 void InputHandler::clearPressed() {
 	pressed.assign(pressed.size(), false);
 
@@ -87,6 +94,7 @@ void InputHandler::clearPressed() {
 			held[i] = false;
 }
 
+//Convert draw thread input events to key updates
 void InputHandler::recieveEvent(sf::Event event, WindowSize *windowSize) {
 	bool press = false;
 	int code = 0;
@@ -128,6 +136,7 @@ void InputHandler::recieveEvent(sf::Event event, WindowSize *windowSize) {
 	}
 }
 
+//Run key press functions
 void InputHandler::update(double time) {
 	for(sint i = 0; i < held.size(); i++) {
 		if(held[i]) {
@@ -140,7 +149,6 @@ void InputHandler::update(double time) {
 
 	clearPressed();
 }
-
 
 DirectionHandler::DirectionHandler(std::vector<int> _controls, int layer, Node *parent)
 : InputHandler(_controls, layer, parent) {
@@ -157,6 +165,7 @@ DirectionHandler::DirectionHandler(std::string field, int layer, Node *parent)
 	joystick = Settings::getInt(field + "/joystick");
 }
 
+//Calculate direction from joystick and keyboard
 void DirectionHandler::update(double time) {
 	direction = sf::Vector2f(0, 0);
 
@@ -204,7 +213,7 @@ void DirectionHandler::update(double time) {
 		}
 	}
 
-	//Update moving placeholder
+	//Update moving placeholder key
 	bool moved = direction != sf::Vector2f(0, 0);
 	if(moved != held[moving])
 		updateKey(-2, moved);
@@ -222,10 +231,12 @@ void DirectionHandler::update(double time) {
 	clearPressed();
 }
 
+//Get direct 2d direction based on inputs
 sf::Vector2f DirectionHandler::getDirection() {
 	return direction;
 }
 
+//Limit keyboard distance to circle to match joystick
 sf::Vector2f DirectionHandler::getMovement(double distance) {
 	if(joystickMovement)
 		return sf::Vector2f(direction.x * distance, direction.y * distance);

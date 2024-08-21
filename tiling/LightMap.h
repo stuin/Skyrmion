@@ -70,7 +70,7 @@ public:
 	LightMapCollection(int tileX, int tileY, Indexer indexes, Layer layer) : Node(layer) {
 		int width = tileX * (indexes.getSize().x * indexes.getScale().x + 1);
 		int height = tileY * (indexes.getSize().y * indexes.getScale().y + 1);
-		blendMode = sf::BlendMultiply;
+		setBlendMode(sf::BlendMultiply);
 
 		//Set up buffer texture
 		buffer = new sf::RenderTexture();
