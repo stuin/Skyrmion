@@ -131,6 +131,41 @@ public:
 	}
 };
 
+class AnimatedNode : public Node {
+	int frameWidth = 0;
+	int frameHeight = 0;
+    int maxFrames = 0;
+    int frame = 0;
+    double nextTime = 0;
+    double delay = -1;
+    bool paused = false;
+public:
+	AnimatedNode(sf::Texture &texture, int _maxFrames, double _delay, Layer layer, sf::Vector2i size) : Node(layer, size) {
+		setTexture(texture);
+
+		maxFrames = _maxFrames;
+		delay = _delay;
+		frameWidth = texture.getSize().x / _maxFrames;
+		frameHeight = texture.getSize().y;
+	}
+
+	//Update timer
+    void update(double time) {
+        if(!paused) {
+            if((nextTime -= time) <= 0) {
+                nextTime = delay;
+                frame++;
+
+                //Reset to start frame
+                if(frame == maxFrames)
+                    frame = 0;
+
+                setTextureRect(sf::IntRect(frameWidth * frame, 0, frameWidth, frameHeight));
+            }
+        }
+    }
+};
+
 sf::Vector2f vectorLength(sf::Vector2f dir, double distance);
 sf::Vector2f operator*(const sf::Vector2f &first, const sf::Vector2f &second);
 sf::Vector2f operator/(const sf::Vector2f &first, const sf::Vector2f &second);

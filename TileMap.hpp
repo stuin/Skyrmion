@@ -20,7 +20,7 @@ private:
     //Graphical variables
     sf::VertexArray vertices;
     sf::Texture *tileset;
-    sf::RenderTexture *buffer;
+    sf::RenderTexture buffer;
 
     uint fullWidth = 0;
     uint fullHeight = 0;
@@ -28,12 +28,6 @@ private:
     uint height = 0;
     uint startX = 0;
     uint startY = 0;
-
-    /*virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
-        states.transform *= getTransform();
-        states.texture = tileset;
-        target.draw(vertices, states);
-    }*/
 
 public:
 
@@ -60,10 +54,9 @@ public:
         setPosition(startX * tileX, startY * tileY);
 
         //Set up buffer texture
-        buffer = new sf::RenderTexture();
-        if(!buffer->create(tileX * width, tileY * height))
+        if(!buffer.create(tileX * width, tileY * height))
             throw std::logic_error("Error creating TileMap buffer");
-        setTexture(buffer->getTexture());
+        setTexture(buffer.getTexture());
 
         // resize the vertex array to fit the level size
         vertices.setPrimitiveType(sf::Quads);
@@ -85,15 +78,15 @@ public:
     }
 
     void reload() {
-        int *tiles = indexes->indexGrid();
         int numTextures = countTextures();
 
         // populate the vertex array, with one quad per tile
         for(unsigned int i = 0; i < width; ++i)
             for(unsigned int j = 0; j < height; ++j) {
                 // get the current tile number
-                int tileNumber = (tiles[i + startX + (j + startY) * fullWidth] % numTextures) + offset;
-                int rotations = (tiles[i + startX + (j + startY) * fullWidth] / numTextures);
+                int tileValue = indexes->getTile(sf::Vector2f(i + startX, j + startY));
+                int tileNumber = (tileValue % numTextures) + offset;
+                int rotations = (tileValue / numTextures);
                 int fliph = rotations / 4 % 2;
                 int flipv = rotations / 8;
 
@@ -112,10 +105,10 @@ public:
                     quad[(3 + rotations - fliph + flipv) % 4].texCoords = sf::Vector2f(tu * tileX, (tv + 1) * tileY);
 
                     // define its 4 corners
-                    quad[0].position = sf::Vector2f((i + startX) * tileX, (j + startY) * tileY);
-                    quad[1].position = sf::Vector2f((i + startX + 1) * tileX, (j + startY) * tileY);
-                    quad[2].position = sf::Vector2f((i + startX + 1) * tileX, (j + startY + 1) * tileY);
-                    quad[3].position = sf::Vector2f((i + startX) * tileX, (j + startY + 1) * tileY);
+                    quad[0].position = sf::Vector2f((i) * tileX, (j) * tileY);
+                    quad[1].position = sf::Vector2f((i + 1) * tileX, (j) * tileY);
+                    quad[2].position = sf::Vector2f((i + 1) * tileX, (j + 1) * tileY);
+                    quad[3].position = sf::Vector2f((i) * tileX, (j + 1) * tileY);
                 } else {
                     quad[0].position = sf::Vector2f(0, 0);
                     quad[1].position = sf::Vector2f(0, 0);
@@ -128,9 +121,9 @@ public:
 
     void reloadBuffer() {
         //Draw to buffer
-        buffer->clear(sf::Color::Transparent);
-        buffer->draw(vertices, sf::RenderStates(tileset));
-        buffer->display();
+        buffer.clear(sf::Color::Transparent);
+        buffer.draw(vertices, sf::RenderStates(tileset));
+        buffer.display();
     }
 
     void setIndex(Indexer *indexes) {
@@ -267,11 +260,11 @@ public:
     LargeTileMap(sf::Texture *tileset, int tileX, int tileY, Indexer *indexes, Layer layer) : Node(layer) {
         fullWidth = indexes->getSize().x;
         fullHeight = indexes->getSize().y;
-        setSize(sf::Vector2i(tileY * fullWidth, tileY * fullHeight));
+        setSize(sf::Vector2i(tileX * fullWidth, tileY * fullHeight));
         setOrigin(0, 0);
 
-        countX = fullWidth / (16000 / tileX) + 1;
-        countY = fullHeight / (16000 / tileY) + 1;
+        countX = std::ceil(fullWidth / (16000.0 / tileX));
+        countY = std::ceil(fullHeight / (16000.0 / tileY));
         sectionWidth = fullWidth / countX;
         sectionHeight = fullHeight / countY;
         //std::cout << countX << "," << countY << ": " << fullWidth << "," << fullHeight << "\n";
@@ -290,8 +283,10 @@ public:
 
     void setScales(sf::Vector2f scale) {
         setScale(scale);
-        for(TileMap *map : tilemaps)
+        for(TileMap *map : tilemaps) {
             map->setScale(scale);
+            map->setPosition(map->getPosition() * scale);
+        }
     }
 
     //Reload all tilemaps

@@ -144,21 +144,6 @@ void Indexer::setTile(sf::Vector2f position, int value) {
 		grid->setTile(x, y, value);
 }
 
-//Convert uint[][] to int[][]
-int* Indexer::indexGrid() {
-	const unsigned int width = grid->getSize().x;
-	const unsigned int height = grid->getSize().y;
-	int* indexes = new int[width * height];
-	//Loop through tiles
-	for(unsigned int y = 0; y < height; y++)
-		for(unsigned int x = 0; x < width; x++) {
-			//Get tile texture index
-			indexes[x + y * width] = getTile(grid->getTile(x, y));
-		}
-
-	return indexes;
-}
-
 //Run function on every square in grid
 void Indexer::mapGrid(std::function<void(uint, sf::Vector2f)> func) {
 	const unsigned int width = grid->getSize().x;

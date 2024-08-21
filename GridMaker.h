@@ -62,7 +62,6 @@ public:
 	int getTile(uint c);
 	int getTile(sf::Vector2f position);
 	void setTile(sf::Vector2f position, int value);
-	int* indexGrid();
 	void mapGrid(std::function<void(uint, sf::Vector2f)> func);
 
 	void addRandomizer(std::map<uint, int> *_limits);
