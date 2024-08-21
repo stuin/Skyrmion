@@ -6,7 +6,7 @@
 #include <math.h>
 #include <stdexcept>
 
-#include "GridMaker.h"
+#include "tiling/GridMaker.h"
 
 #define MAXLAYER 16
 #define LAYERERROR "Used collision layer > " + MAXLAYER
@@ -166,6 +166,7 @@ public:
     }
 };
 
+//Essential vector functions
 sf::Vector2f vectorLength(sf::Vector2f dir, double distance);
 sf::Vector2f operator*(const sf::Vector2f &first, const sf::Vector2f &second);
 sf::Vector2f operator/(const sf::Vector2f &first, const sf::Vector2f &second);

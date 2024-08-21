@@ -1,7 +1,7 @@
 #include <cstdlib>
 
 #include "Settings.h"
-#include "UpdateList.h"
+#include "../UpdateList.h"
 
 #define MAXALTS 2
 #define JOYSTICK_ZONE 5.0f

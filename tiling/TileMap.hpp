@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Node.h"
-#include "GridMaker.h"
+#include "../Node.h"
+#include "../tiling/GridMaker.h"
 
 #include <vector>
 #include <stdexcept>
