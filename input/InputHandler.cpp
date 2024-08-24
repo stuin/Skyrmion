@@ -253,3 +253,10 @@ std::vector<std::string> DirectionHandler::listKeys(std::string field) {
 	};
 	return keys;
 }
+
+std::map<int, int> operator+(const std::map<int, int> &first, const std::map<int, int> &second) {
+	std::map<int, int> third;
+	third.insert(first.begin(), first.end());
+	third.insert(second.begin(), second.end());
+	return third;
+}

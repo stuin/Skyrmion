@@ -208,7 +208,7 @@ void LightMap::lightOctant(sf::Vector2f light, int octant, float maxIntensity) {
 	}
 }
 
-LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexer _indexes, 
+LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexer _indexes,
 		Layer layer, bool indexLights, sf::Color _lightColor)
 		: Node(layer), indexes(_indexes) {
 

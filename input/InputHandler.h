@@ -1,6 +1,9 @@
+#pragma once
+
 #include <cstdlib>
 
 #include "Settings.h"
+#include "MovementEnums.h"
 #include "../UpdateList.h"
 
 #define MAXALTS 2

@@ -47,11 +47,13 @@ public:
             width = fullWidth - startX;
         if(height + startY > fullHeight)
             height = fullHeight - startY;
-        //std::cout << " " << startX << "," << startY << ", " << width << "," << height << "\n";
 
         setSize(sf::Vector2i(tileX * width, tileY * height));
         setOrigin(0, 0);
         setPosition(startX * tileX, startY * tileY);
+
+        //std::cout << " " << startX << "," << startY << ", " << width << "," << height << "\n";
+        //std::cout << toString(getGPosition()) << ":" << toString(getGScale()) <<  "\n";
 
         //Set up buffer texture
         if(!buffer.create(tileX * width, tileY * height))
@@ -267,7 +269,9 @@ public:
         countY = std::ceil(fullHeight / (16000.0 / tileY));
         sectionWidth = fullWidth / countX;
         sectionHeight = fullHeight / countY;
+
         //std::cout << countX << "," << countY << ": " << fullWidth << "," << fullHeight << "\n";
+        //std::cout << toString(getGPosition()) << ":" << toString(getScale()) <<  "\n";
 
         //Build each frame
         for(uint x = 0; x < countX; x++) {
@@ -278,14 +282,6 @@ public:
                 map->setParent(this);
                 tilemaps.push_back(map);
             }
-        }
-    }
-
-    void setScales(sf::Vector2f scale) {
-        setScale(scale);
-        for(TileMap *map : tilemaps) {
-            map->setScale(scale);
-            map->setPosition(map->getPosition() * scale);
         }
     }
 

@@ -63,6 +63,10 @@ public:
 	bool isHidden();
 	Node *getParent();
 	sf::Vector2f getGPosition();
+	sf::Vector2f getGScale();
+	sf::Vector2f getInverseScale();
+	sf::Vector2f getInverseGScale();
+	sf::Transform getGTransform();
 	sf::BlendMode getBlendMode();
 
 	//General setters
@@ -77,11 +81,6 @@ public:
 	std::bitset<MAXLAYER> getCollisionLayers();
 	bool getCollisionLayer(Layer layer);
 	void collideWith(Layer layer, bool collide=true);
-
-	//Other math utilities
-	sf::Vector2f move(sf::Vector2f dir, double distance, int collideOffset=0);
-	sf::Vector2f move(sf::Vector2f dir, Indexer *indexes, double distance, int collideOffset=0);
-	static sf::Vector2f gridCollision(sf::Vector2f start, sf::Vector2f move, Indexer *indexes, int collideOffset);
 
 	//Linked list functions
 	Node *getNext();
@@ -179,4 +178,4 @@ sf::Vector2f vectorLength(sf::Vector2f dir, double distance);
 float distance(sf::Vector2f start, sf::Vector2f end=sf::Vector2f(0,0));
 sf::Vector2f operator*(const sf::Vector2f &first, const sf::Vector2f &second);
 sf::Vector2f operator/(const sf::Vector2f &first, const sf::Vector2f &second);
-std::string getString(sf::Vector2f pos);
+std::string toString(sf::Vector2f pos);

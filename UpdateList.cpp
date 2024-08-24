@@ -216,7 +216,7 @@ void UpdateList::draw(sf::RenderTarget &window, sf::Vector2f offset) {
 	sf::FloatRect cameraRect = sf::FloatRect(-100000,-100000,200000,200000);
 	if(camera != NULL)
 		cameraRect = camera->getRect();
-	cameraRect = sf::FloatRect(cameraRect.left + offset.x, cameraRect.top + offset.y, 
+	cameraRect = sf::FloatRect(cameraRect.left + offset.x, cameraRect.top + offset.y,
 		cameraRect.width, cameraRect.height);
 
 	//Render each node in order
@@ -228,9 +228,9 @@ void UpdateList::draw(sf::RenderTarget &window, sf::Vector2f offset) {
 				if(!source->isHidden() &&
 					(staticLayers[layer] || source->getRect().intersects(cameraRect))) {
 					sf::RenderStates state(source->getBlendMode());
-					//Check for parent node
+
 					if(source->getParent() != NULL)
-						state.transform.translate(source->getParent()->getGPosition());
+						state.transform.combine(source->getParent()->getGTransform());
 					state.transform.translate(offset);
 
 					window.draw(*source, state);

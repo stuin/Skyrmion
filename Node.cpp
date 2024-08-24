@@ -23,7 +23,7 @@ int Node::getLayer() {
 
 //Get scaled size of node
 sf::Vector2i Node::getSize() {
-	return sf::Vector2i(size.x * std::abs(getScale().x), size.y * std::abs(getScale().y));
+	return sf::Vector2i(size.x * std::abs(getGScale().x), size.y * std::abs(getGScale().y));
 }
 
 //Create full collision box
@@ -45,8 +45,28 @@ Node *Node::getParent() {
 //Get global position
 sf::Vector2f Node::getGPosition() {
 	if(parent != NULL)
-		return getPosition() + parent->getGPosition();
+		return getPosition() * parent->getScale() + parent->getGPosition();
 	return getPosition();
+}
+
+sf::Vector2f Node::getGScale() {
+	if(parent != NULL)
+		return parent->getGScale() * getScale();
+	return getScale();
+}
+
+sf::Vector2f Node::getInverseScale() {
+	return sf::Vector2f(1 / getScale().x, 1 / getScale().y);
+}
+
+sf::Vector2f Node::getInverseGScale() {
+	return sf::Vector2f(1 / getGScale().x, 1 / getGScale().y);
+}
+
+sf::Transform Node::getGTransform() {
+	if(parent != NULL)
+		return parent->getGTransform().combine(getTransform());
+	return getTransform();
 }
 
 //Get blend mode for rendering
@@ -110,42 +130,6 @@ void Node::collideWith(Layer layer, bool collide) {
 	collisionLayers[layer] = collide;
 }
 
-//Move node with a specific direction and distance
-sf::Vector2f Node::move(sf::Vector2f dir, double distance, int collideOffset) {
-	sf::Vector2f target = getPosition() + vectorLength(dir, distance);
-	setPosition(target);
-	return target;
-}
-
-sf::Vector2f Node::move(sf::Vector2f dir, Indexer *indexes, double distance, int collideOffset) {
-	sf::Vector2f target = gridCollision(getPosition(),
-		vectorLength(dir, distance), indexes, collideOffset);
-	setPosition(target);
-	return target;
-}
-
-//Adjust vector for collision with grid
-sf::Vector2f Node::gridCollision(sf::Vector2f start, sf::Vector2f move, Indexer *indexes, int collideOffset) {
-	sf::Vector2f end = start + move;
-
-	if(indexes->getTile(end) <= collideOffset) {
-		sf::Vector2f horizontal = sf::Vector2f(start.x, end.y);
-		sf::Vector2f vertical = sf::Vector2f(end.x, start.y);
-
-		if(indexes->getTile(horizontal) > collideOffset &&
-			indexes->getTile(vertical) > collideOffset)
-			end = (abs(move.x) > abs(move.y)) ? horizontal : vertical;
-		else if(indexes->getTile(horizontal) > collideOffset)
-			end = horizontal;
-		else if(indexes->getTile(vertical) > collideOffset)
-			end = vertical;
-		else
-			end = start;
-	}
-
-	return end;
-}
-
 //Get next node in list
 Node *Node::getNext() {
 	return next;
@@ -199,6 +183,6 @@ sf::Vector2f operator/(const sf::Vector2f &first, const sf::Vector2f &second) {
 	return sf::Vector2f(first.x / second.x, first.y / second.y);
 }
 
-std::string getString(sf::Vector2f pos) {
+std::string toString(sf::Vector2f pos) {
 	return "(" + std::to_string(pos.x) + "," + std::to_string(pos.y) + ")";
 }

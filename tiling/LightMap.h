@@ -42,7 +42,7 @@ private:
 	void lightOctant(sf::Vector2f light, int octant, float maxIntensity);
 
 public:
-	LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexer _indexes, 
+	LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexer _indexes,
 		Layer layer, bool indexLights=true, sf::Color _lightColor=sf::Color::White);
 
 	~LightMap() {
