@@ -23,7 +23,8 @@ int Node::getLayer() {
 
 //Get scaled size of node
 sf::Vector2i Node::getSize() {
-	return sf::Vector2i(size.x * std::abs(getGScale().x), size.y * std::abs(getGScale().y));
+	sf::Vector2f scale = getGScale();
+	return sf::Vector2i(size.x * std::abs(scale.x), size.y * std::abs(scale.y));
 }
 
 //Create full collision box
@@ -183,6 +184,10 @@ sf::Vector2f operator/(const sf::Vector2f &first, const sf::Vector2f &second) {
 	return sf::Vector2f(first.x / second.x, first.y / second.y);
 }
 
-std::string toString(sf::Vector2f pos) {
-	return "(" + std::to_string(pos.x) + "," + std::to_string(pos.y) + ")";
+std::ostream& operator<<(std::ostream& os, const sf::Vector2f &pos) {
+	return os << "(" << std::to_string(pos.x) << "," << std::to_string(pos.y) << ") ";
+}
+
+std::ostream& operator<<(std::ostream& os, const sf::Vector2i &pos) {
+	return os << "(" << std::to_string(pos.x) << "," << std::to_string(pos.y) << ") ";
 }
