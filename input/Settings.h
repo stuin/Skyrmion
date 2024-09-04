@@ -15,6 +15,7 @@ using json_pointer = nlohmann::json::json_pointer;
 class Settings {
 private:
 	static nlohmann::json data;
+	static std::vector<std::pair<std::string, std::string>> edits;
 
 public:
 	//Full lists in Keylist.cpp
@@ -53,20 +54,57 @@ public:
 
 	//Set value in memory
 	static void setBool(std::string field, bool value) {
-		data[json_pointer(field)] = value;
+		json_pointer pointer = json_pointer(field);
+		std::string name = '"' + pointer.back() + "\": ";
+		std::string old = getBool(field) ? "true" : "false";
+		edits.push_back(std::make_pair(name + old, name + (value ? "true" : "false")));
+		data[pointer] = value;
 	}
 
 	static void setInt(std::string field, int value) {
-		data[json_pointer(field)] = value;
+		json_pointer pointer = json_pointer(field);
+		std::string name = '"' + pointer.back() + "\": ";
+		std::string old = std::to_string(getInt(field));
+		edits.push_back(std::make_pair(name + old, name + std::to_string(value)));
+		data[pointer] = value;
 	}
 
 	static void setString(std::string field, std::string value) {
-		data[json_pointer(field)] = value;
+		json_pointer pointer = json_pointer(field);
+		std::string name = '"' + pointer.back() + "\": \"";
+		std::string old = getString(field);
+		edits.push_back(std::make_pair(name + old, name + value));
+		data[pointer] = value;
 	}
 
-	//Save edited values back to file (reorders alphabetically)
+	//Save edited values back to file
 	static void save(std::string filename) {
-		std::ofstream o(filename);
-		o << std::setw(4) << data << std::endl;
+		std::string tempname = filename + ".replace";
+		std::ifstream in(filename);
+		std::ofstream out(tempname);
+		std::string line;
+		size_t i = 0;
+
+		while(std::getline(in, line)) {
+			for(std::pair<std::string, std::string> edit : edits) {
+				i = line.find(edit.first);
+			    if(i != std::string::npos)
+			    	line.replace(i, edit.first.length(), edit.second);
+			}
+
+			//Write edited line to output
+			for(char c : line)
+				out.put(c);
+			out.put('\n');
+		}
+
+		//Close files
+		in.close();
+		out.close();
+		edits.clear();
+
+		//Replace original file with new
+		std::remove(filename.c_str());
+		std::rename(tempname.c_str(), filename.c_str());
 	}
 };

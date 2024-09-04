@@ -23,7 +23,7 @@ sf::Vector2f TopDownMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i
 }
 
 struct GlobalPhysicsStats {
-	int jumpPower = 300;
+	int jumpPower = 340;
 	int jumpBoost = 8;
 	int fallSpeed = 48;
 	float fallMax = 600;
@@ -124,9 +124,7 @@ sf::Vector2f PlatformGravityMovement(sf::Vector2f start, sf::Vector2f move, sf::
 	int tileL = collision->getTile(footL);
 	int tileR = collision->getTile(footR);
 	if(tileL == EMPTY && tileR == EMPTY) {
-		if(physics->jumpTime < 0.2 && jumpInput)
-			physics->previous.y -= globalPhysics->jumpBoost;
-		else
+		if(physics->jumpTime > 0.2 || !jumpInput)
 			physics->previous.y += globalPhysics->fallSpeed;
 		physics->previous.y = std::min(physics->previous.y, globalPhysics->fallMax);
 		velocity.y += physics->previous.y * time;
