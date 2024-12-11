@@ -22,7 +22,7 @@ private:
 
 	//Tile mapping
 	float **tiles;
-	Indexer indexes;
+	Indexer *indexes;
 
 	//Light sources
 	std::vector<sf::Vector2f> sourcePosition;
@@ -42,7 +42,7 @@ private:
 	void lightOctant(sf::Vector2f light, int octant, float maxIntensity);
 
 public:
-	LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexer _indexes,
+	LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexer *_indexes,
 		Layer layer, bool indexLights=true, sf::Color _lightColor=sf::Color::White);
 
 	~LightMap() {
@@ -67,9 +67,9 @@ private:
 	sf::RenderTexture *buffer;
 
 public:
-	LightMapCollection(int tileX, int tileY, Indexer indexes, Layer layer) : Node(layer) {
-		int width = tileX * (indexes.getSize().x * indexes.getScale().x + 1);
-		int height = tileY * (indexes.getSize().y * indexes.getScale().y + 1);
+	LightMapCollection(int tileX, int tileY, Indexer *indexes, Layer layer) : Node(layer) {
+		int width = tileX * (indexes->getSize().x * indexes->getScale().x + 1);
+		int height = tileY * (indexes->getSize().y * indexes->getScale().y + 1);
 		setBlendMode(sf::BlendMultiply);
 
 		//Set up buffer texture

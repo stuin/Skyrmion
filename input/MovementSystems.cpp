@@ -1,7 +1,6 @@
-#include "../tiling/GridMaker.h"
-#include "InputHandler.h"
+#include "MovementSystems.h"
 
-sf::Vector2f TopDownMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i size, Indexer *collision) {
+sf::Vector2f topDownMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i size, Indexer *collision) {
 	sf::Vector2f end = start + move;
 
 	if(collision != NULL && collision->getTile(end) != EMPTY) {
@@ -22,39 +21,11 @@ sf::Vector2f TopDownMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i
 	return end;
 }
 
-struct GlobalPhysicsStats {
-	int jumpPower = 340;
-	int jumpBoost = 8;
-	int fallSpeed = 48;
-	float fallMax = 600;
-	int slideSpeed = 200;
-	int slideMax = 200;
-	int slideReverse = 2;
-	int pushPower = 20;
-};
+sf::Vector2f topDownMovement(Node *node, sf::Vector2f move, Indexer *collision, double distance) {
+	return topDownMovement(node->getGPosition(), vectorLength(move, distance), node->getSize(), collision);
+}
 
-class PersonalPhysicsStats {
-public:
-	bool showDebug = false;
-
-	sf::Vector2f previous = sf::Vector2f(0,0);
-	sf::Vector2f pushDirection = sf::Vector2f(0,0);
-	sf::Vector2f nodePosition = sf::Vector2f(0,0);
-	sf::Vector2i nodeSize = sf::Vector2i(1,1);
-
-	float snapSpeed = 2;
-	float jumpTime = 0;
-	float weight = 0;
-	float pushWeight = 0;
-	bool blocked = false;
-};
-
-class PhysicsObject {
-public:
-	virtual PersonalPhysicsStats *getPhysics() = 0;
-};
-
-sf::Vector2f PlatformFrictionMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i size, double time,
+sf::Vector2f platformFrictionMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i size, double time,
 	sf::Vector2f previous, Indexer *collision, Indexer *frictionMap, float frictionValue,
 	GlobalPhysicsStats *globalPhysics) {
 
@@ -91,7 +62,7 @@ bool isAbove(sf::Vector2f position, sf::Vector2i size, sf::Vector2f otherPositio
 	return std::abs(dx) < side && dy > 0;
 }
 
-sf::Vector2f PlatformGravityMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i size, double time, bool jumpInput,
+sf::Vector2f platformGravityMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i size, double time, bool jumpInput,
 	Indexer *collision, GlobalPhysicsStats *globalPhysics, PersonalPhysicsStats *physics, std::vector<PersonalPhysicsStats *> colliding) {
 
 	sf::Vector2f velocity = sf::Vector2f(move.x, 0);

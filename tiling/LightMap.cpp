@@ -166,7 +166,7 @@ void LightMap::lightOctant(sf::Vector2f light, int octant, float maxIntensity) {
 	while(true) {
 		// Stop once we go out of bounds.
 		sf::Vector2f pos = light + transformOctant(row, 0, octant);
-		if(!indexes.inBounds(pos) || maxIntensity < ambientIntensity)
+		if(!indexes->inBounds(pos) || maxIntensity < ambientIntensity)
 			break;
 
 		float intensity = maxIntensity;
@@ -175,7 +175,7 @@ void LightMap::lightOctant(sf::Vector2f light, int octant, float maxIntensity) {
 			pos = light + transformOctant(row, col, octant);
 
 			// If we've traversed out of bounds, bail on this row.
-			if(!indexes.inBounds(pos) || intensity < ambientIntensity) 
+			if(!indexes->inBounds(pos) || intensity < ambientIntensity)
 				break;
 
 			Shadow projection = projectTile(row, col);
@@ -188,13 +188,13 @@ void LightMap::lightOctant(sf::Vector2f light, int octant, float maxIntensity) {
 				tiles[(int)pos.x][(int)pos.y] = tileIntensity;
 
 			// Remove shadows on top of lights
-			int tileValue = indexes.getTile(pos);
+			int tileValue = indexes->getTile(pos);
 			if(tileValue / 100.0 > tiles[(int)pos.x][(int)pos.y])
 				tiles[(int)pos.x][(int)pos.y] = tileValue / 100.0;
 
 			// Add any opaque tiles to the shadow map.
 			if(visible > 0 && tileValue < 0) {
-				tileValue /= std::sqrt(indexes.getScale().x);
+				tileValue /= std::sqrt(indexes->getScale().x);
 				projection.strength = line.visibility(projection, true)-tileValue;
 				line.add(projection);
 				if(line.isFullShadow())
@@ -208,22 +208,22 @@ void LightMap::lightOctant(sf::Vector2f light, int octant, float maxIntensity) {
 	}
 }
 
-LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexer _indexes,
+LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexer *_indexes,
 		Layer layer, bool indexLights, sf::Color _lightColor)
 		: Node(layer), indexes(_indexes) {
 
 	//Set arguments
-	tileX = _tileX / indexes.getScale().x;
-	tileY = _tileY / indexes.getScale().y;
+	tileX = _tileX / indexes->getScale().x;
+	tileY = _tileY / indexes->getScale().y;
 	tileSize = sf::Vector2f(tileX, tileY);
 	ambientIntensity = _ambient;
-	absorb = _absorb / indexes.getScale().x;
+	absorb = _absorb / indexes->getScale().x;
 	lightColor = _lightColor;
 	setBlendMode(sf::BlendMultiply);
 
 	//Set sizing
-	width = (indexes.getSize().x + 1) * indexes.getScale().x;
-	height = (indexes.getSize().y + 1) * indexes.getScale().y;
+	width = (indexes->getSize().x + 1) * indexes->getScale().x;
+	height = (indexes->getSize().y + 1) * indexes->getScale().y;
 	setSize(sf::Vector2i(tileX * width, tileY * height));
 	setOrigin(-_tileX / 2, -_tileY / 2);
 
@@ -245,7 +245,9 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 			//Add static lights
 			if(indexLights) {
 				sf::Vector2f pos(x, y);
-				int tileValue = indexes.getTile(pos);
+				int tileValue = indexes->getTile(pos);
+				if(tileValue > 0)
+					std::cout << "Added " << tileValue << pos << std::endl;
 				if(tileValue > 0)
 					addSource(pos * tileSize, tileValue / 100.0);
 			}
@@ -264,7 +266,7 @@ void LightMap::reload() {
 	//Propogate Sources
 	for(long unsigned int i = 0; i < sourcePosition.size(); i++) {
 		sf::Vector2f light = sourcePosition[i];
-		if(indexes.inBounds(light))
+		if(indexes->inBounds(light))
 			tiles[(int)light.x][(int)light.y] = sourceIntensity[i];
 
 		for(int octant = 0; octant < 8; octant++)

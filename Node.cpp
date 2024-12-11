@@ -180,6 +180,12 @@ float distance(sf::Vector2f start, sf::Vector2f end) {
 sf::Vector2f operator*(const sf::Vector2f &first, const sf::Vector2f &second) {
 	return sf::Vector2f(first.x * second.x, first.y * second.y);
 }
+sf::Vector2f operator*(const sf::Vector2f &first, const sf::Vector2i &second) {
+	return sf::Vector2f(first.x * second.x, first.y * second.y);
+}
+sf::Vector2i operator*(const sf::Vector2i &first, const sf::Vector2i &second) {
+	return sf::Vector2i(first.x * second.x, first.y * second.y);
+}
 sf::Vector2f operator/(const sf::Vector2f &first, const sf::Vector2f &second) {
 	return sf::Vector2f(first.x / second.x, first.y / second.y);
 }

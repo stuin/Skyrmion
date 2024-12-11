@@ -44,8 +44,9 @@ void Indexer::mapGrid(std::function<void(int, sf::Vector2f)> func) {
 		}
 }
 
-bool Indexer::inBounds(sf::Vector2f position) {
-	return inBounds(position.x / getScale().x, position.y / getScale().y);
+bool Indexer::inBounds(sf::Vector2f pos) {
+	return pos.x >= 0 && pos.x < getSize().x*getScale().x &&
+		pos.y >= 0 && pos.y < getSize().y*getScale().y;
 }
 
 bool Indexer::inBounds(int x, int y) {
