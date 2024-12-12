@@ -9,7 +9,7 @@ int Indexer::mapTile(int c) {
 	return c;
 }
 
-//Get tile int from previous
+//Scale vector before retrieving value
 int Indexer::getTile(sf::Vector2f position) {
 	return getTileI(position.x / getScale().x, position.y / getScale().y);
 }
@@ -21,7 +21,7 @@ int Indexer::getTileI(int x, int y) {
 	return fallback;
 }
 
-//Set tile in grid
+//Scale and set tile
 void Indexer::setTile(sf::Vector2f position, int value) {
 	setTileI(position.x / getScale().x, position.y / getScale().y, value);
 }
@@ -67,6 +67,19 @@ sf::Vector2i Indexer::getSize() {
 //Get indexer scale
 sf::Vector2i Indexer::getScale() {
 	return scale;
+}
+
+//Get previous indexer in stack
+Indexer *Indexer::getPrevious() {
+	return previous;
+}
+
+void Indexer::printGrid() {
+	for(int y = 0; y < getSize().y; y++) {
+		for(int x = 0; x < getSize().x; x++)
+			std::cout << (char)getTileI(x,y);
+		std::cout << "\n";
+	}
 }
 
 //Convert file to int[][]
@@ -164,10 +177,49 @@ sf::Vector2i GridMaker::getSize() {
 	return sf::Vector2i(width, height);
 }
 
-void GridMaker::printGrid() {
-	for(int y = 0; y < height; y++) {
-		for(int x = 0; x < width; x++)
-			std::cout << (char)tiles[y][x];
-		std::cout << "\n";
+//Concat 2 maps
+std::map<int, int> operator+(const std::map<int, int> &first, const std::map<int, int> &second) {
+	std::map<int, int> third;
+	third.insert(first.begin(), first.end());
+	third.insert(second.begin(), second.end());
+	return third;
+}
+
+//Concat 2 quad maps
+QuadMap operator+(const QuadMap &first, const QuadMap &second) {
+	QuadMap third;
+	third.insert(third.begin(), first.begin(), first.end());
+	third.insert(third.begin(), second.begin(), second.end());
+	return third;
+}
+
+bool operator==(const std::array<int,5> &lhs, const std::array<int,5> &rhs) {
+	return lhs[0] == rhs[0] && lhs[1] == rhs[1] && lhs[2] == rhs[2] && lhs[3] == rhs[3];
+}
+
+//Generate tile rotations for each quad in map
+QuadMap genQuadRotations(QuadMap quads, int size) {
+	QuadMap out;
+	for(std::array<int,5> quad : quads) {
+		out.push_back(quad);
+		//std::cout << (char)out.back()[0] << (char)out.back()[1] << "\n" << (char)out.back()[2] << (char)out.back()[3] << "\n\n";
+		if(quad[0] != quad[1] || quad[1] != quad[2] || quad[2] != quad[3]) {
+			out.push_back({quad[2], quad[0], quad[3], quad[1], quad[4]+size});
+			//std::cout << (char)out.back()[0] << (char)out.back()[1] << "\n" << (char)out.back()[2] << (char)out.back()[3] << "\n\n";
+			out.push_back({quad[3], quad[2], quad[1], quad[0], quad[4]+size*2});
+			//std::cout << (char)out.back()[0] << (char)out.back()[1] << "\n" << (char)out.back()[2] << (char)out.back()[3] << "\n\n";
+			out.push_back({quad[1], quad[3], quad[0], quad[2], quad[4]+size*3});
+			//std::cout << (char)out.back()[0] << (char)out.back()[1] << "\n" << (char)out.back()[2] << (char)out.back()[3] << "\n\n";
+
+			//Check if horizontal flip = same tile arrangement
+			std::array<int,5> flipQuad = {quad[1], quad[0], quad[3], quad[2], quad[4]+size*4};
+			if(std::find(out.begin(), out.end(), flipQuad) == out.end()) {
+				out.push_back(flipQuad);
+				out.push_back({flipQuad[2], flipQuad[0], flipQuad[3], flipQuad[1], flipQuad[4]+size});
+				out.push_back({flipQuad[3], flipQuad[2], flipQuad[1], flipQuad[0], flipQuad[4]+size*2});
+				out.push_back({flipQuad[1], flipQuad[3], flipQuad[0], flipQuad[2], flipQuad[4]+size*3});
+			}
+		}
 	}
+	return out;
 }

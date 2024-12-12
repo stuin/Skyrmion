@@ -20,4 +20,3 @@ enum MovementDirections {
 	RIGHT
 };
 
-std::map<int, int> operator+(const std::map<int, int> &first, const std::map<int, int> &second);

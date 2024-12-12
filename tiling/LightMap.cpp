@@ -247,8 +247,6 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 				sf::Vector2f pos(x, y);
 				int tileValue = indexes->getTile(pos);
 				if(tileValue > 0)
-					std::cout << "Added " << tileValue << pos << std::endl;
-				if(tileValue > 0)
 					addSource(pos * tileSize, tileValue / 100.0);
 			}
 		}

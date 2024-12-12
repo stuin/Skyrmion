@@ -9,11 +9,14 @@
 #include <iostream>
 #include <string>
 
+#define QuadMap std::vector<std::array<int,5>>
+
 /*
  * Created by Stuart Irwin on 4/15/2019.
  * Generates and stores tiles for maps
  */
 
+//Base class for reading tile properties, can be stacked
 class Indexer {
 private:
 	Indexer *previous = NULL;
@@ -35,6 +38,7 @@ public:
 	virtual int getTileI(int x, int y);
 	virtual void setTileI(int x, int y, int value);
 	void mapGrid(std::function<void(int, sf::Vector2f)> func);
+	void printGrid();
 
 	//Check grid size
 	virtual sf::Vector2i getSize();
@@ -42,8 +46,10 @@ public:
 	bool inBounds(int x, int y);
 	sf::Vector2f snapPosition(sf::Vector2f position);
 	sf::Vector2i getScale();
+	Indexer *getPrevious();
 };
 
+//Lowest level indexer to store the actual grid
 class GridMaker : public Indexer {
 private:
 	int height = 0;
@@ -64,9 +70,9 @@ public:
 
 	//Check grid size
 	sf::Vector2i getSize() override;
-	void printGrid();
 };
 
+//Common indexer to map from tile to property 1x1
 class MapIndexer : public Indexer {
 private:
 	const std::map<int, int> indexes;
@@ -90,3 +96,9 @@ public:
 		return fallback;
 	}
 };
+
+//Helper functions for building indexer maps
+std::map<int, int> operator+(const std::map<int, int> &first, const std::map<int, int> &second);
+QuadMap operator+(const QuadMap &first, const QuadMap &second);
+bool operator==(const std::array<int,5> &lhs, const std::array<int,5> &rhs);
+QuadMap genQuadRotations(QuadMap quads, int size);
