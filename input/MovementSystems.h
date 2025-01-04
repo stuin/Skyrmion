@@ -4,6 +4,7 @@
 #include "InputHandler.h"
 
 sf::Vector2f topDownMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i size, Indexer *collision);
+sf::Vector2f topDownMovement(Node *node, sf::Vector2f move, Indexer *collision);
 sf::Vector2f topDownMovement(Node *node, sf::Vector2f move, Indexer *collision, double distance);
 
 struct GlobalPhysicsStats {

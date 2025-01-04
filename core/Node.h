@@ -1,12 +1,14 @@
 #pragma once
 
+//SFML headers
+#include <SFML/System.hpp>
+#include <SFML/Graphics.hpp>
+
 #include <bitset>
 #include <functional>
 #include <iostream>
 #include <math.h>
 #include <stdexcept>
-
-#include "tiling/GridMaker.h"
 
 #define MAXLAYER 16
 #define LAYERERROR "Used collision layer > " + MAXLAYER
@@ -17,7 +19,6 @@ using Layer = unsigned char;
 using sint = long unsigned int;
 
 /*
- * Created by Stuart Irwin on 4/13/2019.
  * Sprite with collision
  */
 

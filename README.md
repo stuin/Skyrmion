@@ -49,8 +49,8 @@ Each node is attached to a specific layer in UpdateList, usually ordered and nam
 Updates are run as often as possible, with a time delta variable provided for consistency. Draw calls are done in a separate  read-only thread at maximum ~60 fps.
 
 #### Sources
-- [Node.h](https://github.com/stuin/Skyrmion/blob/main/Node.h)
-- [UpdateList.h](https://github.com/stuin/Skyrmion/blob/main/UpdateList.h)
+- [Node.h](https://github.com/stuin/Skyrmion/blob/main/core/Node.h)
+- [UpdateList.h](https://github.com/stuin/Skyrmion/blob/main/core/UpdateList.h)
 
 ## Other tools:
 

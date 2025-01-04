@@ -21,6 +21,10 @@ sf::Vector2f topDownMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i
 	return end;
 }
 
+sf::Vector2f topDownMovement(Node *node, sf::Vector2f move, Indexer *collision) {
+	return topDownMovement(node->getGPosition(), move, node->getSize(), collision);
+}
+
 sf::Vector2f topDownMovement(Node *node, sf::Vector2f move, Indexer *collision, double distance) {
 	return topDownMovement(node->getGPosition(), vectorLength(move, distance), node->getSize(), collision);
 }

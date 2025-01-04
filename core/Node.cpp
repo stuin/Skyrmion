@@ -1,7 +1,6 @@
 #include "Node.h"
 
 /*
- * Created by Stuart Irwin on 4/16/2019.
  * Sprite with collision
  */
 

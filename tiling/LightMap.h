@@ -1,8 +1,8 @@
 #pragma once
 
 #include "GridMaker.h"
-#include "../Node.h"
-#include "../UpdateList.h"
+#include "../core/Node.h"
+#include "../core/UpdateList.h"
 
 #include <vector>
 

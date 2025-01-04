@@ -4,7 +4,7 @@
 
 #include "Settings.h"
 #include "MovementEnums.h"
-#include "../UpdateList.h"
+#include "../core/UpdateList.h"
 
 #define MAXALTS 2
 #define JOYSTICK_ZONE 5.0f

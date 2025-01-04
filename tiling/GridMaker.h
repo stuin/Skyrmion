@@ -12,7 +12,6 @@
 #define QuadMap std::vector<std::array<int,5>>
 
 /*
- * Created by Stuart Irwin on 4/15/2019.
  * Generates and stores tiles for maps
  */
 

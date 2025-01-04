@@ -1,7 +1,6 @@
 #include "GridMaker.h"
 
 /*
- * Created by Stuart Irwin on 4/16/2019.
  * Generates and stores main tilemap
  */
 

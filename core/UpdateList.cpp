@@ -3,7 +3,6 @@
 #define FRAME_DELAY sf::milliseconds(16.6)
 
 /*
- * Created by Stuart Irwin on 4/15/2019.
  * Manages layers of nodes through update cycle
  */
 
