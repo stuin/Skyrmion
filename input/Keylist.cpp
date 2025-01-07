@@ -4,6 +4,7 @@ nlohmann::json Settings::data;
 std::vector<std::pair<std::string, std::string>> Settings::edits;
 
 std::map<std::string, int> Settings::KEYMAP = {
+	{"COMBO", 		-3},
 	{"MOVING", 		-2},
 	{"", 			-1},
 	{"A", 			sf::Keyboard::A},

@@ -43,13 +43,18 @@ public:
 		return data.value(json_pointer(field), "");
 	}
 
-	//Get key number from settings field
-	static int getControl(std::string field) {
-		std::string keyname = data.value(json_pointer(field), "");
+	//Get key number from key name
+	static int mapKeycode(std::string keyname) {
 		//Convert to uppercase
 		for(long unsigned int i = 0; i < keyname.length(); i++)
 			keyname[i] = toupper(keyname[i]);
 		return KEYMAP[keyname];
+	}
+
+	//Get key number from settings field
+	static int getControl(std::string field) {
+		std::string keyname = data.value(json_pointer(field), "");
+		return mapKeycode(keyname);
 	}
 
 	//Set value in memory

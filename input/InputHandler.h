@@ -9,20 +9,36 @@
 #define MAXALTS 2
 #define JOYSTICK_ZONE 5.0f
 
+struct Keybind {
+	int key;
+	std::string configName = "";
+	long int combo = -1;
+	long int duplicate = -1;
+	bool pressed = false;
+	bool held = false;
+
+	Keybind(int _key) {
+		key = _key;
+	}
+	Keybind(int _key, const std::string& _configName, int _combo=-1) {
+		key = _key;
+		configName = _configName;
+		combo = _combo;
+		duplicate = -1;
+	}
+};
+
 class InputHandler : public Node {
 private:
 	void add_listeners();
 
 public:
-	std::vector<int> controls;
-	std::vector<std::string> keycodes;
-	std::vector<bool> pressed;
-	std::vector<bool> held;
+	std::vector<Keybind> controls;
 	std::function<void(int)> pressedFunc = NULL;
 	std::function<void(int)> heldFunc = NULL;
 
-	int remap = -1;
-	int count = 0;
+	long int remap = -1;
+	sint count = 0;
 
 	InputHandler(std::vector<int> _controls, int layer, Node *parent = NULL);
 	InputHandler(std::vector<std::string> keys, int layer, Node *parent = NULL);

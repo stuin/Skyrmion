@@ -2,10 +2,10 @@
 
 //Set controls directly
 InputHandler::InputHandler(std::vector<int> _controls, int layer, Node *parent)
-: Node(layer, sf::Vector2i(16, 16), true, parent), controls(_controls) {
-	keycodes.assign(_controls.size(), "");
-	pressed.assign(_controls.size(), false);
-	held.assign(_controls.size(), false);
+: Node(layer, sf::Vector2i(16, 16), true, parent) {
+
+	for(int key : _controls)
+		controls.push_back(Keybind(key));
 	count = _controls.size();
 
 	add_listeners();
@@ -14,21 +14,47 @@ InputHandler::InputHandler(std::vector<int> _controls, int layer, Node *parent)
 //Set controls through configurable settings
 InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *parent)
 : Node(layer, sf::Vector2i(16, 16), true, parent) {
-	pressed.assign(keys.size() * MAXALTS, false);
-	held.assign(keys.size() * MAXALTS, false);
-	count = keys.size();
 
 	//Base keys
-	for(std::string s : keys) {
-		keycodes.push_back(s);
-		controls.push_back(Settings::getControl(s));
+	int startSize = keys.size();
+	for(sint i = 0; i < keys.size(); i++) {
+		if(i >= startSize) {
+			//Part of key combination
+			controls.push_back(Keybind(Settings::mapKeycode(keys[i]), keys[i], -3));
+		} else {
+			std::string keyname = Settings::getString(keys[i]);
+			sint splitI = keyname.find('+');
+			if(splitI != std::string::npos) {
+				//Split key combination
+				controls.push_back(Keybind(-3, keys[i], keys.size()));
+				keys.push_back(keyname.substr(0, splitI));
+				keys.push_back(keyname.substr(splitI+1));
+			} else {
+				//Single key
+				controls.push_back(Keybind(Settings::getControl(keys[i]), keys[i]));
+			}
+		}
 	}
+	count = keys.size();
 
 	//Alternate keys
 	for(int i = 1; i < MAXALTS; i++) {
-		for(std::string s : keys) {
-			keycodes.push_back(s + "&" + std::to_string(i));
-			controls.push_back(Settings::getControl(s + "&" + std::to_string(i)));
+		for(sint j = 0; j < keys.size(); j++) {
+			std::string s = controls[j].configName;
+			if(j >= startSize)
+				controls.push_back(Keybind(0, s + "&" + std::to_string(i)));
+			else
+				controls.push_back(Keybind(Settings::getControl(s + "&" + std::to_string(i)), s + "&" + std::to_string(i)));
+		}
+	}
+
+	//Mark duplicates
+	for(sint i = 0; i < controls.size(); i++) {
+		if(controls[i].key > 0) {
+			for(sint j = i + 1; j < controls.size() && controls[i].duplicate == -1; j++) {
+				if(controls[i].key == controls[j].key)
+					controls[i].duplicate = j;
+			}
 		}
 	}
 
@@ -51,47 +77,81 @@ void InputHandler::add_listeners() {
 //Register key through configurable settings
 int InputHandler::addKey(std::string key) {
 	int i = addKey(Settings::getControl(key));
-	keycodes[i] = key;
+	controls[i].configName = key;
 	return i;
 }
 
 //Register key with pressed/held states
 int InputHandler::addKey(int code) {
-	controls.insert(controls.begin() + count, code);
-	keycodes.insert(keycodes.begin() + count, "");
-	pressed.insert(pressed.begin() + count, false);
-	held.insert(held.begin() + count, false);
+	controls.insert(controls.begin() + count, Keybind(code));
+
+	//Correct stored indexes
+	for(sint i = 0; i < controls.size(); i++) {
+		if(controls[i].combo > -1 && controls[i].combo > count)
+			controls[i].combo++;
+		if(controls[i].duplicate > -1 && controls[i].duplicate > count)
+			controls[i].duplicate++;
+	}
+
 	return count++;
 }
 
 //Find if key is used and update pressed/held states
 void InputHandler::updateKey(int code, bool press) {
-	if(remap != -1) {
-		controls[remap] = code;
+	if(remap != -1 && remap < controls.size()) {
+		controls[remap].key = code;
 		remap = -1;
 		return;
 	}
 
 	//Find key in controls
 	sint i = 0;
-	while(i < pressed.size() && code != controls[i])
+	while(i < controls.size() && code != controls[i].key)
 		i++;
 
 	//Update press/held
-	if(i < pressed.size() && held[i] != press) {
-		pressed[i] = press;
-		held[i] = press;
+	if(i < controls.size() && controls[i].held != press) {
+		controls[i].pressed = press;
+		controls[i].held = press;
+
+		long int d = controls[i].duplicate;
+		while(d != -1 && d < controls.size()) {
+			controls[d].pressed = press;
+			controls[d].held = press;
+			if(controls[d].duplicate != d)
+				d = controls[d].duplicate;
+			else
+				d = -1;
+		}
+	}
+
+	//Check for combo key
+	if(controls[i].combo == -3) {
+		sint j = 0;
+		while(j < controls.size() && i/2 != controls[j].combo/2)
+			j++;
+
+		//Update press/held
+		if(j < controls.size()) {
+			i = controls[j].combo;
+			press = controls[i].held && controls[i+1].held;
+			if(controls[j].held != press) {
+				controls[j].pressed = press;
+				controls[j].held = press;
+			}
+		}
 	}
 }
 
 //Clear pressed to separate newly pressed keys from held keys
 void InputHandler::clearPressed() {
-	pressed.assign(pressed.size(), false);
+	for(Keybind key : controls)
+		key.pressed = false;
 
 	//Mouse wheel special case
 	for(long unsigned int i = 0; i < controls.size(); i++)
-		if(controls[i] == MOUSE_OFFSET+5 || controls[i] == MOUSE_OFFSET+6)
-			held[i] = false;
+		if(controls[i].key == MOUSE_OFFSET+5 || controls[i].key == MOUSE_OFFSET+6)
+			controls[i].held = false;
 }
 
 //Convert draw thread input events to key updates
@@ -138,11 +198,11 @@ void InputHandler::recieveEvent(sf::Event event, WindowSize *windowSize) {
 
 //Run key press functions
 void InputHandler::update(double time) {
-	for(sint i = 0; i < held.size(); i++) {
-		if(held[i]) {
+	for(sint i = 0; i < controls.size(); i++) {
+		if(controls[i].held) {
 			if(heldFunc != NULL)
 				heldFunc(i % count);
-			if(pressed[i] && pressedFunc != NULL)
+			if(controls[i].pressed && pressedFunc != NULL)
 				pressedFunc(i % count);
 		}
 	}
@@ -170,8 +230,8 @@ void DirectionHandler::update(double time) {
 	direction = sf::Vector2f(0, 0);
 
 	//Button Input
-	for(sint i = 0; i < held.size(); i++) {
-		if(held[i]) {
+	for(sint i = 0; i < controls.size(); i++) {
+		if(controls[i].held) {
 			joystickMovement = false;
 			//Update direction
 			switch(i % count) {
@@ -215,15 +275,15 @@ void DirectionHandler::update(double time) {
 
 	//Update moving placeholder key
 	bool moved = direction != sf::Vector2f(0, 0);
-	if(moved != held[moving])
+	if(moved != controls[moving].held)
 		updateKey(-2, moved);
 
 	//Run lambda functions
-	for(sint i = 0; i < held.size(); i++) {
-		if(held[i]) {
+	for(sint i = 0; i < controls.size(); i++) {
+		if(controls[i].held) {
 			if(heldFunc != NULL)
 				heldFunc(i % count);
-			if(pressed[i] && pressedFunc != NULL)
+			if(controls[i].pressed && pressedFunc != NULL)
 				pressedFunc(i % count);
 		}
 	}
