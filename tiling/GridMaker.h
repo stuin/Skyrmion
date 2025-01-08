@@ -10,6 +10,7 @@
 #include <string>
 
 #define QuadMap std::vector<std::array<int,5>>
+#define SquareMap std::vector<std::array<int,10>>
 
 /*
  * Generates and stores tiles for maps
@@ -98,6 +99,19 @@ public:
 
 //Helper functions for building indexer maps
 std::map<int, int> operator+(const std::map<int, int> &first, const std::map<int, int> &second);
+
+//Helper functions for building Quad indexer maps
 QuadMap operator+(const QuadMap &first, const QuadMap &second);
 bool operator==(const std::array<int,5> &lhs, const std::array<int,5> &rhs);
+std::ostream& operator<<(std::ostream& os, const std::array<int,5> quad);
+QuadMap genQuadRotations(std::array<int,5> quads, int size);
 QuadMap genQuadRotations(QuadMap quads, int size);
+
+//Helper functions for building 3x3 Square indexer maps
+SquareMap operator+(const SquareMap &first, const SquareMap &second);
+bool operator==(const std::array<int,10> &lhs, const std::array<int,10> &rhs);
+std::ostream& operator<<(std::ostream& os, const std::array<int,10> square);
+SquareMap genSquareRotations(std::array<int,10> quads, int size);
+SquareMap genSquareRotations(SquareMap quads, int size);
+
+void printUniqueSquares(Indexer *indexes);
