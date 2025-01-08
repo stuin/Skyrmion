@@ -66,6 +66,12 @@ public:
 	static void pauseLayer(Layer layer, bool pause=true);
 	static void hideLayer(Layer layer, bool hidden=true);
 
+	//Layer read features
+	static bool isLayerStatic(Layer layer);
+	static bool isLayerPaused(Layer layer);
+	static bool isLayerHidden(Layer layer);
+	static int getMaxLayer();
+
 	//Utility Functions
 	static sf::Texture *loadTexture(sf::Texture *texture, std::string filename, sint index=0);
 	static sf::Texture *getTexture(sint index);

@@ -44,7 +44,7 @@ public:
 	InputHandler(std::vector<std::string> keys, int layer, Node *parent = NULL);
 
 	//Key management
-	int addKey(int code);
+	int addKey(int code, int alt=0);
 	int addKey(std::string key);
 
 	//Key press and unpress

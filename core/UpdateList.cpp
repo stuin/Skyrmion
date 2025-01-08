@@ -127,6 +127,32 @@ void UpdateList::hideLayer(Layer layer, bool hidden) {
 	hiddenLayers[layer] = hidden;
 }
 
+//Check if layer is marked static
+bool UpdateList::isLayerStatic(Layer layer) {
+	if(layer >= MAXLAYER)
+		throw new std::invalid_argument(LAYERERROR);
+	return staticLayers[layer];
+}
+
+//Check if layer is paused
+bool UpdateList::isLayerPaused(Layer layer) {
+	if(layer >= MAXLAYER)
+		throw new std::invalid_argument(LAYERERROR);
+	return pausedLayers[layer];
+}
+
+//Check if layer is marked hidden
+bool UpdateList::isLayerHidden(Layer layer) {
+	if(layer >= MAXLAYER)
+		throw new std::invalid_argument(LAYERERROR);
+	return hiddenLayers[layer];
+}
+
+//Get highest occupied layer
+int UpdateList::getMaxLayer() {
+	return max;
+}
+
 //Load texture from file and add to set
 sf::Texture *UpdateList::loadTexture(sf::Texture *texture, std::string filename, sint index) {
 	if(index == 0)

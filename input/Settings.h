@@ -27,7 +27,9 @@ public:
 	//Load settings from file
 	static void loadSettings(std::string filename) {
 		std::ifstream file(filename);
-		data = nlohmann::json::parse(file);
+		nlohmann::json input = nlohmann::json::parse(file);
+		for(auto& el : input.items())
+			data[el.key()] = el.value();
 	}
 
 	//Get value functions

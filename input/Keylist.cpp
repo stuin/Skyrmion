@@ -1,6 +1,6 @@
 #include "Settings.h"
 
-nlohmann::json Settings::data;
+nlohmann::json Settings::data({});
 std::vector<std::pair<std::string, std::string>> Settings::edits;
 
 std::map<std::string, int> Settings::KEYMAP = {

@@ -82,15 +82,19 @@ int InputHandler::addKey(std::string key) {
 }
 
 //Register key with pressed/held states
-int InputHandler::addKey(int code) {
+int InputHandler::addKey(int code, int alt) {
 	controls.insert(controls.begin() + count, Keybind(code));
+
+	//Alternate keys
+	for(int i = 2; i <= MAXALTS; i++)
+		controls.insert(controls.begin() + count * i, Keybind(alt));
 
 	//Correct stored indexes
 	for(sint i = 0; i < controls.size(); i++) {
 		if(controls[i].combo > -1 && controls[i].combo > count)
-			controls[i].combo++;
+			controls[i].combo += controls[i].combo / count;
 		if(controls[i].duplicate > -1 && controls[i].duplicate > count)
-			controls[i].duplicate++;
+			controls[i].duplicate += controls[i].duplicate / count;
 	}
 
 	return count++;
@@ -133,8 +137,8 @@ void InputHandler::updateKey(int code, bool press) {
 
 		//Update press/held
 		if(j < controls.size()) {
-			i = controls[j].combo;
-			press = controls[i].held && controls[i+1].held;
+			int k = controls[j].combo;
+			press = controls[k].held && controls[k+1].held;
 			if(controls[j].held != press) {
 				controls[j].pressed = press;
 				controls[j].held = press;
@@ -145,8 +149,8 @@ void InputHandler::updateKey(int code, bool press) {
 
 //Clear pressed to separate newly pressed keys from held keys
 void InputHandler::clearPressed() {
-	for(Keybind key : controls)
-		key.pressed = false;
+	for(sint i = 0; i < controls.size(); i++)
+		controls[i].pressed = false;
 
 	//Mouse wheel special case
 	for(long unsigned int i = 0; i < controls.size(); i++)
