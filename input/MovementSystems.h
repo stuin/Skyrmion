@@ -3,6 +3,10 @@
 #include "../tiling/GridMaker.h"
 #include "InputHandler.h"
 
+/*
+ * Take in movement directions and adjust for collision and physics
+ */
+
 sf::Vector2f topDownMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i size, Indexer *collision);
 sf::Vector2f topDownMovement(Node *node, sf::Vector2f move, Indexer *collision);
 sf::Vector2f topDownMovement(Node *node, sf::Vector2f move, Indexer *collision, double distance);

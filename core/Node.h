@@ -19,7 +19,7 @@ using Layer = unsigned char;
 using sint = long unsigned int;
 
 /*
- * Sprite with collision
+ * Sprite with collision, events, parenting, etc.
  */
 
 struct WindowSize {

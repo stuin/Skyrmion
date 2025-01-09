@@ -9,6 +9,10 @@
 #define MAXALTS 2
 #define JOYSTICK_ZONE 5.0f
 
+/*
+ * Read input events and collect them into remmappable keybinds
+ */
+
 struct Keybind {
 	int key;
 	std::string configName = "";

@@ -9,9 +9,6 @@
 #include <iostream>
 #include <string>
 
-#define QuadMap std::vector<std::array<int,5>>
-#define SquareMap std::vector<std::array<int,10>>
-
 /*
  * Generates and stores tiles for maps
  */
@@ -76,10 +73,11 @@ public:
 class MapIndexer : public Indexer {
 private:
 	const std::map<int, int> indexes;
+	bool keepOthers = false;
 
 public:
-	MapIndexer(Indexer *previous, std::map<int, int> _indexes, int fallback, int scaleX = 1, int scaleY = 1)
-		: Indexer(previous, fallback, sf::Vector2i(scaleX, scaleY)), indexes(_indexes) {
+	MapIndexer(Indexer *previous, std::map<int, int> _indexes, int fallback, int scaleX = 1, int scaleY = 1, bool _keepOthers=false)
+		: Indexer(previous, fallback, sf::Vector2i(scaleX, scaleY)), indexes(_indexes), keepOthers(_keepOthers) {
 
 	}
 
@@ -93,25 +91,9 @@ public:
 		auto tile = indexes.find(c);
 		if(tile != indexes.end())
 			return tile->second;
-		return fallback;
+		return keepOthers ? c : fallback;
 	}
 };
 
 //Helper functions for building indexer maps
 std::map<int, int> operator+(const std::map<int, int> &first, const std::map<int, int> &second);
-
-//Helper functions for building Quad indexer maps
-QuadMap operator+(const QuadMap &first, const QuadMap &second);
-bool operator==(const std::array<int,5> &lhs, const std::array<int,5> &rhs);
-std::ostream& operator<<(std::ostream& os, const std::array<int,5> quad);
-QuadMap genQuadRotations(std::array<int,5> quads, int size);
-QuadMap genQuadRotations(QuadMap quads, int size);
-
-//Helper functions for building 3x3 Square indexer maps
-SquareMap operator+(const SquareMap &first, const SquareMap &second);
-bool operator==(const std::array<int,10> &lhs, const std::array<int,10> &rhs);
-std::ostream& operator<<(std::ostream& os, const std::array<int,10> square);
-SquareMap genSquareRotations(std::array<int,10> quads, int size);
-SquareMap genSquareRotations(SquareMap quads, int size);
-
-void printUniqueSquares(Indexer *indexes);

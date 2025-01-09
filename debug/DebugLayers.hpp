@@ -1,5 +1,9 @@
 #include "../core/UpdateList.h"
 
+/*
+ * Debug tool to show/hide layers in game with ctrl+number
+ */
+
 std::vector<std::string> debugLayerKeys = {
 	"/debug/layers/toggle0",
 	"/debug/layers/toggle1",

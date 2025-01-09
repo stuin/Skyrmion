@@ -2,6 +2,10 @@
 
 using Edge = unsigned short;
 
+/*
+ * Directed n-edge node graph/tree
+ */
+
 template<Edge size>
 class Vertex {
 private:

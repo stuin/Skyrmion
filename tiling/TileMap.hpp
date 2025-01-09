@@ -8,7 +8,8 @@
 #include <stdexcept>
 
 /*
- * Based off of sfml tutorial
+ * Featureful TileMap renderer
+ * Originally based off of sfml tutorial
  */
 
 class TileMap : public Node {
@@ -135,6 +136,7 @@ public:
     }
 };
 
+//Swap between multiple tilemaps with offset textures
 class AnimatedTileMap : public Node {
 private:
     std::vector<TileMap *> tilemaps;
@@ -248,6 +250,7 @@ public:
     }
 };
 
+//Split up tilemaps that are too large for one buffer
 class LargeTileMap : public Node {
 private:
     std::vector<TileMap *> tilemaps;

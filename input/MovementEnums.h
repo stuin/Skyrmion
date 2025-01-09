@@ -1,5 +1,9 @@
 #pragma once
 
+/*
+ * General purpose directional enums
+ */
+
 enum TileCollisionTypes {
 	EMPTY,
 	FULL,

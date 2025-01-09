@@ -12,6 +12,10 @@
 
 using json_pointer = nlohmann::json::json_pointer;
 
+/*
+ * Read/write from a centralized json settings file
+ */
+
 class Settings {
 private:
 	static nlohmann::json data;

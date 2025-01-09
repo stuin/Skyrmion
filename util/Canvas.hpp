@@ -4,7 +4,11 @@
 
 #include <vector>
 
-class DebugLayer : public Node {
+/*
+ * Render multiple shapes and texts
+ */
+
+class Canvas : public Node {
 private:
 	std::vector<sf::Shape *> shapes;
 	std::vector<sf::Text> words;
@@ -22,7 +26,7 @@ private:
     }
 
 public:
-	DebugLayer(std::string fontFile, sf::Vector2i size, Layer layer, sf::Color _color=sf::Color::Magenta, Node *parent=NULL) :
+	Canvas(std::string fontFile, sf::Vector2i size, Layer layer, sf::Color _color=sf::Color::Magenta, Node *parent=NULL) :
 	Node(layer, size, false, parent) {
 		font.loadFromFile(fontFile);
 		color = _color;
