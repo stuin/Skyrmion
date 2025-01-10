@@ -42,9 +42,6 @@ private:
 	static Layer max;
 	static bool running;
 
-	//Update loops
-	static void update(double time);
-	static void draw(sf::RenderTarget &window, sf::Vector2f offset=sf::Vector2f(0,0));
 	static void renderingThread(std::string title);
 
 public:
@@ -79,4 +76,10 @@ public:
 	//Start engine
 	static void startEngine(std::string title);
 	static void stopEngine();
+	static bool isRunning();
+
+	//Main loop functions
+	static void processEvents();
+	static void update(double time);
+	static void draw(sf::RenderTarget &window, sf::Vector2f offset=sf::Vector2f(0,0));
 };

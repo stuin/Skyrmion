@@ -11,6 +11,11 @@
 			"toggle7": "LCTRL+NUM8",
 			"toggle8": "LCTRL+NUM9",
 			"toggle9": "LCTRL+NUM0"
+		},
+		"breakpoints": {
+			"pause": "ESCAPE",
+			"resume": "SPACE",
+			"nextframe": "TAB"
 		}
 	}
 }

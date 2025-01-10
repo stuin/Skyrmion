@@ -173,8 +173,8 @@ sf::Texture *UpdateList::getTexture(sint index) {
 	return textureSet[index];
 }
 
-//Update all nodes in list
-void UpdateList::update(double time) {
+//Process window events on update thread
+void UpdateList::processEvents() {
 	int count = event_count;
 	event_count -= count;
 	WindowSize size = windowSize;
@@ -187,7 +187,10 @@ void UpdateList::update(double time) {
 			for(Node *node : it->second)
 				node->recieveEvent(event, &size);
 	}
+}
 
+//Update all nodes in list
+void UpdateList::update(double time) {
 	//Check collisions and updates
 	for(int layer = 0; layer <= max; layer++) {
 		Node *source = screen[layer];
@@ -382,10 +385,13 @@ void UpdateList::startEngine(std::string title) {
 		//Manage frame rate
 		sf::Time time = clock.getElapsedTime();
 		if(time >= nextFrame) {
-			//Next update time
+			nextFrame = time + FRAME_DELAY;
+
+			UpdateList::processEvents();
+
+			//Calculate update time
 			double delta = (time - lastTime).asSeconds();
 			lastTime = time;
-			nextFrame = time + FRAME_DELAY;
 
 			//Update nodes and sprites
 			UpdateList::update(delta);
@@ -400,4 +406,8 @@ void UpdateList::startEngine(std::string title) {
 
 void UpdateList::stopEngine() {
 	running = false;
+}
+
+bool UpdateList::isRunning() {
+	return running;
 }

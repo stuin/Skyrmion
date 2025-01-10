@@ -1,5 +1,3 @@
-#include "../core/UpdateList.h"
-
 /*
  * Debug tool to show/hide layers in game with ctrl+number
  */
@@ -22,20 +20,12 @@ private:
 	InputHandler input;
 
 public:
-	DebugLayers() : Node(UpdateList::getMaxLayer()+1, sf::Vector2i(16, 16), true),
-	input(debugLayerKeys, getLayer(), this) {
+	DebugLayers(int layer) : Node(layer, sf::Vector2i(16, 16), true),
+	input(debugLayerKeys, layer, this) {
 
-		UpdateList::staticLayer(getLayer());
-
-		input.pressedFunc = [](int i) {
-			if(i < UpdateList::getMaxLayer())
+		input.pressedFunc = [layer](int i) {
+			if(i < layer)
 				UpdateList::hideLayer(i, !UpdateList::isLayerHidden(i));
 		};
 	}
 };
-
-#if _DEBUG
-	#define DEBUGLAYERS Settings::loadSettings("src/Skyrmion/res/debug_settings.json"); UpdateList::addNode(new DebugLayers())
-#else
-	#define DEBUGLAYERS void
-#endif

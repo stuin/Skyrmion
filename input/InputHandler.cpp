@@ -203,7 +203,7 @@ void InputHandler::recieveEvent(sf::Event event, WindowSize *windowSize) {
 //Run key press functions
 void InputHandler::update(double time) {
 	for(sint i = 0; i < controls.size(); i++) {
-		if(controls[i].held) {
+		if(controls[i].held && controls[i].combo != -3) {
 			if(heldFunc != NULL)
 				heldFunc(i % count);
 			if(controls[i].pressed && pressedFunc != NULL)
