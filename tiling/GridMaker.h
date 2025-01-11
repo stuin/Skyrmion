@@ -34,6 +34,8 @@ public:
 	void setTile(sf::Vector2f position, int value);
 	virtual int getTileI(int x, int y);
 	virtual void setTileI(int x, int y, int value);
+	bool getTileB(int x, int y, int place);
+	void setTileB(int x, int y, int place, bool value);
 	void mapGrid(std::function<void(int, sf::Vector2f)> func);
 	void printGrid();
 

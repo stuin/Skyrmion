@@ -1,6 +1,6 @@
 # Skyrmion
 A 2D Game Engine built in C++, very focused on tilemaps.
-Requires [SFML](https://www.sfml-dev.org/) and [nlohmann json](https://json.nlohmann.me/).
+Requires [SFML](https://www.sfml-dev.org/), [nlohmann json](https://json.nlohmann.me/).
 
 ## Tilemaps
 
@@ -14,7 +14,7 @@ Load from txt files as ASCII art, each char representing a tile and it's propert
 - Tiles with different properties sharing the same texture
 - Invisible tiles
 - Changing tiles during runtime
-- Randomly choosing between mutiple textures
+- Randomly rotating or choosing between mutiple textures
 - Multiple layers rendering below and on top of other objects
 - Using multiple layers to visually extend into other tiles
 - Spawning objects at specific locations on startup

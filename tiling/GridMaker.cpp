@@ -13,6 +13,11 @@ int Indexer::getTile(sf::Vector2f position) {
 	return getTileI(position.x / getScale().x, position.y / getScale().y);
 }
 
+//Scale and set tile
+void Indexer::setTile(sf::Vector2f position, int value) {
+	setTileI(position.x / getScale().x, position.y / getScale().y, value);
+}
+
 //Get tile int from previous
 int Indexer::getTileI(int x, int y) {
 	if(inBounds(x, y))
@@ -20,15 +25,23 @@ int Indexer::getTileI(int x, int y) {
 	return fallback;
 }
 
-//Scale and set tile
-void Indexer::setTile(sf::Vector2f position, int value) {
-	setTileI(position.x / getScale().x, position.y / getScale().y, value);
-}
-
 //Set tile in grid
 void Indexer::setTileI(int x, int y, int value) {
 	if(inBounds(x, y))
 		previous->setTileI(x, y, value);
+}
+
+//Get an individual bit from a specific tile
+bool Indexer::getTileB(int x, int y, int place) {
+	return (getTileI(x, y) >> place) & (int)1;
+}
+
+//Set an individual bit on a specific tile
+void Indexer::setTileB(int x, int y, int place, bool value) {
+	if(value)
+		setTileI(x, y, getTileI(x, y) | ((int)1 << place));
+	else
+		setTileI(x, y, getTileI(x, y) & ~((int)1 << place));
 }
 
 //Run function on every square in grid
