@@ -1,5 +1,19 @@
 #include "UpdateList.h"
 
+#define SOKOL_IMPL
+#define SOKOL_GLCORE
+#include "../sokol_gp/thirdparty/sokol_gfx.h"
+#include "../sokol_gp/sokol_gp.h"
+#include "../sokol_gp/thirdparty/sokol_app.h"
+#include "../sokol_gp/thirdparty/sokol_glue.h"
+#include "../sokol_gp/thirdparty/sokol_log.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_STATIC
+#define STBI_NO_SIMD
+#define STBI_ONLY_PNG
+#include "../sokol_gp/thirdparty/stb_image.h"
+
 #define FRAME_DELAY sf::milliseconds(16.6)
 
 /*
@@ -13,15 +27,14 @@ std::bitset<MAXLAYER> UpdateList::pausedLayers;
 std::vector<Node *> UpdateList::deleted;
 
 std::atomic_int UpdateList::event_count = 0;
-std::deque<sf::Event> UpdateList::event_queue;
-std::unordered_map<sf::Event::EventType, std::vector<Node *>> UpdateList::listeners;
+std::deque<sapp_event*> event_queue;
+std::unordered_map<int, std::vector<Node *>> listeners;
 
 Node *UpdateList::camera = NULL;
-sf::View UpdateList::viewPlayer;
 WindowSize UpdateList::windowSize;
 std::bitset<MAXLAYER> UpdateList::hiddenLayers;
 std::vector<Node *> UpdateList::reloadBuffer;
-std::vector<sf::Texture *> UpdateList::textureSet;
+std::vector<sg_image> textureSet;
 
 Layer UpdateList::max = 0;
 bool UpdateList::running = true;
@@ -64,7 +77,7 @@ void UpdateList::clearLayer(Layer layer) {
 }
 
 //Subscribe node to cetain event type
-void UpdateList::addListener(Node *item, sf::Event::EventType type) {
+void UpdateList::addListener(Node *item, int type) {
 	auto it = listeners.find(type);
 	if(it == listeners.end()) {
 		std::vector<Node *> vec = {item};
@@ -80,7 +93,7 @@ Node *UpdateList::setCamera(Node *follow, sf::Vector2f size, sf::Vector2f positi
 		camera->setParent(follow);
 	} else
 		camera = new Node(0, sf::Vector2i(size.x,size.y), true, follow);
-	viewPlayer.setSize(size);
+	//viewPlayer.setSize(size);
 	camera->setPosition(position);
 	return camera;
 }
@@ -153,29 +166,39 @@ int UpdateList::getMaxLayer() {
 	return max;
 }
 
-//Load texture from file and add to set
-sf::Texture *UpdateList::loadTexture(sf::Texture *texture, std::string filename, sint index) {
-	if(index == 0)
-		index = textureSet.size();
-	while(index >= textureSet.size())
-		textureSet.push_back(NULL);
-	textureSet[index] = texture;
+static sg_image load_image(const char *filename) {
+    int width, height, channels;
+    uint8_t* data = stbi_load(filename, &width, &height, &channels, 4);
+    sg_image img = {SG_INVALID_ID};
+    if (!data) {
+        return img;
+    }
+    sg_image_desc image_desc = {0};
+    image_desc.width = width;
+    image_desc.height = height;
+    image_desc.data.subimage[0][0].ptr = data;
+    image_desc.data.subimage[0][0].size = (size_t)(width * height * 4);
+    img = sg_make_image(&image_desc);
+    stbi_image_free(data);
+    return img;
+}
 
-	if(!texture->loadFromFile(filename))
-		throw std::invalid_argument("Texture " + filename + " not found");
-	return texture;
+//Load texture from file and add to set
+int UpdateList::loadTexture(std::string filename) {
+	textureSet.push_back(load_image(filename.c_str()));
+	return textureSet.size() - 1;
 }
 
 //Get texture from set
-sf::Texture *UpdateList::getTexture(sint index) {
+/*sf::Texture *UpdateList::getTexture(sint index) {
 	if(index > textureSet.size())
 		throw std::invalid_argument("Texture " + std::to_string(index) + " not found");
 	return textureSet[index];
-}
+}*/
 
 //Process window events on update thread
 void UpdateList::processEvents() {
-	int count = event_count;
+	/*int count = event_count;
 	event_count -= count;
 	WindowSize size = windowSize;
 	for(int i = 0; i < count; i++) {
@@ -186,7 +209,7 @@ void UpdateList::processEvents() {
 		if(it != listeners.end())
 			for(Node *node : it->second)
 				node->recieveEvent(event, &size);
-	}
+	}*/
 }
 
 //Update all nodes in list
@@ -239,7 +262,7 @@ void UpdateList::update(double time) {
 }
 
 //Thread safe draw nodes in list
-void UpdateList::draw(sf::RenderTarget &window, sf::Vector2f offset) {
+void UpdateList::draw(sf::Vector2f offset) {
 	//Find camera position
 	sf::FloatRect cameraRect = sf::FloatRect(-100000,-100000,200000,200000);
 	if(camera != NULL)
@@ -255,13 +278,14 @@ void UpdateList::draw(sf::RenderTarget &window, sf::Vector2f offset) {
 			while(source != NULL) {
 				if(!source->isHidden() &&
 					(staticLayers[layer] || source->getRect().intersects(cameraRect))) {
-					sf::RenderStates state(source->getBlendMode());
 
-					if(source->getParent() != NULL)
-						state.transform.combine(source->getParent()->getGTransform());
-					state.transform.translate(offset);
-
-					window.draw(*source, state);
+					sgp_reset_color();
+					if(source->getTexture() != -1) {
+						sgp_set_image(0, textureSet[source->getTexture()]);
+						sf::FloatRect rect = source->getDrawRect();
+						sgp_draw_filled_rect(rect.left, rect.top, rect.width, rect.height);
+						sgp_reset_image(0);
+					}
 				}
 				source = source->getNext();
 			}
@@ -269,7 +293,7 @@ void UpdateList::draw(sf::RenderTarget &window, sf::Vector2f offset) {
 }
 
 //Seperate rendering thread
-void UpdateList::renderingThread(std::string title) {
+/*void UpdateList::renderingThread(std::string title) {
 	//Set frame rate manager
 	sf::Clock clock;
 	sf::Time nextFrame = clock.getElapsedTime();
@@ -349,16 +373,16 @@ void UpdateList::renderingThread(std::string title) {
 	std::cout << "Thread ending\n";
 
 	UpdateList::running = false;
-}
+}*/
 
 #if __linux__
 	#include <X11/Xlib.h>
-	#define init XInitThreads
+	#define initThreads XInitThreads
 #else
-	#define init void
+	#define initThreads void
 #endif
 
-void UpdateList::startEngine(std::string title) {
+/*void UpdateList::startEngine(std::string title) {
 	init();
 
 	//Set frame rate manager
@@ -402,6 +426,96 @@ void UpdateList::startEngine(std::string title) {
 	}
 
 	rendering.join();
+}*/
+
+static void frame(void) {
+    UpdateList::update(sapp_frame_duration());
+
+	// Get current window size.
+    int width = sapp_width(), height = sapp_height();
+
+    // Begin recording draw commands for a frame buffer of size (width, height).
+    sgp_begin(width, height);
+    // Set frame buffer drawing region to (0,0,width,height).
+    sgp_viewport(0, 0, width, height);
+
+    // Clear the frame buffer.
+    sgp_set_color(0.1f, 0.1f, 0.1f, 1.0f);
+    sgp_clear();
+
+    UpdateList::draw(sf::Vector2f(0,0));
+
+    // Begin a render pass.
+    sg_pass pass = {.swapchain = sglue_swapchain()};
+    sg_begin_pass(&pass);
+    // Dispatch all draw commands to Sokol GFX.
+    sgp_flush();
+    // Finish a draw command queue, clearing it.
+    sgp_end();
+    // End render pass.
+    sg_end_pass();
+    // Commit Sokol render.
+    sg_commit();
+}
+
+static void init(void) {
+	// initialize Sokol GFX
+    sg_desc sgdesc = {0};
+    sgdesc.environment = sglue_environment();
+    sgdesc.logger.func = slog_func;
+    sg_setup(&sgdesc);
+    if(!sg_isvalid()) {
+        fprintf(stderr, "Failed to create Sokol GFX context!\n");
+        exit(-1);
+    }
+
+    // initialize Sokol GP
+    sgp_desc sgpdesc = {0};
+    sgp_setup(&sgpdesc);
+    if(!sgp_is_valid()) {
+        fprintf(stderr, "Failed to create Sokol GP context: %s\n", sgp_get_error_message(sgp_get_last_error()));
+        exit(-1);
+    }
+
+    initThreads();
+
+    initialize();
+
+    std::cout << "Starting\n";
+
+    //Initial node update
+	/*for(int i = 0; i < UpdateList::max; i++) {
+		Node *source = UpdateList::getNode(i);
+
+		while(source != NULL) {
+			source->update(0);
+			source = source->getNext();
+		}
+	}*/
+
+	/*for(sg_image &image : textureSet) {
+    	if(sg_query_image_state(image)) {
+    		fprintf(stderr, "failed to load images");
+        	exit(-1);
+    	}
+    }*/
+}
+
+static void cleanup(void) {
+    sgp_shutdown();
+    sg_shutdown();
+}
+
+sapp_desc sokol_main(int argc, char* argv[]) {
+    (void)argc;
+    (void)argv;
+   	sapp_desc desc = {0};
+   	desc.init_cb = init;
+   	desc.frame_cb = frame;
+   	desc.cleanup_cb = cleanup;
+   	desc.window_title = "Sokol";
+   	desc.logger.func = slog_func;
+    return desc;
 }
 
 void UpdateList::stopEngine() {

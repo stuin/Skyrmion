@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+
 /*
  * General purpose directional enums
  */

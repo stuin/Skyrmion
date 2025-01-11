@@ -1,19 +1,13 @@
 #pragma once
 
-//SFML headers
-#include <SFML/System.hpp>
-#include <SFML/Graphics.hpp>
-
 #include <bitset>
 #include <functional>
-#include <iostream>
-#include <math.h>
 #include <stdexcept>
+
+#include "Vector.h"
 
 #define MAXLAYER 16
 #define LAYERERROR "Used collision layer > " + MAXLAYER
-
-#define RT2O2 sqrt(2) / 2.0
 
 using Layer = unsigned char;
 using sint = long unsigned int;
@@ -33,17 +27,24 @@ struct WindowSize {
 	}
 };
 
-class Node : public sf::Sprite {
+class Node {
 private:
 	//Base semi-public variables
 	Layer layer;
 	Node *parent = NULL;
 	bool hidden = false;
-	sf::BlendMode blendMode;
 
 	//Collision
 	sf::Vector2i size;
 	std::bitset<MAXLAYER> collisionLayers;
+
+	//Rendering
+	sf::Vector2f position = sf::Vector2f(0,0);
+	sf::Vector2f scale = sf::Vector2f(1,1);
+	sf::Vector2f origin = sf::Vector2f(0,0);
+	int blendMode;
+	int textureChannel = -1;
+	sf::IntRect textureRect;
 
 	//Background system variables
 	bool deleted = false;
@@ -59,24 +60,37 @@ public:
 
 	//General getters
 	int getLayer();
+	Node *getParent();
+	bool isHidden();
 	sf::Vector2i getSize();
 	sf::FloatRect getRect();
-	bool isHidden();
-	Node *getParent();
+
+	sf::Vector2f getPosition();
 	sf::Vector2f getGPosition();
+	sf::Vector2f getScale();
 	sf::Vector2f getGScale();
 	sf::Vector2f getInverseScale();
 	sf::Vector2f getInverseGScale();
-	sf::Transform getGTransform();
-	sf::BlendMode getBlendMode();
+	sf::Vector2f getOrigin();
+	sf::FloatRect getDrawRect();
+	int getBlendMode();
+	int getTexture();
 
 	//General setters
-	void setSize(sf::Vector2i size);
-	void setHidden(bool hidden=true);
 	void setParent(Node *parent);
+	void setHidden(bool hidden=true);
+	void setSize(sf::Vector2i size);
+
+	void setPosition(sf::Vector2f pos);
+	void setPosition(float x, float y);
 	void setGPosition(sf::Vector2f pos);
 	void setGPosition(float x, float y);
-	void setBlendMode(sf::BlendMode blendMode);
+	void setScale(sf::Vector2f scale);
+	void setOrigin(sf::Vector2f origin);
+	void setOrigin(float x, float y);
+	void setBlendMode(int blendMode);
+	void setTexture(int textureChannel);
+	void setTextureRect(sf::IntRect &rectangle);
 
 	//Collision system
 	std::bitset<MAXLAYER> getCollisionLayers();
@@ -103,13 +117,13 @@ public:
 	virtual void collide(Node *object, double time) {
 		collide(object);
 	}
-	virtual void recieveEvent(sf::Event event, WindowSize *windowSize) {}
+	virtual void recieveEvent(int ev, WindowSize *windowSize) {}
 	virtual void recieveSignal(int id, Node *sender) {}
 	virtual void reloadBuffer() {}
 };
 
 // Use SFML drawable instead of texture
-class DrawNode : public Node {
+/*class DrawNode : public Node {
 private:
 	sf::Drawable *image = NULL;
 
@@ -132,10 +146,10 @@ public:
 	sf::Drawable *getImage() {
 		return image;
 	}
-};
+};*/
 
 //Handles simple animations with horizontal spritesheets
-class AnimatedNode : public Node {
+/*class AnimatedNode : public Node {
 	int frameWidth = 0;
 	int frameHeight = 0;
     int maxFrames = 0;
@@ -172,14 +186,4 @@ public:
             }
         }
     }
-};
-
-//Essential vector functions
-sf::Vector2f vectorLength(sf::Vector2f dir, double distance);
-float distance(sf::Vector2f start, sf::Vector2f end=sf::Vector2f(0,0));
-sf::Vector2f operator*(const sf::Vector2f &first, const sf::Vector2f &second);
-sf::Vector2f operator*(const sf::Vector2f &first, const sf::Vector2i &second);
-sf::Vector2i operator*(const sf::Vector2i &first, const sf::Vector2i &second);
-sf::Vector2f operator/(const sf::Vector2f &first, const sf::Vector2f &second);
-std::ostream& operator<<(std::ostream& os, const sf::Vector2f &pos);
-std::ostream& operator<<(std::ostream& os, const sf::Vector2i &pos);
+};*/

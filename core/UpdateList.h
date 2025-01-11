@@ -26,18 +26,17 @@ private:
 
 	//Window event system
 	static std::atomic_int event_count;
-	static std::deque<sf::Event> event_queue;
-	static std::unordered_map<sf::Event::EventType, std::vector<Node *>> listeners;
+	//static std::deque<sapp_event*> event_queue;
+	//static std::unordered_map<sapp_event_type, std::vector<Node *>> listeners;
 
 	//Viewport variables
 	static Node *camera;
-	static sf::View viewPlayer;
 	static WindowSize windowSize;
 
 	//Display special cases
 	static std::bitset<MAXLAYER> hiddenLayers;
 	static std::vector<Node *> reloadBuffer;
-	static std::vector<sf::Texture *> textureSet;
+	//static std::vector<sg_image> textureSet;
 
 	static Layer max;
 	static bool running;
@@ -50,7 +49,7 @@ public:
 	static void addNodes(std::vector<Node *> nodes);
 	static Node *getNode(Layer layer);
 	static void clearLayer(Layer layer);
-	static void addListener(Node *item, sf::Event::EventType type);
+	static void addListener(Node *item, int type);
 
 	//Special node features
 	static Node *setCamera(Node *follow, sf::Vector2f size, sf::Vector2f position=sf::Vector2f(0,0));
@@ -70,8 +69,8 @@ public:
 	static int getMaxLayer();
 
 	//Utility Functions
-	static sf::Texture *loadTexture(sf::Texture *texture, std::string filename, sint index=0);
-	static sf::Texture *getTexture(sint index);
+	static int loadTexture(std::string filename);
+	//static sf::Texture *getTexture(sint index);
 
 	//Start engine
 	static void startEngine(std::string title);
@@ -81,5 +80,7 @@ public:
 	//Main loop functions
 	static void processEvents();
 	static void update(double time);
-	static void draw(sf::RenderTarget &window, sf::Vector2f offset=sf::Vector2f(0,0));
+	static void draw(sf::Vector2f offset=sf::Vector2f(0,0));
 };
+
+void initialize();
