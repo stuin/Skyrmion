@@ -1,14 +1,12 @@
 #pragma once
 
 #include <nlohmann/json.hpp>
-#include <SFML/Window.hpp>
 
 #include <fstream>
 #include <iostream>
 #include <string>
 
-#define MOUSE_OFFSET 150
-#define JOYSTICK_OFFSET 160
+#include "../core/Event.h"
 
 using json_pointer = nlohmann::json::json_pointer;
 
@@ -20,14 +18,9 @@ class Settings {
 private:
 	static nlohmann::json data;
 	static std::vector<std::pair<std::string, std::string>> edits;
+	static std::map<std::string, int> EVENT_KEYMAP;
 
 public:
-	//Full lists in Keylist.cpp
-	static std::map<std::string, int> KEYMAP;
-	static std::map<sf::Mouse::Button, int> MOUSEBUTTON;
-	static std::map<int, sf::Joystick::Axis> JOYSTICKAXIS;
-	static std::map<sf::Joystick::Axis, int> JOYSTICKID;
-
 	//Load settings from file
 	static void loadSettings(std::string filename) {
 		std::ifstream file(filename);
@@ -54,7 +47,7 @@ public:
 		//Convert to uppercase
 		for(long unsigned int i = 0; i < keyname.length(); i++)
 			keyname[i] = toupper(keyname[i]);
-		return KEYMAP[keyname];
+		return EVENT_KEYMAP[keyname];
 	}
 
 	//Get key number from settings field

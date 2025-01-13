@@ -16,6 +16,17 @@
  * Manages list of nodes through update cycle
  */
 
+struct WindowSize {
+	float shiftX;
+	float shiftY;
+	int cornerX;
+	int cornerY;
+
+	sf::Vector2f worldPos(int x, int y) {
+		return sf::Vector2f(x * shiftX + cornerX, y * shiftY + cornerY);
+	}
+};
+
 class UpdateList {
 private:
 	//Node management
@@ -25,7 +36,7 @@ private:
 	static std::vector<Node *> deleted;
 
 	//Window event system
-	static std::atomic_int event_count;
+	//static std::atomic_int event_count;
 	//static std::deque<sapp_event*> event_queue;
 	//static std::unordered_map<sapp_event_type, std::vector<Node *>> listeners;
 
@@ -42,6 +53,7 @@ private:
 	static bool running;
 
 	static void renderingThread(std::string title);
+	static void updateThread();
 
 public:
 	//Manage node lists
@@ -80,7 +92,13 @@ public:
 	//Main loop functions
 	static void processEvents();
 	static void update(double time);
-	static void draw(sf::Vector2f offset=sf::Vector2f(0,0));
+	static void draw(sf::Vector2f offset, sf::Vector2i size);
+
+	//Sokol callback functions
+	static void frame(void);
+	static void init(void);
+	static void cleanup(void);
 };
 
 void initialize();
+std::string windowTitle();

@@ -20,6 +20,7 @@ struct Keybind {
 	long int duplicate = -1;
 	bool pressed = false;
 	bool held = false;
+	int lastFrame = 0;
 
 	Keybind(int _key) {
 		key = _key;
@@ -52,11 +53,11 @@ public:
 	int addKey(std::string key);
 
 	//Key press and unpress
-	void updateKey(int code, bool press);
+	void updateKey(int code, bool press, int frame=0);
 	void clearPressed();
 
 	//System updates loop
-	void recieveEvent(sf::Event event, WindowSize *windowSize);
+	void recieveEvent(Event event);
 	void update(double time);
 };
 

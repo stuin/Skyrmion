@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 #include "Vector.h"
+#include "Event.h"
 
 #define MAXLAYER 16
 #define LAYERERROR "Used collision layer > " + MAXLAYER
@@ -15,17 +16,6 @@ using sint = long unsigned int;
 /*
  * Sprite with collision, events, parenting, etc.
  */
-
-struct WindowSize {
-	float shiftX;
-	float shiftY;
-	int cornerX;
-	int cornerY;
-
-	sf::Vector2f worldPos(int x, int y) {
-		return sf::Vector2f(x * shiftX + cornerX, y * shiftY + cornerY);
-	}
-};
 
 class Node {
 private:
@@ -117,7 +107,7 @@ public:
 	virtual void collide(Node *object, double time) {
 		collide(object);
 	}
-	virtual void recieveEvent(int ev, WindowSize *windowSize) {}
+	virtual void recieveEvent(Event event) {}
 	virtual void recieveSignal(int id, Node *sender) {}
 	virtual void reloadBuffer() {}
 };
