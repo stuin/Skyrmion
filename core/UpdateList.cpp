@@ -30,10 +30,13 @@ Node *UpdateList::camera = NULL;
 WindowSize UpdateList::windowSize;
 std::bitset<MAXLAYER> UpdateList::hiddenLayers;
 std::vector<Node *> UpdateList::reloadBuffer;
-std::vector<sg_image> textureSet;
 
 Layer UpdateList::max = 0;
-bool UpdateList::running = true;
+bool UpdateList::running = false;
+
+//Textures
+std::vector<sg_image> textureSet;
+std::vector<sf::Vector2i> textureSizes;
 
 //Event handling
 std::atomic_int event_count = 0;
@@ -169,6 +172,8 @@ static sg_image load_image(const char *filename) {
     uint8_t* data = stbi_load(filename, &width, &height, &channels, 4);
     sg_image img = {SG_INVALID_ID};
     if (!data) {
+    	textureSet.push_back(img);
+    	textureSizes.push_back(sf::Vector2i(0,0));
         return img;
     }
     sg_image_desc image_desc = {0};
@@ -178,21 +183,21 @@ static sg_image load_image(const char *filename) {
     image_desc.data.subimage[0][0].size = (size_t)(width * height * 4);
     img = sg_make_image(&image_desc);
     stbi_image_free(data);
+    textureSet.push_back(img);
+    textureSizes.push_back(sf::Vector2i(width, height));
     return img;
 }
 
 //Load texture from file and add to set
 int UpdateList::loadTexture(std::string filename) {
-	textureSet.push_back(load_image(filename.c_str()));
+	load_image(filename.c_str());
 	return textureSet.size() - 1;
 }
 
-//Get texture from set
-/*sf::Texture *UpdateList::getTexture(sint index) {
-	if(index > textureSet.size())
-		throw std::invalid_argument("Texture " + std::to_string(index) + " not found");
-	return textureSet[index];
-}*/
+//Get size of texture
+sf::Vector2i UpdateList::getTextureSize(int index) {
+	return textureSizes[index];
+}
 
 //Process window events on update thread
 void UpdateList::processEvents() {
@@ -274,7 +279,8 @@ void UpdateList::draw(sf::Vector2f offset, sf::Vector2i size) {
     sgp_project(cameraRect.left, cameraRect.left+cameraRect.width, cameraRect.top, cameraRect.top+cameraRect.height);
 
     // Clear the frame buffer.
-    sgp_set_color(0.1f, 0.1f, 0.1f, 1.0f);
+    Color background = backgroundColor();
+    sgp_set_color(background.red, background.green, background.blue, background.alpha);
     sgp_clear();
 
 	//Render each node in order
@@ -287,11 +293,39 @@ void UpdateList::draw(sf::Vector2f offset, sf::Vector2i size) {
 					(staticLayers[layer] || source->getRect().intersects(cameraRect))) {
 
 					sgp_reset_color();
-					if(source->getTexture() != -1) {
+					sgp_set_blend_mode((sgp_blend_mode)source->getBlendMode());
+
+					sf::FloatRect rect = source->getDrawRect();
+					std::vector<TextureRect> *textureRects = source->getTextureRects();
+
+					if(source->getTexture() != -1 && textureRects->size() == 0) {
+						//Default square texture
 						sgp_set_image(0, textureSet[source->getTexture()]);
-						sf::FloatRect rect = source->getDrawRect();
 						sgp_draw_filled_rect(rect.left, rect.top, rect.width, rect.height);
 						sgp_reset_image(0);
+					} else if(source->getTexture() != -1) {
+						//Tilemapped or partial texture
+						sgp_set_image(0, textureSet[source->getTexture()]);
+						//sgp_textured_rect outRects[textureRects->size()];
+						for(int i = 0; i < textureRects->size(); i++) {
+							TextureRect tex = (*textureRects)[i];
+							sf::Vector2f scale = source->getScale();
+							if(tex.width != 0 && tex.height != 0) {
+								sgp_rect dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, abs(tex.width)*scale.x, abs(tex.height)*scale.y};
+								sgp_rect src = {tex.tx, tex.ty, tex.width, tex.height};
+								if(tex.rotation != 0) {
+									sgp_push_transform();
+									sgp_rotate_at(tex.rotation, dst.x + dst.w/2.0, dst.y + dst.h/2.0);
+									sgp_draw_textured_rect(0, dst, src);
+									sgp_pop_transform();
+								} else {
+									sgp_draw_textured_rect(0, dst, src);
+								}
+							}
+						}
+						sgp_reset_image(0);
+					} else {
+						sgp_draw_filled_rect(rect.left, rect.top, rect.width, rect.height);
 					}
 				}
 				source = source->getNext();
@@ -300,17 +334,23 @@ void UpdateList::draw(sf::Vector2f offset, sf::Vector2i size) {
 }
 
 void UpdateList::updateThread() {
+	std::cout << "Initializing game\n";
+    initialize();
+}
+
+void UpdateList::startEngine() {
 	std::cout << "Update thread starting\n";
 
 	//Initial node update
-	for(Node *layer : screen) {
-		Node *source = layer;
+	for(int layer = 0; layer <= max; layer++) {
+		Node *source = screen[layer];
 
 		while(source != NULL) {
-			source->update(0);
+			source->update(1);
 			source = source->getNext();
 		}
 	}
+	UpdateList::running = true;
 
 	stm_setup();
 	uint64_t lastTime = stm_now();
@@ -541,12 +581,18 @@ void UpdateList::init(void) {
         exit(-1);
     }
 
+    //Load textures
+	for(std::string file : textureFiles())
+		UpdateList::loadTexture(file);
+
+    //Start update thread and initialize
     initThreads();
-
-    std::cout << "Initializing game\n";
-    initialize();
-
 	updates = std::thread(UpdateList::updateThread);
+
+	while(!UpdateList::running) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+
     std::cout << "Starting Rendering\n";
 
 	/*for(sg_image &image : textureSet) {
@@ -577,12 +623,15 @@ bool UpdateList::isRunning() {
 sapp_desc sokol_main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;
+
+    std::string title = windowTitle();
+
    	sapp_desc desc = {0};
    	desc.init_cb = UpdateList::init;
    	desc.frame_cb = UpdateList::frame;
    	desc.event_cb = event;
    	desc.cleanup_cb = UpdateList::cleanup;
-   	desc.window_title = windowTitle().c_str();
+   	desc.window_title = title.c_str();
    	desc.logger.func = slog_func;
     return desc;
 }

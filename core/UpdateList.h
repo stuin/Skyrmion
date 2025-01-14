@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "Node.h"
+#include "Color.h"
 
 /*
  * Manages list of nodes through update cycle
@@ -82,10 +83,11 @@ public:
 
 	//Utility Functions
 	static int loadTexture(std::string filename);
+	static sf::Vector2i getTextureSize(int index);
 	//static sf::Texture *getTexture(sint index);
 
 	//Start engine
-	static void startEngine(std::string title);
+	static void startEngine();
 	static void stopEngine();
 	static bool isRunning();
 
@@ -100,5 +102,8 @@ public:
 	static void cleanup(void);
 };
 
+//Functions to be implemented by the game
 void initialize();
 std::string windowTitle();
+Color backgroundColor();
+std::vector<std::string> textureFiles();

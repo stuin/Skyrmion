@@ -18,11 +18,7 @@ private:
     const int tileY;
     Indexer *indexes;
     int offset = 0;
-
-    //Graphical variables
-    sf::VertexArray vertices;
-    sf::Texture *tileset;
-    sf::RenderTexture buffer;
+    int tileset = 0;
 
     uint fullWidth = 0;
     uint fullHeight = 0;
@@ -33,7 +29,7 @@ private:
 
 public:
 
-    TileMap(sf::Texture *_tileset, int _tileX, int _tileY, Indexer *_indexes, Layer layer = 0, int _offset = 0, sf::Rect<uint> border=sf::Rect<uint>())
+    TileMap(int _tileset, int _tileX, int _tileY, Indexer *_indexes, Layer layer = 0, int _offset = 0, sf::Rect<uint> border=sf::Rect<uint>())
      : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes), offset(_offset), tileset(_tileset) {
 
         //Set sizing
@@ -53,18 +49,20 @@ public:
         setSize(sf::Vector2i(tileX * width, tileY * height));
         setOrigin(0, 0);
         setPosition(startX * tileX, startY * tileY);
+        setTexture(tileset);
 
         //std::cout << " " << startX << "," << startY << ", " << width << "," << height << "\n";
         //std::cout << toString(getGPosition()) << ":" << toString(getGScale()) <<  "\n";
 
         //Set up buffer texture
-        if(!buffer.create(tileX * width, tileY * height))
-            throw std::logic_error("Error creating TileMap buffer");
-        setTexture(buffer.getTexture());
+        //if(!buffer.create(tileX * width, tileY * height))
+        //    throw std::logic_error("Error creating TileMap buffer");
+        //setTexture(buffer.getTexture());
 
         // resize the vertex array to fit the level size
-        vertices.setPrimitiveType(sf::Quads);
-        vertices.resize(width * height * 4);
+        //vertices.setPrimitiveType(sf::Quads);
+        //vertices.resize(width * height * 4);
+        getTextureRects()->reserve(width * height * 4);
 
         //Load textures
         reload();
@@ -78,7 +76,7 @@ public:
     }
 
     int countTextures() {
-        return (tileset->getSize().x / tileX) * (tileset->getSize().y / tileY);
+        return (UpdateList::getTextureSize(tileset).x / tileX) * (UpdateList::getTextureSize(tileset).y / tileY);
     }
 
     void reload() {
@@ -90,18 +88,33 @@ public:
                 // get the current tile number
                 int tileValue = indexes->getTile(sf::Vector2f(i + startX, j + startY));
                 int tileNumber = (tileValue % numTextures) + offset;
-                int rotations = (tileValue / numTextures);
+                int rotations = (tileValue / numTextures) % 4;
                 int fliph = rotations / 4 % 2;
                 int flipv = rotations / 8;
 
                 // find its position in the tileset texture
-                int tu = tileNumber % (tileset->getSize().x / tileX);
-                int tv = tileNumber / (tileset->getSize().x / tileX);
+                int tu = tileNumber % (UpdateList::getTextureSize(tileset).x / tileX);
+                int tv = tileNumber / (UpdateList::getTextureSize(tileset).x / tileX);
 
                 // get a pointer to the current tile's quad
-                sf::Vertex* quad = &vertices[(i + j * width) * 4];
+                TextureRect quad = (*getTextureRects())[(i + j * width) * 4];
+                //sf::Vertex* quad = &vertices[(i + j * width) * 4];
 
                 if(tileNumber - offset != -1) {
+                    quad.tx = (tu+fliph) * tileX;
+                    quad.ty = (tv+flipv) * tileY;
+                    quad.width = fliph ? -tileX : tileX;
+                    quad.height = flipv ? -tileY : tileY;
+                    quad.px = i * tileX;
+                    quad.py = j * tileY;
+                    quad.rotation = PIO2*rotations;
+                } else {
+                    quad.width = 0;
+                    quad.height = 0;
+                }
+                setTextureRect(quad, (i + j * width) * 4);
+
+                /*if(tileNumber - offset != -1) {
                     // define its 4 texture coordinates
                     quad[(0 + rotations + fliph - flipv) % 4].texCoords = sf::Vector2f(tu * tileX, tv * tileY);
                     quad[(1 + rotations - fliph + flipv) % 4].texCoords = sf::Vector2f((tu + 1) * tileX, tv * tileY);
@@ -118,16 +131,16 @@ public:
                     quad[1].position = sf::Vector2f(0, 0);
                     quad[2].position = sf::Vector2f(0, 0);
                     quad[3].position = sf::Vector2f(0, 0);
-                }
+                }*/
             }
         UpdateList::scheduleReload(this);
     }
 
     void reloadBuffer() {
         //Draw to buffer
-        buffer.clear(sf::Color::Transparent);
-        buffer.draw(vertices, sf::RenderStates(tileset));
-        buffer.display();
+        //buffer.clear(sf::Color::Transparent);
+        //buffer.draw(vertices, sf::RenderStates(tileset));
+        //buffer.display();
     }
 
     void setIndex(Indexer *indexes) {
@@ -137,7 +150,7 @@ public:
 };
 
 //Swap between multiple tilemaps with offset textures
-class AnimatedTileMap : public Node {
+/*class AnimatedTileMap : public Node {
 private:
     std::vector<TileMap *> tilemaps;
     int numTiles = 0;
@@ -301,4 +314,4 @@ public:
             nodes.push_back(map);
         return nodes;
     }
-};
+};*/

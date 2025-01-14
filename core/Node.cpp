@@ -102,7 +102,12 @@ int Node::getBlendMode() {
 
 //Get texture number
 int Node::getTexture() {
-	return textureChannel;
+	return texture;
+}
+
+//Get sections of texture to render
+std::vector<TextureRect> *Node::getTextureRects() {
+	return &textureRects;
 }
 
 //Set parent node
@@ -143,6 +148,9 @@ void Node::setGPosition(float x, float y) {
 void Node::setScale(sf::Vector2f scale) {
 	this->scale = scale;
 }
+void Node::setScale(float x, float y) {
+	this->scale = sf::Vector2f(x, y);
+}
 
 //Set origin
 void Node::setOrigin(sf::Vector2f origin) {
@@ -159,12 +167,15 @@ void Node::setBlendMode(int blendMode) {
 
 //Set texture channel
 void Node::setTexture(int texture) {
-	this->textureChannel = texture;
+	this->texture = texture;
 }
 
 //Set texture rect
-void Node::setTextureRect(sf::IntRect &rectangle) {
-	this->textureRect = rectangle;
+void Node::setTextureRect(TextureRect &rectangle, int i) {
+	if(i < textureRects.size())
+		textureRects[i] = rectangle;
+	else
+		textureRects.push_back(rectangle);
 }
 
 //Get list of layers node collides with

@@ -32,9 +32,9 @@ private:
 	sf::Vector2f position = sf::Vector2f(0,0);
 	sf::Vector2f scale = sf::Vector2f(1,1);
 	sf::Vector2f origin = sf::Vector2f(0,0);
-	int blendMode;
-	int textureChannel = -1;
-	sf::IntRect textureRect;
+	int blendMode = 1;
+	int texture = -1;
+	std::vector<TextureRect> textureRects;
 
 	//Background system variables
 	bool deleted = false;
@@ -65,6 +65,7 @@ public:
 	sf::FloatRect getDrawRect();
 	int getBlendMode();
 	int getTexture();
+	std::vector<TextureRect> *getTextureRects();
 
 	//General setters
 	void setParent(Node *parent);
@@ -76,11 +77,12 @@ public:
 	void setGPosition(sf::Vector2f pos);
 	void setGPosition(float x, float y);
 	void setScale(sf::Vector2f scale);
+	void setScale(float x, float y);
 	void setOrigin(sf::Vector2f origin);
 	void setOrigin(float x, float y);
 	void setBlendMode(int blendMode);
 	void setTexture(int textureChannel);
-	void setTextureRect(sf::IntRect &rectangle);
+	void setTextureRect(TextureRect &rectangle, int i=0);
 
 	//Collision system
 	std::bitset<MAXLAYER> getCollisionLayers();

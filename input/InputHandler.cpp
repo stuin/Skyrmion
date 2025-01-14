@@ -68,6 +68,7 @@ InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *paren
 void InputHandler::add_listeners() {
 	UpdateList::addNode(this);
 	UpdateList::addListener(this, EVENT_KEYPRESS);
+	UpdateList::addListener(this, EVENT_FOCUS);
 }
 
 //Register key through configurable settings
@@ -97,7 +98,7 @@ int InputHandler::addKey(int code, int alt) {
 }
 
 //Find if key is used and update pressed/held states
-void InputHandler::updateKey(int code, bool press, int frame) {
+void InputHandler::updateKey(int code, bool press) {
 	if(remap != -1 && remap < controls.size()) {
 		controls[remap].key = code;
 		remap = -1;
@@ -108,10 +109,6 @@ void InputHandler::updateKey(int code, bool press, int frame) {
 	sint i = 0;
 	while(i < controls.size() && code != controls[i].key)
 		i++;
-
-	//if(frame != 0 && controls[i].lastFrame + 1 >= frame)
-	//	return;
-	controls[i].lastFrame = frame;
 
 	//Update press/held
 	if(i < controls.size() && controls[i].held != press) {
@@ -148,19 +145,22 @@ void InputHandler::updateKey(int code, bool press, int frame) {
 }
 
 //Clear pressed to separate newly pressed keys from held keys
-void InputHandler::clearPressed() {
+void InputHandler::clearPressed(bool clearHeld) {
 
 	//Mouse wheel special case
 	for(long unsigned int i = 0; i < controls.size(); i++) {
 		controls[i].pressed = false;
-		if(controls[i].key == MOUSE_OFFSET+5 || controls[i].key == MOUSE_OFFSET+6)
+		if(controls[i].key == MOUSE_OFFSET+5 || controls[i].key == MOUSE_OFFSET+6 || clearHeld)
 			controls[i].held = false;
 	}
 }
 
 //Convert draw thread input events to key updates
 void InputHandler::recieveEvent(Event event) {
-	updateKey(event.code, event.down, event.x);
+	if(event.type == EVENT_KEYPRESS)
+		updateKey(event.code, event.down);
+	else
+		clearPressed(true);
 }
 
 //Run key press functions

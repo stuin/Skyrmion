@@ -3,7 +3,10 @@
 #include <functional>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <string>
+
+#include "../core/Vector.h"
 
 /*
  * Generates and stores tiles for maps
