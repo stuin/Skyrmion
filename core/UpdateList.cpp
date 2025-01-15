@@ -3,18 +3,24 @@
 
 #define SOKOL_IMPL
 #define SOKOL_GLCORE
-#include "../sokol/sokol_gfx.h"//
-#include "../sokol_gp/sokol_gp.h"//
-#include "../sokol/sokol_app.h"//
-#include "../sokol/sokol_glue.h"//
-#include "../sokol/sokol_time.h"//
-#include "../sokol/sokol_log.h"//
+#define SOKOL_TRACE_HOOKS
+#include "../include/sokol/sokol_gfx.h"//
+#include "../include/sokol_gp/sokol_gp.h"//
+#include "../include/sokol/sokol_app.h"//
+#include "../include/sokol/sokol_glue.h"//
+#include "../include/sokol/sokol_time.h"//
+#include "../include/sokol/sokol_log.h"//
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_STATIC
 #define STBI_NO_SIMD
 #define STBI_ONLY_PNG
-#include "../sokol_gp/thirdparty/stb_image.h"//
+#include "../include/sokol_gp/thirdparty/stb_image.h"//
+
+#define SOKOL_IMGUI_IMPL
+#include "../include/imgui/imgui.h"//
+#include "../include/sokol/util/sokol_imgui.h"//
+#include "../include/sokol/util/sokol_gfx_imgui.h"//
 
 /*
  * Manages layers of nodes through update cycle
@@ -44,6 +50,7 @@ std::deque<Event> event_queue;
 std::array<std::vector<Node *>, EVENT_MAX> listeners;
 
 std::thread updates;
+sgimgui_t sgimgui;
 
 //Add node to update cycle
 void UpdateList::addNode(Node *next) {
@@ -292,44 +299,51 @@ void UpdateList::draw(sf::Vector2f offset, sf::Vector2i size) {
 				if(!source->isHidden() &&
 					(staticLayers[layer] || source->getRect().intersects(cameraRect))) {
 
-					sgp_reset_color();
-					sgp_set_blend_mode((sgp_blend_mode)source->getBlendMode());
-
-					sf::FloatRect rect = source->getDrawRect();
-					std::vector<TextureRect> *textureRects = source->getTextureRects();
-
-					if(source->getTexture() != -1 && textureRects->size() == 0) {
-						//Default square texture
-						sgp_set_image(0, textureSet[source->getTexture()]);
-						sgp_draw_filled_rect(rect.left, rect.top, rect.width, rect.height);
-						sgp_reset_image(0);
-					} else if(source->getTexture() != -1) {
-						//Tilemapped or partial texture
-						sgp_set_image(0, textureSet[source->getTexture()]);
-						//sgp_textured_rect outRects[textureRects->size()];
-						for(int i = 0; i < textureRects->size(); i++) {
-							TextureRect tex = (*textureRects)[i];
-							sf::Vector2f scale = source->getScale();
-							if(tex.width != 0 && tex.height != 0) {
-								sgp_rect dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, abs(tex.width)*scale.x, abs(tex.height)*scale.y};
-								sgp_rect src = {tex.tx, tex.ty, tex.width, tex.height};
-								if(tex.rotation != 0) {
-									sgp_push_transform();
-									sgp_rotate_at(tex.rotation, dst.x + dst.w/2.0, dst.y + dst.h/2.0);
-									sgp_draw_textured_rect(0, dst, src);
-									sgp_pop_transform();
-								} else {
-									sgp_draw_textured_rect(0, dst, src);
-								}
-							}
-						}
-						sgp_reset_image(0);
-					} else {
-						sgp_draw_filled_rect(rect.left, rect.top, rect.width, rect.height);
-					}
+					drawNode(source);
 				}
 				source = source->getNext();
 			}
+	}
+}
+
+void UpdateList::drawNode(Node *source) {
+	sgp_reset_color();
+	sgp_set_blend_mode((sgp_blend_mode)source->getBlendMode());
+
+	sf::FloatRect rect = source->getDrawRect();
+	std::vector<TextureRect> *textureRects = source->getTextureRects();
+
+	if(source->getTexture() != -1 && textureRects->size() == 0) {
+		//Default square texture
+		sgp_set_image(0, textureSet[source->getTexture()]);
+		sgp_draw_filled_rect(rect.left, rect.top, rect.width, rect.height);
+		sgp_reset_image(0);
+	} else if(source->getTexture() != -1) {
+		//Tilemapped or partial texture
+		sgp_set_image(0, textureSet[source->getTexture()]);
+		sgp_textured_rect outRects[textureRects->size()];
+		int renderCount = 0;
+		for(int i = 0; i < textureRects->size(); i++) {
+			TextureRect tex = (*textureRects)[i];
+			sf::Vector2f scale = source->getScale();
+			if(tex.width != 0 && tex.height != 0) {
+				outRects[renderCount].dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, abs(tex.width)*scale.x, abs(tex.height)*scale.y};
+				outRects[renderCount].src = {(float)tex.tx, (float)tex.ty, (float)tex.width, (float)tex.height};
+				renderCount++;
+				//if(tex.rotation != 0) {
+				//	sgp_push_transform();
+				//	sgp_rotate_at(tex.rotation, dst.x + dst.w/2.0, dst.y + dst.h/2.0);
+				//	sgp_draw_textured_rect(0, dst, src);
+				//	sgp_pop_transform();
+				//} else {
+				//	sgp_draw_textured_rect(0, dst, src);
+				//}
+			}
+		}
+		sgp_draw_textured_rects(0, outRects, renderCount);
+		sgp_reset_image(0);
+	} else {
+		sgp_draw_filled_rect(rect.left, rect.top, rect.width, rect.height);
 	}
 }
 
@@ -367,89 +381,6 @@ void UpdateList::startEngine() {
 
 	std::cout << "Update thread ending\n";
 }
-
-//Seperate rendering thread
-/*void UpdateList::renderingThread(std::string title) {
-	//Set frame rate manager
-	sf::Clock clock;
-	sf::Time nextFrame = clock.getElapsedTime();
-
-	std::cout << "Thread starting\n";
-	sf::RenderWindow window(sf::VideoMode::getDesktopMode(), title);
-
-    //Run rendering loop
-	while(window.isOpen()) {
-		//Calculate window size and scaling
-		float shiftX = viewPlayer.getSize().x / window.getSize().x;
-		float shiftY = viewPlayer.getSize().y / window.getSize().y;
-		int cornerX = viewPlayer.getCenter().x - viewPlayer.getSize().x/2;
-		int cornerY = viewPlayer.getCenter().y - viewPlayer.getSize().y/2;
-		windowSize = {shiftX, shiftY, cornerX, cornerY};
-
-		//Check event updates
-		sf::Event event;
-		while(window.pollEvent(event)) {
-			if(event.type == sf::Event::Closed)
-				window.close();
-			else if(listeners.find(event.type) != listeners.end()) {
-				event_queue.push_front(event);
-				event_count++;
-			}
-
-			//Adjust window size
-			if(event.type == sf::Event::Resized) {
-				if(camera == NULL) {
-					sf::Vector2f size(event.size.width, event.size.height);
-					viewPlayer.setSize(size);
-				}
-				std::cout << "Window Size: " << cornerX << "x" << cornerY << "\n";
-			}
-		}
-		if(!UpdateList::running)
-			window.close();
-
-		sf::Time time = clock.getElapsedTime();
-		if(time >= nextFrame) {
-			//Next update time
-			nextFrame = time + FRAME_DELAY;
-
-			//Loop through list to reload any buffers
-			std::vector<Node *>::iterator rit = reloadBuffer.begin();
-			while(rit != reloadBuffer.end()) {
-				(*rit)->reloadBuffer();
-				rit++;
-			}
-			reloadBuffer.clear();
-
-			//Loop through list to delete nodes
-			std::vector<Node *>::iterator dit = deleted.begin();
-			while(dit != deleted.end()) {
-				Node *node = *dit;
-				dit++;
-				delete node;
-			}
-			deleted.clear();
-
-			//Set camera position
-			if(camera != NULL) {
-				viewPlayer.setCenter(camera->getGPosition());
-				window.setView(viewPlayer);
-			}
-
-			//Update window
-			window.clear();
-			UpdateList::draw(window);
-			window.display();
-		}
-		time = clock.getElapsedTime();
-		std::this_thread::sleep_for(
-			std::chrono::microseconds((nextFrame - time).asMicroseconds()));
-	}
-
-	std::cout << "Thread ending\n";
-
-	UpdateList::running = false;
-}*/
 
 #if __linux__
 	#include <X11/Xlib.h>
@@ -530,6 +461,7 @@ void event(const sapp_event* event) {
 		break;
 	}
 
+	simgui_handle_event(event);
 	sapp_consume_event();
 }
 
@@ -538,7 +470,41 @@ void UpdateList::frame(void) {
 
 	// Get current window size.
     int width = sapp_width(), height = sapp_height();
+
+    //Start imgui frame
+    simgui_frame_desc_t simguidesc = { };
+    simguidesc.width = width;
+    simguidesc.height = height;
+    simguidesc.delta_time = sapp_frame_duration();
+    simguidesc.dpi_scale = sapp_dpi_scale();
+    simgui_new_frame(&simguidesc);
+
+    //Main draw functions
     draw(sf::Vector2f(0,0), sf::Vector2i(width, height));
+
+    //imgui gfx debug
+    #if _DEBUG
+    sgimgui_draw(&sgimgui);
+    if(ImGui::BeginMainMenuBar()) {
+        if(ImGui::BeginMenu("sokol-gfx")) {
+            ImGui::MenuItem("Capabilities", 0, &sgimgui.caps_window.open);
+            ImGui::MenuItem("Frame Stats", 0, &sgimgui.frame_stats_window.open);
+            ImGui::MenuItem("Buffers", 0, &sgimgui.buffer_window.open);
+            ImGui::MenuItem("Images", 0, &sgimgui.image_window.open);
+            ImGui::MenuItem("Samplers", 0, &sgimgui.sampler_window.open);
+            ImGui::MenuItem("Shaders", 0, &sgimgui.shader_window.open);
+            ImGui::MenuItem("Pipelines", 0, &sgimgui.pipeline_window.open);
+            ImGui::MenuItem("Attachments", 0, &sgimgui.attachments_window.open);
+            ImGui::MenuItem("Calls", 0, &sgimgui.capture_window.open);
+            ImGui::EndMenu();
+        }
+        skyrmionImguiMenu();
+        gameImguiMenu();
+        ImGui::EndMainMenuBar();
+    }
+    skyrmionImgui();
+    gameImgui();
+    #endif
 
     // Begin a render pass.
     sg_pass pass = {.swapchain = sglue_swapchain()};
@@ -547,6 +513,9 @@ void UpdateList::frame(void) {
     sgp_flush();
     // Finish a draw command queue, clearing it.
     sgp_end();
+
+    //imgui render
+    simgui_render();
     // End render pass.
     sg_end_pass();
     // Commit Sokol render.
@@ -564,7 +533,7 @@ void UpdateList::frame(void) {
 
 void UpdateList::init(void) {
 	// initialize Sokol GFX
-    sg_desc sgdesc = {0};
+    sg_desc sgdesc = { };
     sgdesc.environment = sglue_environment();
     sgdesc.logger.func = slog_func;
     sg_setup(&sgdesc);
@@ -574,12 +543,21 @@ void UpdateList::init(void) {
     }
 
     // initialize Sokol GP
-    sgp_desc sgpdesc = {0};
+    sgp_desc sgpdesc = { };
     sgp_setup(&sgpdesc);
     if(!sgp_is_valid()) {
         fprintf(stderr, "Failed to create Sokol GP context: %s\n", sgp_get_error_message(sgp_get_last_error()));
         exit(-1);
     }
+
+    //initialize imgui
+    simgui_desc_t simguidesc = { };
+    simgui_setup(&simguidesc);
+
+    //imgui gfx debug
+    sgimgui_desc_t gimgui_desc = { };
+    sgimgui_init(&sgimgui, &gimgui_desc);
+
 
     //Load textures
 	for(std::string file : textureFiles())
@@ -607,6 +585,8 @@ void UpdateList::cleanup(void) {
 	std::cout << "Cleanup Rendering\n";
 	running = false;
 	updates.join();
+	sgimgui_discard(&sgimgui);
+	simgui_shutdown();
     sgp_shutdown();
     sg_shutdown();
 }

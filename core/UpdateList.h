@@ -95,6 +95,7 @@ public:
 	static void processEvents();
 	static void update(double time);
 	static void draw(sf::Vector2f offset, sf::Vector2i size);
+	static void drawNode(Node *source);
 
 	//Sokol callback functions
 	static void frame(void);
@@ -107,3 +108,8 @@ void initialize();
 std::string windowTitle();
 Color backgroundColor();
 std::vector<std::string> textureFiles();
+std::vector<std::string> layerNames();
+void skyrmionImguiMenu();
+void skyrmionImgui();
+void gameImguiMenu();
+void gameImgui();
