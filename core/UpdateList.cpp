@@ -286,7 +286,6 @@ void UpdateList::update(double time) {
 void UpdateList::draw(FloatRect cameraRect) {
 	skColor color = backgroundColor();
 	ClearBackground(Color{(Layer)(color.red*255), (Layer)(color.green*255), (Layer)(color.blue*255)});
-    //BeginScissorMode(cameraRect.left, cameraRect.top, cameraRect.width, cameraRect.height);
 
 	raycamera.target = Vector2{cameraRect.left, cameraRect.top};
 	raycamera.zoom = screenRect.getSize().x / cameraRect.getSize().x;
@@ -308,7 +307,6 @@ void UpdateList::draw(FloatRect cameraRect) {
 			}
 		}
 	}
-	//EndScissorMode();
 	EndMode2D();
 }
 
