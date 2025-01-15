@@ -10,24 +10,24 @@ struct TextureRect {
 	float px, py;
 	int tx, ty;
 	int width, height;
-	float rotation;
+	int rotation;
 };
 
 template <typename T>
-class Vector2 {
+class skVector2 {
 public:
 	T x = 0;
 	T y = 0;
 
-	Vector2() {}
+	skVector2() {}
 
-	Vector2(T _x, T _y) { 
+	skVector2(T _x, T _y) {
 		x = _x;
 		y = _y;
 	}
 };
-typedef Vector2<int> Vector2i;
-typedef Vector2<float> Vector2f;
+typedef skVector2<int> Vector2i;
+typedef skVector2<float> Vector2f;
 
 template <typename T>
 class Rect {
@@ -46,15 +46,15 @@ public:
 		height = _height;
 	}
 
-	Vector2<T> getPos() {
-		return Vector2<T>(left, top);
+	skVector2<T> getPos() {
+		return skVector2<T>(left, top);
 	}
 
-	Vector2<T> getSize() {
-		return Vector2<T>(width, height);
+	skVector2<T> getSize() {
+		return skVector2<T>(width, height);
 	}
 
-	bool contains(const Vector2<T> point) const {
+	bool contains(const skVector2<T> point) const {
 		return point.x >= left && point.x <= left+width &&
 			point.y >= top && point.y <= top+height;
 	}
@@ -69,75 +69,76 @@ typedef Rect<float> FloatRect;
 
 //Vector with Vector operators
 template <typename T>
-constexpr Vector2<T> operator+(const Vector2<T> &first, const Vector2<T> &second) {
-	return Vector2<T>(first.x + second.x, first.y + second.y);
+constexpr skVector2<T> operator+(const skVector2<T> &first, const skVector2<T> &second) {
+	return skVector2<T>(first.x + second.x, first.y + second.y);
 }
 template <typename T>
-constexpr Vector2<T> operator-(const Vector2<T> &first, const Vector2<T> &second) {
-	return Vector2<T>(first.x - second.x, first.y - second.y);
+constexpr skVector2<T> operator-(const skVector2<T> &first, const skVector2<T> &second) {
+	return skVector2<T>(first.x - second.x, first.y - second.y);
 }
 template <typename T>
-constexpr Vector2<T> operator*(const Vector2<T> &first, const Vector2<T> &second) {
-	return Vector2<T>(first.x * second.x, first.y * second.y);
+constexpr skVector2<T> operator*(const skVector2<T> &first, const skVector2<T> &second) {
+	return skVector2<T>(first.x * second.x, first.y * second.y);
 }
 template <typename T>
-constexpr Vector2<T> operator/(const Vector2<T> &first, const Vector2<T> &second) {
-	return Vector2<T>(first.x / second.x, first.y / second.y);
+constexpr skVector2<T> operator/(const skVector2<T> &first, const skVector2<T> &second) {
+	return skVector2<T>(first.x / second.x, first.y / second.y);
 }
 
 template <typename T>
-constexpr Vector2<T>& operator+=(Vector2<T> &first, const Vector2<T> &second) {
+constexpr skVector2<T>& operator+=(skVector2<T> &first, const skVector2<T> &second) {
 	first.x += second.x;
     first.y += second.y;
     return first;
 }
 template <typename T>
-constexpr Vector2<T>& operator-=(Vector2<T> &first, const Vector2<T> &second) {
+constexpr skVector2<T>& operator-=(skVector2<T> &first, const skVector2<T> &second) {
 	first.x -= second.x;
     first.y -= second.y;
     return first;
 }
 template <typename T>
-constexpr Vector2<T>& operator*=(Vector2<T> &first, const Vector2<T> &second) {
+constexpr skVector2<T>& operator*=(skVector2<T> &first, const skVector2<T> &second) {
 	first.x *= second.x;
     first.y *= second.y;
     return first;
 }
 template <typename T>
-constexpr Vector2<T>& operator/=(Vector2<T> &first, const Vector2<T> &second) {
+constexpr skVector2<T>& operator/=(skVector2<T> &first, const skVector2<T> &second) {
 	first.x /= second.x;
     first.y /= second.y;
     return first;
 }
 
 template <typename T>
-constexpr bool operator==(const Vector2<T> &first, const Vector2<T> &second) {
+constexpr bool operator==(const skVector2<T> &first, const skVector2<T> &second) {
 	return first.x==second.x && first.y==second.y;
 }
 template <typename T>
-constexpr bool operator!=(const Vector2<T> &first, const Vector2<T> &second) {
+constexpr bool operator!=(const skVector2<T> &first, const skVector2<T> &second) {
 	return first.x!=second.x || first.y!=second.y;
 }
 
 //Vector with number operators
 template <typename T>
-constexpr Vector2<T> operator+(const Vector2<T>& first, T second) {
-	return Vector2<T>(first.x + second, first.y + second);
+constexpr skVector2<T> operator+(const skVector2<T>& first, T second) {
+	return skVector2<T>(first.x + second, first.y + second);
 }
 template <typename T>
-constexpr Vector2<T> operator-(const Vector2<T>& first, T second) {
-	return Vector2<T>(first.x - second, first.y - second);
+constexpr skVector2<T> operator-(const skVector2<T>& first, T second) {
+	return skVector2<T>(first.x - second, first.y - second);
 }
 template <typename T>
-constexpr Vector2<T> operator*(const Vector2<T>& first, T second) {
-	return Vector2<T>(first.x * second, first.y * second);
+constexpr skVector2<T> operator*(const skVector2<T>& first, T second) {
+	return skVector2<T>(first.x * second, first.y * second);
 }
 template <typename T>
-constexpr Vector2<T> operator/(const Vector2<T>& first, T second) {
-	return Vector2<T>(first.x / second, first.y / second);
+constexpr skVector2<T> operator/(const skVector2<T>& first, T second) {
+	return skVector2<T>(first.x / second, first.y / second);
 }
 
 Vector2f operator*(const Vector2f &first, const Vector2i &second);
+Vector2f operator*(const Vector2i &first, const float second);
 std::ostream& operator<<(std::ostream& os, const Vector2f &pos);
 std::ostream& operator<<(std::ostream& os, const Vector2i &pos);
 

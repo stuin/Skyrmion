@@ -98,8 +98,8 @@ public:
 	static int loadTexture(std::string filename);
 	static Vector2i getTextureSize(sint index);
 	static TextureData &getTextureData(sint index);
-	static unsigned long long getImGuiTexture(sint texture);
-	static Color pickColor(sint texture, Vector2i position);
+	static void drawImGuiTexture(sint texture, Vector2i size);
+	static skColor pickColor(sint texture, Vector2i position);
 
 	//Start engine
 	static void startEngine();
@@ -120,7 +120,7 @@ public:
 
 //Functions to be implemented by the game
 void initialize();
-Color backgroundColor();
+skColor backgroundColor();
 std::string *windowTitle();
 std::vector<std::string> &textureFiles();
 std::vector<std::string> &layerNames();

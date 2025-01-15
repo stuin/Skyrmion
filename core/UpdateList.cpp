@@ -2,28 +2,12 @@
 #include "Event.h"
 #include "../debug/TimingStats.hpp"
 
-#define TEXTUREERROR "Texture does not exist"
-
-#define SOKOL_IMPL
-#define SOKOL_GLCORE
-#define SOKOL_TRACE_HOOKS
-#include "../include/sokol/sokol_gfx.h"//
-#include "../include/sokol_gp/sokol_gp.h"//
-#include "../include/sokol/sokol_app.h"//
-#include "../include/sokol/sokol_glue.h"//
-#include "../include/sokol/sokol_time.h"//
-#include "../include/sokol/sokol_log.h"//
-
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_STATIC
-#define STBI_NO_SIMD
-#define STBI_ONLY_PNG
-#include "../include/sokol_gp/thirdparty/stb_image.h"//
-
-#define SOKOL_IMGUI_IMPL
 #include "../include/imgui/imgui.h"//
-#include "../include/sokol/util/sokol_imgui.h"//
-#include "../include/sokol/util/sokol_gfx_imgui.h"//
+#include "../include/rlImGui/rlImGui.h"//
+
+#define DTOR 0.0174532925199
+#define RTOD 57.2957795131
+#define TEXTUREERROR "Texture does not exist"
 
 /*
  * Manages layers of nodes through update cycle
@@ -39,6 +23,7 @@ bool UpdateList::running = false;
 Node *UpdateList::camera = NULL;
 FloatRect UpdateList::cameraRect;
 FloatRect UpdateList::screenRect;
+Camera2D raycamera;
 std::vector<Node *> UpdateList::reloadBuffer;
 
 //Event handling
@@ -48,10 +33,10 @@ std::array<std::vector<Node *>, EVENT_MAX> listeners;
 
 //Textures stored in this file
 std::vector<TextureData> textureData;
-std::vector<sg_image> textureSet;
+std::vector<Texture2D> textureSet;
+std::vector<Image> textureSetImage;
 
 std::thread updates;
-sgimgui_t sgimgui;
 
 //Add node to update cycle
 void UpdateList::addNode(Node *next) {
@@ -189,34 +174,16 @@ int UpdateList::getLayerCount() {
 	return maxLayer + 1;
 }
 
-//Load image from file
-static sg_image load_image(std::string filename) {
-    int width, height, channels;
-    uint8_t* data = stbi_load(filename.c_str(), &width, &height, &channels, 4);
-    sg_image img = {SG_INVALID_ID};
-    if(!data) {
-    	textureSet.push_back(img);
-    	textureData.push_back(filename);
-        return img;
-    }
-    sg_image_desc image_desc = {0};
-    image_desc.width = width;
-    image_desc.height = height;
-    image_desc.data.subimage[0][0].ptr = data;
-    image_desc.data.subimage[0][0].size = (size_t)(width * height * 4);
-    img = sg_make_image(&image_desc);
-    stbi_image_free(data);
-    textureSet.push_back(img);
-    textureData.emplace_back(filename, Vector2i(width, height));
-    return img;
-}
-
 //Load texture from file and add to set
 int UpdateList::loadTexture(std::string filename) {
-	if(filename.length() > 0 && filename[0] != '#')
-		load_image(filename);
-	else {
+	if(filename.length() > 0 && filename[0] != '#') {
+		Texture2D texture = LoadTexture(filename.c_str());
+		textureSet.push_back(texture);
+		textureSetImage.push_back(LoadImage(filename.c_str()));
+		textureData.emplace_back(filename, Vector2i(texture.width, texture.height));
+	} else {
 		textureSet.emplace_back();
+		textureSetImage.emplace_back();
 		textureData.emplace_back(filename);
 	}
 	return textureSet.size() - 1;
@@ -236,25 +203,20 @@ TextureData &UpdateList::getTextureData(sint texture) {
 	return textureData[texture];
 }
 
-//Create ImGui id for texture
-unsigned long long UpdateList::getImGuiTexture(sint texture) {
+//Draw ImGui texture
+void UpdateList::drawImGuiTexture(sint texture, Vector2i size) {
 	if(texture >= textureData.size())
 		throw new std::invalid_argument(TEXTUREERROR);
-	return simgui_imtextureid(textureSet[texture]);
+	rlImGuiImage(&(textureSet[texture]));
 }
 
 //Pick color from texture
-Color UpdateList::pickColor(sint texture, Vector2i position) {
+skColor UpdateList::pickColor(sint texture, Vector2i position) {
 	if(texture >= textureData.size() || !textureData[texture].valid)
-		return Color(0,0,0,0);
+		return skColor(0,0,0,0);
 
-	TextureData data = textureData[texture];
-	sint index = (position.x+position.y*data.size.x)*4;
-	int width, height, channels;
-	uint8_t* image = stbi_load(data.filename.c_str(), &width, &height, &channels, 4);
-	Color color(image + index);
-	stbi_image_free(image);
-	return color;
+	Color color = GetImageColor(textureSetImage[texture], position.x, position.y);
+	return skColor(color.r, color.g, color.b, color.a);
 }
 
 //Process window events on update thread
@@ -322,22 +284,18 @@ void UpdateList::update(double time) {
 
 //Thread safe draw nodes in list
 void UpdateList::draw(FloatRect cameraRect) {
-	// Begin recording draw commands for a frame buffer of size (width, height).
-    sgp_begin(cameraRect.width, cameraRect.height);
-    // Set frame buffer drawing region to (0,0,width,height).
-    //sgp_viewport(cameraRect.left, cameraRect.top, cameraRect.width, cameraRect.height);
-    sgp_viewport(0,0,cameraRect.width, cameraRect.height);
+	skColor color = backgroundColor();
+	ClearBackground(Color{(Layer)(color.red*255), (Layer)(color.green*255), (Layer)(color.blue*255)});
+    //BeginScissorMode(cameraRect.left, cameraRect.top, cameraRect.width, cameraRect.height);
 
-    // Clear the frame buffer.
-    Color background = backgroundColor();
-    sgp_set_color(background.red, background.green, background.blue, background.alpha);
-    sgp_clear();
+	raycamera.target = Vector2{cameraRect.left, cameraRect.top};
+	raycamera.zoom = screenRect.getSize().x / cameraRect.getSize().x;
+
+    BeginMode2D(raycamera);
 
 	//Render each node in order
 	for(Layer layer = 0; layer <= maxLayer; layer++) {
 		Node *source = layers[layer].root;
-
-		sgp_project(cameraRect.left, cameraRect.left+cameraRect.width, cameraRect.top, cameraRect.top+cameraRect.height);
 
 		if(!layers[layer].hidden) {
 			while(source != NULL) {
@@ -350,11 +308,20 @@ void UpdateList::draw(FloatRect cameraRect) {
 			}
 		}
 	}
+	//EndScissorMode();
+	EndMode2D();
 }
 
+static const std::map<int, int> blendModeMap = {
+	{SK_BLEND_ALPHA, BLEND_ALPHA},
+	{SK_BLEND_ALPHA_MULT, BLEND_ALPHA_PREMULTIPLY},
+	{SK_BLEND_ADD, BLEND_ADDITIVE},
+	{SK_BLEND_MULT, BLEND_MULTIPLIED},
+};
+
 void UpdateList::drawNode(Node *source) {
-	sgp_reset_color();
-	sgp_set_blend_mode((sgp_blend_mode)source->getBlendMode());
+	if(source->getBlendMode() != SK_BLEND_NONE)
+		BeginBlendMode(blendModeMap[source->getBlendMode()]);
 
 	sint texture = source->getTexture();
 	FloatRect rect = source->getDrawRect();
@@ -362,36 +329,23 @@ void UpdateList::drawNode(Node *source) {
 
 	if(texture < textureData.size() && textureData[texture].valid && textureRects->size() == 0) {
 		//Default square texture
-		sgp_set_image(0, textureSet[texture]);
-		sgp_draw_filled_rect(rect.left, rect.top, rect.width, rect.height);
-		sgp_reset_image(0);
-	} else if(texture != 0) {
+		DrawTexture(textureSet[source->getTexture()], rect.left, rect.top, WHITE);
+	} else if(source->getTexture() != -1) {
 		//Tilemapped or partial texture
-		sgp_set_image(0, textureSet[texture]);
-		//sgp_textured_rect outRects[1];
-		//int renderCount = 0;
 		for(sint i = 0; i < textureRects->size(); i++) {
 			TextureRect tex = (*textureRects)[i];
-			Vector2f scale = source->getScale();
+			Vector2f scale = source->getGScale();
 			if(tex.width != 0 && tex.height != 0) {
-				sgp_rect dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, abs(tex.width)*scale.x, abs(tex.height)*scale.y};
-				sgp_rect src = {(float)tex.tx, (float)tex.ty, (float)tex.width, (float)tex.height};
-				//renderCount++;
-				if(tex.rotation != 0) {
-					sgp_push_transform();
-					sgp_rotate_at(tex.rotation, dst.x + dst.w/2.0, dst.y + dst.h/2.0);
-					sgp_draw_textured_rect(0, dst, src);
-					sgp_pop_transform();
-				} else {
-					sgp_draw_textured_rect(0, dst, src);
-				}
+				Rectangle dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, abs(tex.width)*scale.x, abs(tex.height)*scale.y};
+				Rectangle src = {(float)tex.tx, (float)tex.ty, (float)tex.width, (float)tex.height};
+				Vector2 origin = Vector2{source->getOrigin().x, source->getOrigin().y};
+				DrawTexturePro(textureSet[source->getTexture()], src, dst, origin, (float)tex.rotation, WHITE);
 			}
 		}
-		//sgp_draw_textured_rects(0, outRects, renderCount);
-		sgp_reset_image(0);
 	} else {
-		sgp_draw_filled_rect(rect.left, rect.top, rect.width, rect.height);
+		DrawRectangle(rect.left, rect.top, rect.width, rect.height, WHITE);
 	}
+	EndBlendMode();
 }
 
 void UpdateList::startEngine() {
@@ -412,25 +366,27 @@ void UpdateList::startEngine() {
 	}
 	UpdateList::running = true;
 
-	stm_setup();
-	uint64_t lastTime = stm_now();
+	double lastTime = GetTime();
 	while(UpdateList::running) {
 		UpdateList::processEvents();
 
-		//Update nodes and sprites
-		double delta = stm_sec(stm_laptime(&lastTime));
+		//Calculate delta times
+		double delta = GetTime()-lastTime;
 		DebugTimers::updateTimes.addDelta(delta);
+		lastTime = GetTime();
+
+		//Update nodes and sprites
 		UpdateList::update(delta);
-		DebugTimers::updateLiteralTimes.addDelta(stm_sec(stm_since(lastTime)));
+		DebugTimers::updateLiteralTimes.addDelta(GetTime()-lastTime);
 
 		std::this_thread::sleep_for(
-			std::chrono::milliseconds(10-(int)stm_ms(stm_since(lastTime))));
+			std::chrono::milliseconds(10-(int)((GetTime()-lastTime)/1000)));
 	}
 
 	std::cout << "Update thread ending\n";
 }
 
-void event(const sapp_event* event) {
+/*void event(const sapp_event* event) {
 	switch(event->type) {
 	case SAPP_EVENTTYPE_KEY_DOWN: case SAPP_EVENTTYPE_KEY_UP:
 		//Keyboard
@@ -504,22 +460,19 @@ void event(const sapp_event* event) {
 
 	simgui_handle_event(event);
 	sapp_consume_event();
-}
+}*/
 
 void UpdateList::frame(void) {
-    DebugTimers::frameTimes.addDelta(sapp_frame_duration());
-    uint64_t lastTime = stm_now();
+    DebugTimers::frameTimes.addDelta(GetFrameTime());
+    uint64_t lastTime = GetTime();
 
 	// Get current window size.
-    int width = sapp_width(), height = sapp_height();
+    int width = GetRenderWidth();
+    int height = GetRenderHeight();
+    BeginDrawing();
 
     //Start imgui frame
-    simgui_frame_desc_t simguidesc = { };
-    simguidesc.width = width;
-    simguidesc.height = height;
-    simguidesc.delta_time = sapp_frame_duration();
-    simguidesc.dpi_scale = sapp_dpi_scale();
-    simgui_new_frame(&simguidesc);
+    rlImGuiBegin();
 
     //Find camera position
 	screenRect = FloatRect(0,0,width,height);
@@ -533,20 +486,7 @@ void UpdateList::frame(void) {
 
     //imgui gfx debug
     #if _DEBUG
-    sgimgui_draw(&sgimgui);
     if(ImGui::BeginMainMenuBar()) {
-        if(ImGui::BeginMenu("sokol-gfx")) {
-            ImGui::MenuItem("Capabilities", 0, &sgimgui.caps_window.open);
-            ImGui::MenuItem("Frame Stats", 0, &sgimgui.frame_stats_window.open);
-            ImGui::MenuItem("Buffers", 0, &sgimgui.buffer_window.open);
-            ImGui::MenuItem("Images", 0, &sgimgui.image_window.open);
-            ImGui::MenuItem("Samplers", 0, &sgimgui.sampler_window.open);
-            ImGui::MenuItem("Shaders", 0, &sgimgui.shader_window.open);
-            ImGui::MenuItem("Pipelines", 0, &sgimgui.pipeline_window.open);
-            ImGui::MenuItem("Attachments", 0, &sgimgui.attachments_window.open);
-            ImGui::MenuItem("Calls", 0, &sgimgui.capture_window.open);
-            ImGui::EndMenu();
-        }
         skyrmionImguiMenu();
         gameImguiMenu();
         ImGui::EndMainMenuBar();
@@ -555,20 +495,7 @@ void UpdateList::frame(void) {
     gameImgui();
     #endif
 
-    // Begin a render pass.
-    sg_pass pass = {.swapchain = sglue_swapchain()};
-    sg_begin_pass(&pass);
-    // Dispatch all draw commands to Sokol GFX.
-    sgp_flush();
-    // Finish a draw command queue, clearing it.
-    sgp_end();
-
-    //imgui render
-    simgui_render();
-    // End render pass.
-    sg_end_pass();
-    // Commit Sokol render.
-    sg_commit();
+    rlImGuiEnd();
 
     //Loop through list to delete nodes from memory
 	std::vector<Node *>::iterator dit = deleted.begin();
@@ -579,35 +506,17 @@ void UpdateList::frame(void) {
 	}
 	deleted.clear();
 
-	DebugTimers::frameLiteralTimes.addDelta(stm_sec(stm_since(lastTime)));
+	DebugTimers::frameLiteralTimes.addDelta(GetTime()-lastTime);
+
+    EndDrawing();
 }
 
-void UpdateList::init(void) {
-	// initialize Sokol GFX
-    sg_desc sgdesc = { };
-    sgdesc.environment = sglue_environment();
-    sgdesc.logger.func = slog_func;
-    sg_setup(&sgdesc);
-    if(!sg_isvalid()) {
-        fprintf(stderr, "Failed to create Sokol GFX context!\n");
-        exit(-1);
-    }
-
-    // initialize Sokol GP
-    sgp_desc sgpdesc = { };
-    sgp_setup(&sgpdesc);
-    if(!sgp_is_valid()) {
-        fprintf(stderr, "Failed to create Sokol GP context: %s\n", sgp_get_error_message(sgp_get_last_error()));
-        exit(-1);
-    }
+void UpdateList::init() {
+	SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
+	InitWindow(1920, 1080, windowTitle()->c_str());
 
     //initialize imgui
-    simgui_desc_t simguidesc = { };
-    simgui_setup(&simguidesc);
-
-    //imgui gfx debug
-    sgimgui_desc_t gimgui_desc = { };
-    sgimgui_init(&sgimgui, &gimgui_desc);
+    rlImGuiSetup(true);
 
     //Set layer names
     for(Layer layer = 0; layer < layerNames().size(); layer++)
@@ -629,44 +538,34 @@ void UpdateList::init(void) {
 	}
 
     std::cout << "Starting Rendering\n";
+    while(!WindowShouldClose() && UpdateList::running) {
+		frame();
+	}
 
-	/*for(sg_image &image : textureSet) {
-    	if(sg_query_image_state(image)) {
-    		fprintf(stderr, "failed to load images");
-        	exit(-1);
-    	}
-    }*/
+	cleanup();
 }
 
-void UpdateList::cleanup(void) {
+void UpdateList::cleanup() {
 	std::cout << "Cleanup Rendering\n";
 	running = false;
 	updates.join();
-	sgimgui_discard(&sgimgui);
-	simgui_shutdown();
-    sgp_shutdown();
-    sg_shutdown();
+
+	for(Texture2D texture : textureSet)
+		UnloadTexture(texture);
+
+	rlImGuiShutdown();
+	CloseWindow();
 }
 
 void UpdateList::stopEngine() {
 	running = false;
-	sapp_quit();
 }
 
 bool UpdateList::isRunning() {
 	return running;
 }
 
-sapp_desc sokol_main(int argc, char* argv[]) {
-    (void)argc;
-    (void)argv;
-
-   	sapp_desc desc = {0};
-   	desc.init_cb = UpdateList::init;
-   	desc.frame_cb = UpdateList::frame;
-   	desc.event_cb = event;
-   	desc.cleanup_cb = UpdateList::cleanup;
-   	desc.window_title = windowTitle()->c_str();
-   	desc.logger.func = slog_func;
-    return desc;
+int main() {
+	UpdateList::init();
+	return 0;
 }

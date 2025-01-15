@@ -174,7 +174,7 @@ void imguiNodeWindow(Node *source) {
 
         if(ImGui::BeginChild("##", ImVec2(400.0f, 200.0f), ImGuiChildFlags_Borders, 0)) {
             for(TextureRect rect : *source->getTextureRects()) {
-                ImGui::Text("(%.3f,%.3f) = (%d,%d)->(%d,%d) / %.3f",
+                ImGui::Text("(%.3f,%.3f) = (%d,%d)->(%d,%d) / %d",
                 	rect.px, rect.py, rect.tx, rect.ty, rect.tx+rect.width, rect.ty+rect.height, rect.rotation);
             }
         }
@@ -345,7 +345,7 @@ void imguiColorPickerWindow() {
     	pickPosition.x = index % size.x;
     	pickPosition.y = index / size.x;
 
-    	Color pickColor = UpdateList::pickColor(pickTexture, pickPosition);
+    	skColor pickColor = UpdateList::pickColor(pickTexture, pickPosition);
 	    col1[0] = pickColor.red;
 	    col1[1] = pickColor.green;
 	    col1[2] = pickColor.blue;
@@ -353,7 +353,7 @@ void imguiColorPickerWindow() {
 	    pickIndex = index;
 	}
 
-	ImGui::Image(UpdateList::getImGuiTexture(pickTexture), ImVec2(size.x*pickTextureScale, size.y*pickTextureScale));
+	UpdateList::drawImGuiTexture(pickTexture, Vector2i(size.x*pickTextureScale, size.y*pickTextureScale));
 
     ImGui::End();
 }

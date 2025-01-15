@@ -108,7 +108,7 @@ public:
                     quad.height = flipv ? -tileY : tileY;
                     quad.px = i * tileX;
                     quad.py = j * tileY;
-                    quad.rotation = PIO2*rotations;
+                    quad.rotation = 90*rotations;
                     setTextureRect(quad, usedRects++);
                 }
 
