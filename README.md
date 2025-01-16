@@ -1,6 +1,8 @@
 # Skyrmion
 A 2D Game Engine built in C++, very focused on tilemaps.
-Requires [SFML](https://www.sfml-dev.org/), [nlohmann json](https://json.nlohmann.me/).
+Previously designed for SFML, now uses Sokol (A branch also exists using Raylib).
+Requires installing [nlohmann json](https://json.nlohmann.me/) and [libnoise](https://libnoise.sourceforge.net/).
+Also includes as submodules [Sokol](https://github.com/floooh/sokol), [Sokol GP](https://github.com/edubart/sokol_gp), and [Dear ImGui](https://github.com/ocornut/imgui).
 
 ## Tilemaps
 
@@ -14,7 +16,8 @@ Load from txt files as ASCII art, each char representing a tile and it's propert
 - Tiles with different properties sharing the same texture
 - Invisible tiles
 - Changing tiles during runtime
-- Randomly rotating or choosing between mutiple textures
+- Randomly rotating or choosing between multiple textures
+- Perlin noise and related options provided by libnoise
 - Multiple layers rendering below and on top of other objects
 - Using multiple layers to visually extend into other tiles
 - Spawning objects at specific locations on startup
@@ -25,15 +28,17 @@ Load from txt files as ASCII art, each char representing a tile and it's propert
 - [LightMap.h](https://github.com/stuin/Skyrmion/blob/main/tiling/LightMap.h)
 
 ## Nodes:
-Everything visible in the game is a Node or rendered by a Node. These are SFML sprites with extra features.
+Everything visible in the game is a Node or rendered by a Node.
 Each node is attached to a specific layer in UpdateList, usually ordered and named by an enum, which decides render, collision, and update order.
 
-- Can display textures, simple spritesheet animations, buffered render textures, or builtin SFML objects natively
-- Can also just be given a completely custom draw function
+- float Position, Size, and Scaling
+- Has Texture, Origin, BlendMode, and Texture Rectangles
+- Can display textures, simple spritesheet animations, buffered render textures
 - Can be hidden while still updating
-- Only rendered when on screen
-- Specific layers can keep updating while off screen
+- By default nodes are only rendered when on screen
 - Layers can be paused while still being visible, or hidden without being paused
+- Layers can use global coordinates or can be placed relative to screen
+- Thread safe node deletion
 - Nodes can be deleted on mass by layer
 - Camera can be static or attached to any node
 - Parent a node to any other node in a tree
@@ -46,11 +51,17 @@ Each node is attached to a specific layer in UpdateList, usually ordered and nam
 - Subscribe to window events by type (resizing, mouse, keyboard, etc)
 - Thread safe deletion and render texture drawing
 
-Updates are run as often as possible, with a time delta variable provided for consistency. Draw calls are done in a separate  read-only thread at maximum ~60 fps.
+Updates are run at ~100 per second, with a time delta variable provided for consistency. Draw calls are done in a separate read-only thread.
 
 #### Sources
 - [Node.h](https://github.com/stuin/Skyrmion/blob/main/core/Node.h)
 - [UpdateList.h](https://github.com/stuin/Skyrmion/blob/main/core/UpdateList.h)
+
+## Dear ImGui Debug Tools:
+- List of layers with names and flags
+- Debug information for each node
+- Live updating perlin noise generator
+- Color picker including from loaded textures
 
 ## Other tools:
 
@@ -60,13 +71,11 @@ Updates are run as often as possible, with a time delta variable provided for co
 - Json customizable controls supporting keyboard/mouse/gamepad buttons, joystick movement, and up to 3 binds for every action
 - Extra vector functions for finding+setting length and simpler multiplication
 - N dimensional directed edge-vertex graph
-- Canvas to draw circles and text at any location
 
 #### Sources
 - [Settings.h](https://github.com/stuin/Skyrmion/blob/main/input/Settings.h)
 - [Keylist.cpp](https://github.com/stuin/Skyrmion/blob/main/input/Keylist.cpp)
 - [VertexGraph.hpp](https://github.com/stuin/Skyrmion/blob/main/util/VertexGraph.hpp)
-- [Canvas.hpp](https://github.com/stuin/Skyrmion/blob/main/util/Canvas.hpp)
 
 ## Example games:
 - The engine was originally built with a group as the core systems of [Temple-of-Pele](https://github.com/skyrmiongames/Temple-of-Pele), and later extracted into it's own project. As more game jam type projects were created with it I added more features

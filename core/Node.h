@@ -20,6 +20,7 @@ using sint = long unsigned int;
 class Node {
 private:
 	//Base semi-public variables
+	sint id;
 	Layer layer;
 	Node *parent = NULL;
 	bool hidden = false;
@@ -49,6 +50,7 @@ public:
 		Node *parent = NULL);
 
 	//General getters
+	sint getId();
 	int getLayer();
 	Node *getParent();
 	bool isHidden();
@@ -65,7 +67,7 @@ public:
 	sf::FloatRect getDrawRect();
 	int getBlendMode();
 	int getTexture();
-	std::vector<TextureRect> *getTextureRects();
+	virtual std::vector<TextureRect> *getTextureRects();
 
 	//General setters
 	void setParent(Node *parent);
@@ -82,7 +84,7 @@ public:
 	void setOrigin(float x, float y);
 	void setBlendMode(int blendMode);
 	void setTexture(int textureChannel);
-	void setTextureRect(TextureRect &rectangle, int i=0);
+	void setTextureRect(TextureRect &rectangle, sint i=0);
 
 	//Collision system
 	std::bitset<MAXLAYER> getCollisionLayers();

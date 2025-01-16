@@ -19,7 +19,7 @@ private:
 	const sf::Vector2i scale;
 
 public:
-	const int fallback;
+	int fallback;
 
 	Indexer(Indexer *_previous, int _fallback, sf::Vector2i _scale)
 		: previous(_previous), scale(_scale), fallback(_fallback) {

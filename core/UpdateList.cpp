@@ -30,6 +30,7 @@
 Node *UpdateList::screen[MAXLAYER];
 std::bitset<MAXLAYER> UpdateList::staticLayers;
 std::bitset<MAXLAYER> UpdateList::pausedLayers;
+std::bitset<MAXLAYER> UpdateList::screenLayers;
 std::vector<Node *> UpdateList::deleted;
 
 Node *UpdateList::camera = NULL;
@@ -141,6 +142,13 @@ void UpdateList::pauseLayer(Layer layer, bool pause) {
 	pausedLayers[layer] = pause;
 }
 
+//Nodes placed relative to camera
+void UpdateList::screenSpaceLayer(Layer layer, bool screen) {
+	if(layer >= MAXLAYER)
+		throw new std::invalid_argument(LAYERERROR);
+	screenLayers[layer] = screen;
+}
+
 //Do not render nodes
 void UpdateList::hideLayer(Layer layer, bool hidden) {
 	if(layer >= MAXLAYER)
@@ -162,6 +170,13 @@ bool UpdateList::isLayerPaused(Layer layer) {
 	return pausedLayers[layer];
 }
 
+//Check if layer is marked screen space
+bool UpdateList::isLayerScreenSpace(Layer layer) {
+	if(layer >= MAXLAYER)
+		throw new std::invalid_argument(LAYERERROR);
+	return screenLayers[layer];
+}
+
 //Check if layer is marked hidden
 bool UpdateList::isLayerHidden(Layer layer) {
 	if(layer >= MAXLAYER)
@@ -169,9 +184,9 @@ bool UpdateList::isLayerHidden(Layer layer) {
 	return hiddenLayers[layer];
 }
 
-//Get highest occupied layer
-int UpdateList::getMaxLayer() {
-	return max;
+//Get number of occupied layers
+int UpdateList::getLayerCount() {
+	return max + 1;
 }
 
 static sg_image load_image(const char *filename) {
@@ -197,13 +212,32 @@ static sg_image load_image(const char *filename) {
 
 //Load texture from file and add to set
 int UpdateList::loadTexture(std::string filename) {
-	load_image(filename.c_str());
+	if(filename.length() > 0 && filename[0] != '#')
+		load_image(filename.c_str());
+	else {
+		textureSet.emplace_back();
+		textureSizes.push_back(sf::Vector2i(0,0));
+	}
 	return textureSet.size() - 1;
 }
 
 //Get size of texture
 sf::Vector2i UpdateList::getTextureSize(int index) {
 	return textureSizes[index];
+}
+
+unsigned long long UpdateList::getImguiTexture(int index) {
+	return simgui_imtextureid(textureSet[index]);
+}
+
+//Pick color from texture
+Color UpdateList::pickColor(int texture, sf::Vector2i position) {
+	sint index = (position.x+position.y*textureSizes[texture].x)*4;
+	int width, height, channels;
+	uint8_t* data = stbi_load(textureFiles()[texture].c_str(), &width, &height, &channels, 4);
+	Color color(data + index);
+	stbi_image_free(data);
+	return color;
 }
 
 //Process window events on update thread
@@ -282,8 +316,6 @@ void UpdateList::draw(sf::Vector2f offset, sf::Vector2i size) {
     // Set frame buffer drawing region to (0,0,width,height).
     //sgp_viewport(cameraRect.left, cameraRect.top, cameraRect.width, cameraRect.height);
     sgp_viewport(0,0,size.x,size.y);
-    // Set drawing coordinate space to (left=-ratio, right=ratio, top=1, bottom=-1).
-    sgp_project(cameraRect.left, cameraRect.left+cameraRect.width, cameraRect.top, cameraRect.top+cameraRect.height);
 
     // Clear the frame buffer.
     Color background = backgroundColor();
@@ -293,6 +325,11 @@ void UpdateList::draw(sf::Vector2f offset, sf::Vector2i size) {
 	//Render each node in order
 	for(int layer = 0; layer <= max; layer++) {
 		Node *source = screen[layer];
+
+		if(screenLayers[layer])
+			sgp_project(0, 0+size.x, 0, 0+size.y);
+		else
+			sgp_project(cameraRect.left, cameraRect.left+cameraRect.width, cameraRect.top, cameraRect.top+cameraRect.height);
 
 		if(!hiddenLayers[layer])
 			while(source != NULL) {
@@ -321,26 +358,26 @@ void UpdateList::drawNode(Node *source) {
 	} else if(source->getTexture() != -1) {
 		//Tilemapped or partial texture
 		sgp_set_image(0, textureSet[source->getTexture()]);
-		sgp_textured_rect outRects[textureRects->size()];
-		int renderCount = 0;
+		//sgp_textured_rect outRects[1];
+		//int renderCount = 0;
 		for(int i = 0; i < textureRects->size(); i++) {
 			TextureRect tex = (*textureRects)[i];
 			sf::Vector2f scale = source->getScale();
 			if(tex.width != 0 && tex.height != 0) {
-				outRects[renderCount].dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, abs(tex.width)*scale.x, abs(tex.height)*scale.y};
-				outRects[renderCount].src = {(float)tex.tx, (float)tex.ty, (float)tex.width, (float)tex.height};
-				renderCount++;
-				//if(tex.rotation != 0) {
-				//	sgp_push_transform();
-				//	sgp_rotate_at(tex.rotation, dst.x + dst.w/2.0, dst.y + dst.h/2.0);
-				//	sgp_draw_textured_rect(0, dst, src);
-				//	sgp_pop_transform();
-				//} else {
-				//	sgp_draw_textured_rect(0, dst, src);
-				//}
+				sgp_rect dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, abs(tex.width)*scale.x, abs(tex.height)*scale.y};
+				sgp_rect src = {(float)tex.tx, (float)tex.ty, (float)tex.width, (float)tex.height};
+				//renderCount++;
+				if(tex.rotation != 0) {
+					sgp_push_transform();
+					sgp_rotate_at(tex.rotation, dst.x + dst.w/2.0, dst.y + dst.h/2.0);
+					sgp_draw_textured_rect(0, dst, src);
+					sgp_pop_transform();
+				} else {
+					sgp_draw_textured_rect(0, dst, src);
+				}
 			}
 		}
-		sgp_draw_textured_rects(0, outRects, renderCount);
+		//sgp_draw_textured_rects(0, outRects, renderCount);
 		sgp_reset_image(0);
 	} else {
 		sgp_draw_filled_rect(rect.left, rect.top, rect.width, rect.height);
@@ -355,12 +392,16 @@ void UpdateList::updateThread() {
 void UpdateList::startEngine() {
 	std::cout << "Update thread starting\n";
 
+    #ifdef _DEBUG
+	setupDebugTools();
+	#endif
+
 	//Initial node update
 	for(int layer = 0; layer <= max; layer++) {
 		Node *source = screen[layer];
 
 		while(source != NULL) {
-			source->update(1);
+			source->update(-1);
 			source = source->getNext();
 		}
 	}
@@ -558,6 +599,9 @@ void UpdateList::init(void) {
     sgimgui_desc_t gimgui_desc = { };
     sgimgui_init(&sgimgui, &gimgui_desc);
 
+    #ifdef _DEBUG
+    addDebugTextures();
+    #endif
 
     //Load textures
 	for(std::string file : textureFiles())

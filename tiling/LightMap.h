@@ -10,6 +10,7 @@
  * Generate and show a lightmap based on a grid
  */
 
+/*
 class LightMap : public Node {
 private:
 	const sf::Vector2f offset = sf::Vector2f(-1,-1);
@@ -104,3 +105,4 @@ public:
 		//std::cout << "Redraw lightmap collection\n";
 	}
 };
+*/

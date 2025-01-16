@@ -62,7 +62,7 @@ public:
         // resize the vertex array to fit the level size
         //vertices.setPrimitiveType(sf::Quads);
         //vertices.resize(width * height * 4);
-        getTextureRects()->reserve(width * height * 4);
+        getTextureRects()->reserve(width * height);
 
         //Load textures
         reload();
@@ -97,7 +97,7 @@ public:
                 int tv = tileNumber / (UpdateList::getTextureSize(tileset).x / tileX);
 
                 // get a pointer to the current tile's quad
-                TextureRect quad = (*getTextureRects())[(i + j * width) * 4];
+                TextureRect quad = (*getTextureRects())[i + j * width];
                 //sf::Vertex* quad = &vertices[(i + j * width) * 4];
 
                 if(tileNumber - offset != -1) {
@@ -112,7 +112,7 @@ public:
                     quad.width = 0;
                     quad.height = 0;
                 }
-                setTextureRect(quad, (i + j * width) * 4);
+                setTextureRect(quad, i + j * width);
 
                 /*if(tileNumber - offset != -1) {
                     // define its 4 texture coordinates
@@ -143,14 +143,14 @@ public:
         //buffer.display();
     }
 
-    void setIndex(Indexer *indexes) {
+    void setIndexer(Indexer *indexes) {
         this->indexes = indexes;
         reload();
     }
 };
 
 //Swap between multiple tilemaps with offset textures
-/*class AnimatedTileMap : public Node {
+class AnimatedTileMap : public Node {
 private:
     std::vector<TileMap *> tilemaps;
     int numTiles = 0;
@@ -161,18 +161,13 @@ private:
     int pauseAfter = 0;
     bool paused = false;
 
-    //Draw selected tilemap
-    virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
-        states.transform *= getTransform();
-        target.draw(*tilemaps[frame], states);
-    }
-
 public:
-    AnimatedTileMap(sf::Texture *tileset, int tileX, int tileY, Indexer *indexes, int frames, double delay, Layer layer = 0) : Node(layer) {
+    AnimatedTileMap(int tileset, int tileX, int tileY, Indexer *indexes, int frames, double delay, Layer layer = 0) : Node(layer) {
         int width = indexes->getSize().x;
         int height = indexes->getSize().y;
         setSize(sf::Vector2i(tileX * width, tileY * height));
         setOrigin(0, 0);
+        setTexture(tileset);
 
         this->maxFrames = frames;
         this->delay = delay;
@@ -221,6 +216,10 @@ public:
                     frame = 0;
             }
         }
+    }
+
+    std::vector<TextureRect> *getTextureRects() {
+        return tilemaps[frame]->getTextureRects();
     }
 
     void addFrame(TileMap *map) {
@@ -276,11 +275,13 @@ private:
     uint countY;
 
 public:
-    LargeTileMap(sf::Texture *tileset, int tileX, int tileY, Indexer *indexes, Layer layer) : Node(layer) {
+    LargeTileMap(int tileset, int tileX, int tileY, Indexer *indexes, Layer layer) : Node(layer) {
         fullWidth = indexes->getSize().x;
         fullHeight = indexes->getSize().y;
         setSize(sf::Vector2i(tileX * fullWidth, tileY * fullHeight));
         setOrigin(0, 0);
+        setHidden(true);
+        setTexture(tileset);
 
         countX = std::ceil(fullWidth / (16000.0 / tileX));
         countY = std::ceil(fullHeight / (16000.0 / tileY));
@@ -314,4 +315,4 @@ public:
             nodes.push_back(map);
         return nodes;
     }
-};*/
+};

@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+/*
+
 //Based on http://journal.stuffwithstuff.com/2015/09/07/what-the-hero-sees/
 class Shadow {
 public:
@@ -329,3 +331,4 @@ void LightMap::markCollection(Node *node) {
 	collection = node;
 	setHidden(true);
 }
+*/

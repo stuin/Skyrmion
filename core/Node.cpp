@@ -4,15 +4,22 @@
  * Sprite with collision
  */
 
+unsigned int currentId = 0;
+
 //Base constructor
 Node::Node(Layer layer, sf::Vector2i size, bool hidden, Node *parent) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	this->layer = layer;
+	this->id = currentId++;
 
 	setSize(size);
 	setHidden(hidden);
 	setParent(parent);
+}
+
+sint Node::getId() {
+	return id;
 }
 
 //Get layer node is attached to
@@ -171,11 +178,10 @@ void Node::setTexture(int texture) {
 }
 
 //Set texture rect
-void Node::setTextureRect(TextureRect &rectangle, int i) {
-	if(i < textureRects.size())
-		textureRects[i] = rectangle;
-	else
-		textureRects.push_back(rectangle);
+void Node::setTextureRect(TextureRect &rectangle, sint i) {
+	while(i >= textureRects.size())
+		textureRects.push_back({0});
+	textureRects[i] = rectangle;
 }
 
 //Get list of layers node collides with

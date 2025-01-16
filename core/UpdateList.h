@@ -34,6 +34,7 @@ private:
 	static Node *screen[MAXLAYER];
 	static std::bitset<MAXLAYER> staticLayers;
 	static std::bitset<MAXLAYER> pausedLayers;
+	static std::bitset<MAXLAYER> screenLayers;
 	static std::vector<Node *> deleted;
 
 	//Window event system
@@ -73,17 +74,21 @@ public:
 	//Layer control features
 	static void staticLayer(Layer layer, bool _static=true);
 	static void pauseLayer(Layer layer, bool pause=true);
+	static void screenSpaceLayer(Layer layer, bool pause=true);
 	static void hideLayer(Layer layer, bool hidden=true);
 
 	//Layer read features
 	static bool isLayerStatic(Layer layer);
 	static bool isLayerPaused(Layer layer);
+	static bool isLayerScreenSpace(Layer layer);
 	static bool isLayerHidden(Layer layer);
-	static int getMaxLayer();
+	static int getLayerCount();
 
 	//Utility Functions
 	static int loadTexture(std::string filename);
 	static sf::Vector2i getTextureSize(int index);
+	static unsigned long long getImguiTexture(int index);
+	static Color pickColor(int texture, sf::Vector2i position);
 	//static sf::Texture *getTexture(sint index);
 
 	//Start engine
@@ -107,8 +112,16 @@ public:
 void initialize();
 std::string windowTitle();
 Color backgroundColor();
-std::vector<std::string> textureFiles();
-std::vector<std::string> layerNames();
+std::vector<std::string> &textureFiles();
+std::vector<std::string> &layerNames();
+
+//Debug tool insertions
+void setupDebugTools();
+void addDebugTextures();
+int getDebugTextures();
+
+//Imgui debug functions
+void imguiShowNode(sint id);
 void skyrmionImguiMenu();
 void skyrmionImgui();
 void gameImguiMenu();

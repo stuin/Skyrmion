@@ -6,23 +6,15 @@
  * Random noise tiling
  */
 
-//Function copied from https://libnoise.sourceforge.net/noisegen/index.html
-//Modified for range 0.0 - 1.0
-double IntegerNoise(int n) {
-	n = (n >> 13) ^ n;
-	int nn = (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
-	return ((double)nn / 1073741824.0) / 2.0;
-}
-
 //Add a pure random value to each tile, with a range of 0 to limit index
 class RandomIndexer : public Indexer {
 private:
 	Indexer *limits = NULL;
-	int multiplier;
-	int seed = 0;
 	int linearPosition = 0;
 
 public:
+	int seed = 0;
+	int multiplier;
 
 	RandomIndexer(Indexer *previous, std::map<int, int> _limits, int _multiplier=1, sf::Vector2i scale=sf::Vector2i(1,1))
 		: Indexer(previous, previous->fallback, scale), limits(new MapIndexer(previous, _limits, 0)), multiplier(_multiplier) {
@@ -34,12 +26,20 @@ public:
 
 	}
 
+	//Function copied from https://libnoise.sourceforge.net/noisegen/index.html
+	//Modified for range 0.0 - 1.0
+	double IntegerNoise(int n) {
+		n = (n >> 13) ^ n;
+		int nn = (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
+		return ((double)nn / 1073741824.0) / 2.0;
+	}
+
 	//Consistant locational randomness
 	int getTileI(int x, int y) {
 		if(inBounds(x, y)) {
 			int rOffset = 0;
 			int limit = limits->getTileI(x, y);
-			double input = IntegerNoise(x + y*getSize().x);
+			double input = IntegerNoise(x + y*getSize().x + seed*getSize().y*getSize().x);
 			rOffset = (int)floor(input * limit);
 			return getPrevious()->getTileI(x, y) + rOffset * multiplier;
 		}
@@ -60,10 +60,12 @@ class NoiseIndexer : public Indexer {
 private:
 	Indexer *limits = NULL;
 	noise::module::Module *noise;
+
+public:
+	int seed = 0;
 	int multiplier;
 	int linearPosition = 0;
 
-public:
 	NoiseIndexer(Indexer *previous, std::map<int, int> _limits, noise::module::Module *_noise, int _multiplier=1, sf::Vector2i scale=sf::Vector2i(1,1))
 		: Indexer(previous, previous->fallback, scale), limits(new MapIndexer(previous, _limits, 0)), noise(_noise), multiplier(_multiplier) {
 
@@ -109,6 +111,10 @@ public:
 	ConstIndexer(int fallback, sf::Vector2i _size, sf::Vector2i scale)
 		: Indexer(NULL, fallback, scale), size(_size) {
 
+	}
+
+	void setConst(int value) {
+		fallback = value;
 	}
 
 	//Get tile value

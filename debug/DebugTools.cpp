@@ -4,21 +4,23 @@
 #include "DebugLayers.hpp"
 #include "DebugBreakpoints.hpp"
 
+void addDebugTextures() {
+	textureFiles().push_back("#DEBUG");
+	textureFiles().push_back("src/Skyrmion/res/heatmapG.png");
+	textureFiles().push_back("src/Skyrmion/res/heatmap.png");
+	textureFiles().push_back("src/Skyrmion/res/colors.png");
+}
+
 void setupDebugTools() {
 	Settings::loadSettings("src/Skyrmion/res/debug_settings.json");
 
-	int debugLayer = UpdateList::getMaxLayer()+1;
+	int debugLayer = UpdateList::getLayerCount();
 	UpdateList::staticLayer(debugLayer);
+	UpdateList::screenSpaceLayer(debugLayer);
+	layerNames().push_back("DEBUG");
 
 	UpdateList::addNode(new DebugLayers(debugLayer));
 
 	debugBreakpoints = new DebugBreakpoints(debugLayer);
 	UpdateList::addNode(debugBreakpoints);
 }
-
-
-#if _DEBUG
-	#define DEBUGTOOLS setupDebugTools()
-#else
-	#define DEBUGTOOLS void
-#endif
