@@ -20,10 +20,20 @@ struct TimingStats {
         double seconds = 0;
         while(frames < MAX_DELTA_TIMES && seconds < 1.0)
             seconds += delta[(start + frames++) % MAX_DELTA_TIMES];
+        if(seconds < 1.0)
+            frames *= 1/seconds;
         return frames;
     }
 
     double last() {
         return delta[totalCount % MAX_DELTA_TIMES];
     }
+};
+
+class DebugTimers {
+public:
+    static TimingStats frameTimes;
+    static TimingStats frameLiteralTimes;
+    static TimingStats updateTimes;
+    static TimingStats updateLiteralTimes;
 };

@@ -138,8 +138,8 @@ sf::Color LightMap::applyIntensity(float intensity) {
 	return result;
 }
 
-sf::Vector2f LightMap::getTilePos(unsigned int x, unsigned int y) {
-	sf::Vector2f pos(tileX / 2.0f + tileX * x, tileY / 2.0f + tileY * y);
+Vector2f LightMap::getTilePos(unsigned int x, unsigned int y) {
+	Vector2f pos(tileX / 2.0f + tileX * x, tileY / 2.0f + tileY * y);
 	if(x > width + 1)
 		pos.x = 0;
 	if(y > height + 1)
@@ -147,27 +147,27 @@ sf::Vector2f LightMap::getTilePos(unsigned int x, unsigned int y) {
 	return pos;
 }
 
-sf::Vector2f LightMap::transformOctant(int row, int col, int octant) {
+Vector2f LightMap::transformOctant(int row, int col, int octant) {
 	switch(octant) {
-		case 0: return sf::Vector2f( col, -row);
-		case 1: return sf::Vector2f( row, -col);
-		case 2: return sf::Vector2f( row,  col);
-		case 3: return sf::Vector2f( col,  row);
-		case 4: return sf::Vector2f(-col,  row);
-		case 5: return sf::Vector2f(-row,  col);
-		case 6: return sf::Vector2f(-row, -col);
-		case 7: return sf::Vector2f(-col, -row);
+		case 0: return Vector2f( col, -row);
+		case 1: return Vector2f( row, -col);
+		case 2: return Vector2f( row,  col);
+		case 3: return Vector2f( col,  row);
+		case 4: return Vector2f(-col,  row);
+		case 5: return Vector2f(-row,  col);
+		case 6: return Vector2f(-row, -col);
+		case 7: return Vector2f(-col, -row);
 	}
-	return sf::Vector2f(0, 0);
+	return Vector2f(0, 0);
 }
 
-void LightMap::lightOctant(sf::Vector2f light, int octant, float maxIntensity) {
+void LightMap::lightOctant(Vector2f light, int octant, float maxIntensity) {
 	ShadowLine line;
 	int row = 1;
 
 	while(true) {
 		// Stop once we go out of bounds.
-		sf::Vector2f pos = light + transformOctant(row, 0, octant);
+		Vector2f pos = light + transformOctant(row, 0, octant);
 		if(!indexes->inBounds(pos) || maxIntensity < ambientIntensity)
 			break;
 
@@ -217,7 +217,7 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 	//Set arguments
 	tileX = _tileX / indexes->getScale().x;
 	tileY = _tileY / indexes->getScale().y;
-	tileSize = sf::Vector2f(tileX, tileY);
+	tileSize = Vector2f(tileX, tileY);
 	ambientIntensity = _ambient;
 	absorb = _absorb / indexes->getScale().x;
 	lightColor = _lightColor;
@@ -226,7 +226,7 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 	//Set sizing
 	width = (indexes->getSize().x + 1) * indexes->getScale().x;
 	height = (indexes->getSize().y + 1) * indexes->getScale().y;
-	setSize(sf::Vector2i(tileX * width, tileY * height));
+	setSize(Vector2i(tileX * width, tileY * height));
 	setOrigin(-_tileX / 2, -_tileY / 2);
 
 	vertices.setPrimitiveType(sf::Quads);
@@ -246,7 +246,7 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
 
 			//Add static lights
 			if(indexLights) {
-				sf::Vector2f pos(x, y);
+				Vector2f pos(x, y);
 				int tileValue = indexes->getTile(pos);
 				if(tileValue > 0)
 					addSource(pos * tileSize, tileValue / 100.0);
@@ -265,7 +265,7 @@ void LightMap::reload() {
 
 	//Propogate Sources
 	for(long unsigned int i = 0; i < sourcePosition.size(); i++) {
-		sf::Vector2f light = sourcePosition[i];
+		Vector2f light = sourcePosition[i];
 		if(indexes->inBounds(light))
 			tiles[(int)light.x][(int)light.y] = sourceIntensity[i];
 
@@ -302,7 +302,7 @@ void LightMap::reloadBuffer() {
 	//std::cout << "Redraw lightmap\n";
 }
 
-int LightMap::addSource(sf::Vector2f light, float intensity) {
+int LightMap::addSource(Vector2f light, float intensity) {
 	light = light / tileSize;
 	int lastIndex = nextIndex;
 	if(nextIndex < sourcePosition.size()) {
@@ -318,7 +318,7 @@ int LightMap::addSource(sf::Vector2f light, float intensity) {
 	return lastIndex;
 }
 
-void LightMap::moveSource(int i, sf::Vector2f light) {
+void LightMap::moveSource(int i, Vector2f light) {
 	sourcePosition[i] = light / tileSize;
 }
 

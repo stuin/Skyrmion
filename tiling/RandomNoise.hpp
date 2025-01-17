@@ -16,12 +16,12 @@ public:
 	int seed = 0;
 	int multiplier;
 
-	RandomIndexer(Indexer *previous, std::map<int, int> _limits, int _multiplier=1, sf::Vector2i scale=sf::Vector2i(1,1))
+	RandomIndexer(Indexer *previous, std::map<int, int> _limits, int _multiplier=1, Vector2i scale=Vector2i(1,1))
 		: Indexer(previous, previous->fallback, scale), limits(new MapIndexer(previous, _limits, 0)), multiplier(_multiplier) {
 
 	}
 
-	RandomIndexer(Indexer *previous, Indexer *_limits, int _multiplier=1, sf::Vector2i scale=sf::Vector2i(1,1))
+	RandomIndexer(Indexer *previous, Indexer *_limits, int _multiplier=1, Vector2i scale=Vector2i(1,1))
 		: Indexer(previous, previous->fallback, scale), limits(_limits), multiplier(_multiplier) {
 
 	}
@@ -66,12 +66,12 @@ public:
 	int multiplier;
 	int linearPosition = 0;
 
-	NoiseIndexer(Indexer *previous, std::map<int, int> _limits, noise::module::Module *_noise, int _multiplier=1, sf::Vector2i scale=sf::Vector2i(1,1))
+	NoiseIndexer(Indexer *previous, std::map<int, int> _limits, noise::module::Module *_noise, int _multiplier=1, Vector2i scale=Vector2i(1,1))
 		: Indexer(previous, previous->fallback, scale), limits(new MapIndexer(previous, _limits, 0)), noise(_noise), multiplier(_multiplier) {
 
 	}
 
-	NoiseIndexer(Indexer *previous, Indexer *_limits, noise::module::Module *_noise, int _multiplier=1, sf::Vector2i scale=sf::Vector2i(1,1))
+	NoiseIndexer(Indexer *previous, Indexer *_limits, noise::module::Module *_noise, int _multiplier=1, Vector2i scale=Vector2i(1,1))
 		: Indexer(previous, previous->fallback, scale), limits(_limits), noise(_noise), multiplier(_multiplier) {
 
 	}
@@ -100,15 +100,15 @@ public:
 
 //Constant value indexer
 class ConstIndexer : public Indexer {
-	sf::Vector2i size;
+	Vector2i size;
 
 public:
 	ConstIndexer(int fallback, int width, int height, int scaleX=1, int scaleY=1)
-		: Indexer(NULL, fallback, sf::Vector2i(scaleX, scaleY)), size(width, height) {
+		: Indexer(NULL, fallback, Vector2i(scaleX, scaleY)), size(width, height) {
 
 	}
 
-	ConstIndexer(int fallback, sf::Vector2i _size, sf::Vector2i scale)
+	ConstIndexer(int fallback, Vector2i _size, Vector2i scale)
 		: Indexer(NULL, fallback, scale), size(_size) {
 
 	}
@@ -128,7 +128,7 @@ public:
 	}
 
 	//Return actual size
-	sf::Vector2i getSize() {
+	Vector2i getSize() {
 		return size;
 	}
 

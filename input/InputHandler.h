@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstdlib>
 
 #include "Settings.h"
@@ -63,7 +64,7 @@ public:
 //Input with built in joystick and directional keyboard support
 class DirectionHandler : public InputHandler {
 private:
-	sf::Vector2f direction = sf::Vector2f(0, 0);
+	Vector2f direction = Vector2f(0, 0);
 	int joystick = 0;
 
 public:
@@ -74,8 +75,8 @@ public:
 	DirectionHandler(std::vector<std::string> keys, int layer, Node *parent = NULL);
 	DirectionHandler(std::string field, int layer, Node *parent = NULL);
 
-	sf::Vector2f getDirection();
-	sf::Vector2f getMovement(double distance);
+	Vector2f getDirection();
+	Vector2f getMovement(double distance);
 
 	void update(double time);
 

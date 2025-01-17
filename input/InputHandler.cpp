@@ -5,7 +5,7 @@ std::vector<std::pair<std::string, std::string>> Settings::edits;
 
 //Set controls directly
 InputHandler::InputHandler(std::vector<int> _controls, int layer, Node *parent)
-: Node(layer, sf::Vector2i(16, 16), true, parent) {
+: Node(layer, Vector2i(16, 16), true, parent) {
 
 	for(int key : _controls)
 		controls.push_back(Keybind(key));
@@ -16,7 +16,7 @@ InputHandler::InputHandler(std::vector<int> _controls, int layer, Node *parent)
 
 //Set controls through configurable settings
 InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *parent)
-: Node(layer, sf::Vector2i(16, 16), true, parent) {
+: Node(layer, Vector2i(16, 16), true, parent) {
 
 	//Base keys
 	sint startSize = keys.size();
@@ -194,7 +194,7 @@ DirectionHandler::DirectionHandler(std::string field, int layer, Node *parent)
 
 //Calculate direction from joystick and keyboard
 void DirectionHandler::update(double time) {
-	direction = sf::Vector2f(0, 0);
+	direction = Vector2f(0, 0);
 
 	//Button Input
 	for(sint i = 0; i < controls.size(); i++) {
@@ -220,7 +220,7 @@ void DirectionHandler::update(double time) {
 
 	//Read from joystick
 	/*int jid = (joystick - 1) / 4;
-	if(direction == sf::Vector2f(0, 0) && joystick > 0) {
+	if(direction == Vector2f(0, 0) && joystick > 0) {
 		int axes = ((joystick - 1) % 4) * 2;
 		sf::Joystick::Axis xAxis = Settings::JOYSTICKAXIS[axes];
 		sf::Joystick::Axis yAxis = Settings::JOYSTICKAXIS[axes + 1];
@@ -241,7 +241,7 @@ void DirectionHandler::update(double time) {
 	}*/
 
 	//Update moving placeholder key
-	bool moved = direction != sf::Vector2f(0, 0);
+	bool moved = direction != Vector2f(0, 0);
 	if(moved != controls[moving].held)
 		updateKey(-2, moved);
 
@@ -259,14 +259,14 @@ void DirectionHandler::update(double time) {
 }
 
 //Get direct 2d direction based on inputs
-sf::Vector2f DirectionHandler::getDirection() {
+Vector2f DirectionHandler::getDirection() {
 	return direction;
 }
 
 //Limit keyboard distance to circle to match joystick
-sf::Vector2f DirectionHandler::getMovement(double distance) {
+Vector2f DirectionHandler::getMovement(double distance) {
 	if(joystickMovement)
-		return sf::Vector2f(direction.x * distance, direction.y * distance);
+		return Vector2f(direction.x * distance, direction.y * distance);
 	return vectorLength(direction, distance);
 }
 

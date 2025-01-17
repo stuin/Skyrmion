@@ -20,7 +20,7 @@ public:
 	bool pauseFrame = false;
 	bool stayPaused = false;
 
-	DebugBreakpoints(int layer) : Node(layer, sf::Vector2i(16, 16), true),
+	DebugBreakpoints(int layer) : Node(layer, Vector2i(16, 16), true),
 	input(debugBreakpointKeys, layer, this) {
 
 		DebugBreakpoints *_this = this;

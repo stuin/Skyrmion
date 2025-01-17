@@ -20,7 +20,7 @@ private:
 	InputHandler input;
 
 public:
-	DebugLayers(int layer) : Node(layer, sf::Vector2i(16, 16), true),
+	DebugLayers(int layer) : Node(layer, Vector2i(16, 16), true),
 	input(debugLayerKeys, layer, this) {
 
 		input.pressedFunc = [layer](int i) {

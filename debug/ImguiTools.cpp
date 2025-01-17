@@ -1,6 +1,9 @@
+#include <algorithm>
+
 #include "../core/UpdateList.h"
 #include "../tiling/TileMap.hpp"
 #include "../tiling/RandomNoise.hpp"
+#include "TimingStats.hpp"
 
 #include "../include/imgui/imgui.h"//
 
@@ -21,12 +24,17 @@ std::vector<Node *> nodes;
 sint debugTextureStart = 0;
 Layer debugLayer = 0;
 
-void Text(std::string name, sf::Vector2f value) {
+TimingStats DebugTimers::frameTimes;
+TimingStats DebugTimers::frameLiteralTimes;
+TimingStats DebugTimers::updateTimes;
+TimingStats DebugTimers::updateLiteralTimes;
+
+void Text(std::string name, Vector2f value) {
 	name += " = (%.3f,%.3f)";
 	ImGui::Text(name.c_str(), value.x, value.y);
 }
 
-void Text(std::string name, sf::Vector2i value) {
+void Text(std::string name, Vector2i value) {
 	name += " = (%d,%d)";
 	ImGui::Text(name.c_str(), value.x, value.y);
 }
@@ -47,24 +55,38 @@ void setupNodes() {
 }
 
 void imguiFPSWindow() {
-	ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(300, 500), ImGuiCond_FirstUseEver);
     ImGui::Begin("FPS", &fpsWindow);
 
     ImGui::SeparatorText("Updates");
-    ImGui::Text("Per Second = %d", UpdateList::updateTimes.getFPS());
-    ImGui::Text("Last delta = %f", UpdateList::updateTimes.last());
-    ImGui::Text("Total updates = %d", UpdateList::updateTimes.totalCount);
-    ImGui::Text("Total time = %f", UpdateList::updateTimes.totalTime);
-    ImGui::Text("Max delta = %f", UpdateList::updateTimes.maxDelta);
-    ImGui::Text("Average delta = %f", UpdateList::updateTimes.totalTime/UpdateList::updateTimes.totalCount);
+    ImGui::Text("Per Second = %d", DebugTimers::updateTimes.getFPS());
+    ImGui::Text("Last delta = %f", DebugTimers::updateTimes.last());
+    ImGui::Text("Average delta = %f", DebugTimers::updateTimes.totalTime/DebugTimers::updateTimes.totalCount);
+    ImGui::Text("Max delta = %f", DebugTimers::updateTimes.maxDelta);
+    ImGui::Text("Total updates = %d", DebugTimers::updateTimes.totalCount);
+    ImGui::Text("Total time = %f", DebugTimers::updateTimes.totalTime);
+
+    ImGui::SeparatorText("Literal Update Length");
+    ImGui::Text("Theoretical Per Second = %d", DebugTimers::updateLiteralTimes.getFPS());
+    ImGui::Text("Last delta = %f", DebugTimers::updateLiteralTimes.last());
+    ImGui::Text("Average delta = %f", DebugTimers::updateLiteralTimes.totalTime/DebugTimers::updateLiteralTimes.totalCount);
+    ImGui::Text("Max delta = %f", DebugTimers::updateLiteralTimes.maxDelta);
+    ImGui::Text("Total time = %f", DebugTimers::updateLiteralTimes.totalTime);
 
     ImGui::SeparatorText("Draw Frames");
-    ImGui::Text("Per Second = %d", UpdateList::frameTimes.getFPS());
-    ImGui::Text("Last delta = %f", UpdateList::frameTimes.last());
-    ImGui::Text("Total frames = %d", UpdateList::frameTimes.totalCount);
-    ImGui::Text("Total time = %f", UpdateList::frameTimes.totalTime);
-    ImGui::Text("Max delta = %f", UpdateList::frameTimes.maxDelta);
-    ImGui::Text("Average delta = %f", UpdateList::frameTimes.totalTime/UpdateList::frameTimes.totalCount);
+    ImGui::Text("Per Second = %d", DebugTimers::frameTimes.getFPS());
+    ImGui::Text("Last delta = %f", DebugTimers::frameTimes.last());
+    ImGui::Text("Average delta = %f", DebugTimers::frameTimes.totalTime/DebugTimers::frameTimes.totalCount);
+    ImGui::Text("Max delta = %f", DebugTimers::frameTimes.maxDelta);
+    ImGui::Text("Total frames = %d", DebugTimers::frameTimes.totalCount);
+    ImGui::Text("Total time = %f", DebugTimers::frameTimes.totalTime);
+
+    ImGui::SeparatorText("Literal Draw Time");
+    ImGui::Text("Theoretical Per Second = %d", DebugTimers::frameLiteralTimes.getFPS());
+    ImGui::Text("Last delta = %f", DebugTimers::frameLiteralTimes.last());
+    ImGui::Text("Average delta = %f", DebugTimers::frameLiteralTimes.totalTime/DebugTimers::frameLiteralTimes.totalCount);
+    ImGui::Text("Max delta = %f", DebugTimers::frameLiteralTimes.maxDelta);
+    ImGui::Text("Total time = %f", DebugTimers::frameLiteralTimes.totalTime);
 
     ImGui::End();
 }
@@ -136,11 +158,11 @@ void imguiNodeWindow(Node *source) {
 
 	ImGui::Text("BlendMode = %d", source->getBlendMode());
 
-	int texture = source->getTexture();
+	sint texture = source->getTexture();
 	if(texture < textureFiles().size())
-		ImGui::Text("Texture = %d (%s)", texture, textureFiles()[texture].c_str());
+		ImGui::Text("Texture = %ld (%s)", texture, textureFiles()[texture].c_str());
 	else
-		ImGui::Text("Texture = %d", texture);
+		ImGui::Text("Texture = %ld", texture);
 
 	bool nodeHidden = source->isHidden();
 	ImGui::Text("Hidden = ");
@@ -269,7 +291,7 @@ void imguiNoiseGenWindow() {
 	//
 
 	/*int counters[testDivisions] = {0};
-	randomIndexer->mapGrid([&counters, testDivisions](int c, sf::Vector2f pos) {
+	randomIndexer->mapGrid([&counters, testDivisions](int c, Vector2f pos) {
 		counters[c/ (100/testDivisions)]++;
 	});
 	int sum = 0;
@@ -283,7 +305,7 @@ void imguiNoiseGenWindow() {
 }
 
 float col1[4] = { 1.0f, 0.0f, 0.2f, 1.0f };
-sf::Vector2i pickPosition;
+Vector2i pickPosition;
 int pickIndex = 10;
 int pickTexture = -1;
 float pickTextureScale = 6;
@@ -311,9 +333,9 @@ void imguiColorPickerWindow() {
     ImGui::SeparatorText("Image Picker");
 
     if(texture != pickTexture)
-    	pickPosition = sf::Vector2i(0,0);
+    	pickPosition = Vector2i(0,0);
 
-    sf::Vector2i size = textureData.size;
+    Vector2i size = textureData.size;
     ImGui::SliderInt("x", &pickPosition.x, 0, size.x-1);
     ImGui::SliderInt("y", &pickPosition.y, 0, size.y-1);
 

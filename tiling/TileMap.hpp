@@ -29,7 +29,7 @@ private:
 
 public:
 
-    TileMap(int _tileset, int _tileX, int _tileY, Indexer *_indexes, Layer layer = 0, int _offset = 0, sf::Rect<uint> border=sf::Rect<uint>())
+    TileMap(int _tileset, int _tileX, int _tileY, Indexer *_indexes, Layer layer = 0, int _offset = 0, Rect<uint> border=Rect<uint>())
      : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes), offset(_offset), tileset(_tileset) {
 
         //Set sizing
@@ -46,7 +46,7 @@ public:
         if(height + startY > fullHeight)
             height = fullHeight - startY;
 
-        setSize(sf::Vector2i(tileX * width, tileY * height));
+        setSize(Vector2i(tileX * width, tileY * height));
         setOrigin(0, 0);
         setPosition(startX * tileX, startY * tileY);
         setTexture(tileset);
@@ -87,7 +87,7 @@ public:
         for(unsigned int i = 0; i < width; ++i) {
             for(unsigned int j = 0; j < height; ++j) {
                 // get the current tile number
-                int tileValue = indexes->getTile(sf::Vector2f(i + startX, j + startY));
+                int tileValue = indexes->getTile(Vector2f(i + startX, j + startY));
                 int tileNumber = (tileValue % numTextures) + offset;
                 int rotations = (tileValue / numTextures) % 4;
                 int fliph = rotations / 4 % 2;
@@ -114,21 +114,21 @@ public:
 
                 /*if(tileNumber - offset != -1) {
                     // define its 4 texture coordinates
-                    quad[(0 + rotations + fliph - flipv) % 4].texCoords = sf::Vector2f(tu * tileX, tv * tileY);
-                    quad[(1 + rotations - fliph + flipv) % 4].texCoords = sf::Vector2f((tu + 1) * tileX, tv * tileY);
-                    quad[(2 + rotations + fliph - flipv) % 4].texCoords = sf::Vector2f((tu + 1) * tileX, (tv + 1) * tileY);
-                    quad[(3 + rotations - fliph + flipv) % 4].texCoords = sf::Vector2f(tu * tileX, (tv + 1) * tileY);
+                    quad[(0 + rotations + fliph - flipv) % 4].texCoords = Vector2f(tu * tileX, tv * tileY);
+                    quad[(1 + rotations - fliph + flipv) % 4].texCoords = Vector2f((tu + 1) * tileX, tv * tileY);
+                    quad[(2 + rotations + fliph - flipv) % 4].texCoords = Vector2f((tu + 1) * tileX, (tv + 1) * tileY);
+                    quad[(3 + rotations - fliph + flipv) % 4].texCoords = Vector2f(tu * tileX, (tv + 1) * tileY);
 
                     // define its 4 corners
-                    quad[0].position = sf::Vector2f((i) * tileX, (j) * tileY);
-                    quad[1].position = sf::Vector2f((i + 1) * tileX, (j) * tileY);
-                    quad[2].position = sf::Vector2f((i + 1) * tileX, (j + 1) * tileY);
-                    quad[3].position = sf::Vector2f((i) * tileX, (j + 1) * tileY);
+                    quad[0].position = Vector2f((i) * tileX, (j) * tileY);
+                    quad[1].position = Vector2f((i + 1) * tileX, (j) * tileY);
+                    quad[2].position = Vector2f((i + 1) * tileX, (j + 1) * tileY);
+                    quad[3].position = Vector2f((i) * tileX, (j + 1) * tileY);
                 } else {
-                    quad[0].position = sf::Vector2f(0, 0);
-                    quad[1].position = sf::Vector2f(0, 0);
-                    quad[2].position = sf::Vector2f(0, 0);
-                    quad[3].position = sf::Vector2f(0, 0);
+                    quad[0].position = Vector2f(0, 0);
+                    quad[1].position = Vector2f(0, 0);
+                    quad[2].position = Vector2f(0, 0);
+                    quad[3].position = Vector2f(0, 0);
                 }*/
             }
         }
@@ -165,7 +165,7 @@ public:
     AnimatedTileMap(int tileset, int tileX, int tileY, Indexer *indexes, int frames, double delay, Layer layer = 0) : Node(layer) {
         int width = indexes->getSize().x;
         int height = indexes->getSize().y;
-        setSize(sf::Vector2i(tileX * width, tileY * height));
+        setSize(Vector2i(tileX * width, tileY * height));
         setOrigin(0, 0);
         setTexture(tileset);
 
@@ -185,7 +185,7 @@ public:
         }
     }
 
-    AnimatedTileMap(sf::Vector2i size, double delay, Layer layer = 0) : Node(layer) {
+    AnimatedTileMap(Vector2i size, double delay, Layer layer = 0) : Node(layer) {
         this->numTiles = 0;
         this->maxFrames = 0;
         this->delay = delay;
@@ -278,7 +278,7 @@ public:
     LargeTileMap(int tileset, int tileX, int tileY, Indexer *indexes, Layer layer) : Node(layer) {
         fullWidth = indexes->getSize().x;
         fullHeight = indexes->getSize().y;
-        setSize(sf::Vector2i(tileX * fullWidth, tileY * fullHeight));
+        setSize(Vector2i(tileX * fullWidth, tileY * fullHeight));
         setOrigin(0, 0);
         setHidden(true);
         setTexture(tileset);
@@ -295,7 +295,7 @@ public:
         for(uint x = 0; x < countX; x++) {
             for(uint y = 0; y < countY; y++) {
                 //Add new tilemap
-                sf::Rect<uint> border(x * sectionWidth, y * sectionHeight, sectionWidth, sectionHeight);
+                Rect<uint> border(x * sectionWidth, y * sectionHeight, sectionWidth, sectionHeight);
                 TileMap *map = new TileMap(tileset, tileX, tileY, indexes, layer, 0, border);
                 map->setParent(this);
                 tilemaps.push_back(map);

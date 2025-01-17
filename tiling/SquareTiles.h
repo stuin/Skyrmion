@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 
 #include "GridMaker.h"
@@ -42,7 +43,7 @@ private:
 	std::unordered_map<std::array<int,4>, int, QuadHash, QuadEqual> quads;
 
 public:
-	QuadIndexer(Indexer *previous, QuadMap _quads, int fallback, sf::Vector2i scale=sf::Vector2i(1,1), int _seed=0)
+	QuadIndexer(Indexer *previous, QuadMap _quads, int fallback, Vector2i scale=Vector2i(1,1), int _seed=0)
 		: Indexer(previous, fallback, scale) {
 
 		for(std::array<int,5> _quad : _quads){

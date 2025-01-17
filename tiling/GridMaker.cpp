@@ -9,12 +9,12 @@ int Indexer::mapTile(int c) {
 }
 
 //Scale vector before retrieving value
-int Indexer::getTile(sf::Vector2f position) {
+int Indexer::getTile(Vector2f position) {
 	return getTileI(position.x / getScale().x, position.y / getScale().y);
 }
 
 //Scale and set tile
-void Indexer::setTile(sf::Vector2f position, int value) {
+void Indexer::setTile(Vector2f position, int value) {
 	setTileI(position.x / getScale().x, position.y / getScale().y, value);
 }
 
@@ -45,18 +45,18 @@ void Indexer::setTileB(int x, int y, int place, bool value) {
 }
 
 //Run function on every square in grid
-void Indexer::mapGrid(std::function<void(int, sf::Vector2f)> func) {
+void Indexer::mapGrid(std::function<void(int, Vector2f)> func) {
 	const int width = getSize().x;
 	const int height = getSize().y;
 	//Loop through tiles
 	for(int y = 0; y < height; y++)
 		for(int x = 0; x < width; x++) {
-			sf::Vector2f pos = sf::Vector2f(x * getScale().x, y * getScale().y);
+			Vector2f pos = Vector2f(x * getScale().x, y * getScale().y);
 			func(getTileI(x, y), pos);
 		}
 }
 
-bool Indexer::inBounds(sf::Vector2f pos) {
+bool Indexer::inBounds(Vector2f pos) {
 	return pos.x >= 0 && pos.x < getSize().x*getScale().x &&
 		pos.y >= 0 && pos.y < getSize().y*getScale().y;
 }
@@ -65,19 +65,19 @@ bool Indexer::inBounds(int x, int y) {
 	return x >= 0 && x < getSize().x && y >= 0 && y < getSize().y;
 }
 
-sf::Vector2f Indexer::snapPosition(sf::Vector2f position) {
+Vector2f Indexer::snapPosition(Vector2f position) {
 	int x = position.x / getScale().x;
 	int y = position.y / getScale().y;
-	return sf::Vector2f(x * getScale().x, y * getScale().y);
+	return Vector2f(x * getScale().x, y * getScale().y);
 }
 
 //Get size of grid
-sf::Vector2i Indexer::getSize() {
+Vector2i Indexer::getSize() {
 	return previous->getSize();
 }
 
 //Get indexer scale
-sf::Vector2i Indexer::getScale() {
+Vector2i Indexer::getScale() {
 	return scale;
 }
 
@@ -95,7 +95,7 @@ void Indexer::printGrid() {
 }
 
 //Convert file to int[][]
-GridMaker::GridMaker(std::string file, int fallback) : Indexer(NULL, fallback, sf::Vector2i(1, 1)) {
+GridMaker::GridMaker(std::string file, int fallback) : Indexer(NULL, fallback, Vector2i(1, 1)) {
 	std::string line;
 	std::ifstream mapFile(file);
 
@@ -118,7 +118,7 @@ GridMaker::GridMaker(std::string file, int fallback) : Indexer(NULL, fallback, s
 }
 
 //Create blank int[][]
-GridMaker::GridMaker(int width, int height, int fallback) : Indexer(NULL, fallback, sf::Vector2i(1, 1)) {
+GridMaker::GridMaker(int width, int height, int fallback) : Indexer(NULL, fallback, Vector2i(1, 1)) {
 	this->width = width;
 	this->height = height;
 
@@ -137,7 +137,7 @@ GridMaker::~GridMaker() {
 	delete[] tiles;
 }
 
-void GridMaker::reload(std::string file, int offset, sf::Rect<int> border) {
+void GridMaker::reload(std::string file, int offset, Rect<int> border) {
 	if(border.width == 0 || border.left + border.width > width)
 		border.width = width-border.left;
 	if(border.height == 0 || border.top + border.height > height)
@@ -185,8 +185,8 @@ void GridMaker::clearTiles() {
 }
 
 //Get size of grid
-sf::Vector2i GridMaker::getSize() {
-	return sf::Vector2i(width, height);
+Vector2i GridMaker::getSize() {
+	return Vector2i(width, height);
 }
 
 //Concat 2 maps

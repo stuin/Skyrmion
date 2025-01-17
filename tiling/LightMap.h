@@ -13,8 +13,8 @@
 /*
 class LightMap : public Node {
 private:
-	const sf::Vector2f offset = sf::Vector2f(-1,-1);
-	sf::Vector2f tileSize;
+	const Vector2f offset = Vector2f(-1,-1);
+	Vector2f tileSize;
 	int tileX;
 	int tileY;
 	unsigned int width;
@@ -30,7 +30,7 @@ private:
 	Indexer *indexes;
 
 	//Light sources
-	std::vector<sf::Vector2f> sourcePosition;
+	std::vector<Vector2f> sourcePosition;
 	std::vector<float> sourceIntensity;
 	unsigned int nextIndex = 0;
 
@@ -42,9 +42,9 @@ private:
 
 	sf::Color applyIntensity(unsigned int x, unsigned int y);
 	sf::Color applyIntensity(float intensity);
-	sf::Vector2f getTilePos(unsigned int x, unsigned int y);
-	sf::Vector2f transformOctant(int row, int col, int octant);
-	void lightOctant(sf::Vector2f light, int octant, float maxIntensity);
+	Vector2f getTilePos(unsigned int x, unsigned int y);
+	Vector2f transformOctant(int row, int col, int octant);
+	void lightOctant(Vector2f light, int octant, float maxIntensity);
 
 public:
 	LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexer *_indexes,
@@ -60,8 +60,8 @@ public:
 	void reloadBuffer();
 
 	//Moving lights
-	int addSource(sf::Vector2f light, float intensity);
-	void moveSource(int i, sf::Vector2f light);
+	int addSource(Vector2f light, float intensity);
+	void moveSource(int i, Vector2f light);
 	void deleteSource(int i);
 	void markCollection(Node *node);
 };

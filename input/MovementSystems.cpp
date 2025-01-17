@@ -1,11 +1,11 @@
 #include "MovementSystems.h"
 
-sf::Vector2f topDownMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i size, Indexer *collision) {
-	sf::Vector2f end = start + move;
+Vector2f topDownMovement(Vector2f start, Vector2f move, Vector2i size, Indexer *collision) {
+	Vector2f end = start + move;
 
 	if(collision != NULL && collision->getTile(end) != EMPTY) {
-		sf::Vector2f horizontal = sf::Vector2f(start.x, end.y);
-		sf::Vector2f vertical = sf::Vector2f(end.x, start.y);
+		Vector2f horizontal = Vector2f(start.x, end.y);
+		Vector2f vertical = Vector2f(end.x, start.y);
 
 		if(collision->getTile(horizontal) == EMPTY &&
 			collision->getTile(vertical) == EMPTY)
@@ -21,21 +21,21 @@ sf::Vector2f topDownMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i
 	return end;
 }
 
-sf::Vector2f topDownMovement(Node *node, sf::Vector2f move, Indexer *collision) {
+Vector2f topDownMovement(Node *node, Vector2f move, Indexer *collision) {
 	return topDownMovement(node->getGPosition(), move, node->getSize(), collision);
 }
 
-sf::Vector2f topDownMovement(Node *node, sf::Vector2f move, Indexer *collision, double distance) {
+Vector2f topDownMovement(Node *node, Vector2f move, Indexer *collision, double distance) {
 	return topDownMovement(node->getGPosition(), vectorLength(move, distance), node->getSize(), collision);
 }
 
-sf::Vector2f platformFrictionMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i size, double time,
-	sf::Vector2f previous, Indexer *collision, Indexer *frictionMap, float frictionValue,
+Vector2f platformFrictionMovement(Vector2f start, Vector2f move, Vector2i size, double time,
+	Vector2f previous, Indexer *collision, Indexer *frictionMap, float frictionValue,
 	GlobalPhysicsStats *globalPhysics) {
 
-	sf::Vector2f foot = sf::Vector2f(start.x, start.y + size.y / 2 - 2);
-	sf::Vector2f footL = foot - sf::Vector2f(size.x / 2, 0);
-	sf::Vector2f footR = foot + sf::Vector2f(size.x / 2, 0);
+	Vector2f foot = Vector2f(start.x, start.y + size.y / 2 - 2);
+	Vector2f footL = foot - Vector2f(size.x / 2, 0);
+	Vector2f footR = foot + Vector2f(size.x / 2, 0);
 	foot.y += 6;
 
 	float netFriction = (frictionMap->getTile(foot) / 100.0) * frictionValue;
@@ -59,18 +59,18 @@ sf::Vector2f platformFrictionMovement(sf::Vector2f start, sf::Vector2f move, sf:
 	return move;
 }
 
-bool isAbove(sf::Vector2f position, sf::Vector2i size, sf::Vector2f otherPosition, sf::Vector2i otherSize) {
+bool isAbove(Vector2f position, Vector2i size, Vector2f otherPosition, Vector2i otherSize) {
 	float dx = position.x - otherPosition.x;
 	float dy = (otherPosition.y - otherSize.y/2) - (position.y + size.y/4);
 	float side = size.x/3 + otherSize.x/2;
 	return std::abs(dx) < side && dy > 0;
 }
 
-sf::Vector2f platformGravityMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i size, double time, bool jumpInput,
+Vector2f platformGravityMovement(Vector2f start, Vector2f move, Vector2i size, double time, bool jumpInput,
 	Indexer *collision, GlobalPhysicsStats *globalPhysics, PersonalPhysicsStats *physics, std::vector<PersonalPhysicsStats *> colliding) {
 
-	sf::Vector2f velocity = sf::Vector2f(move.x, 0);
-	sf::Vector2f foot = sf::Vector2f(start.x, start.y + physics->nodeSize.y / 2 + 4);
+	Vector2f velocity = Vector2f(move.x, 0);
+	Vector2f foot = Vector2f(start.x, start.y + physics->nodeSize.y / 2 + 4);
 	physics->nodePosition = start;
 	physics->nodeSize = size;
 
@@ -78,7 +78,7 @@ sf::Vector2f platformGravityMovement(sf::Vector2f start, sf::Vector2f move, sf::
 		std::cout << velocity.x << "," << velocity.y << ">1 ";
 
 	//Check for wall
-	sf::Vector2f collisionOffset = velocity + sf::Vector2f(velocity.x / std::abs(velocity.x) * physics->nodeSize.x / 2, physics->nodeSize.y / 4);
+	Vector2f collisionOffset = velocity + Vector2f(velocity.x / std::abs(velocity.x) * physics->nodeSize.x / 2, physics->nodeSize.y / 4);
 	if(physics->previous.y != 0 || foot.y - 8 < collision->snapPosition(foot).y) {
 		if(collision->getTile(start + collisionOffset) == FULL)
 			velocity.x = 0;
@@ -94,8 +94,8 @@ sf::Vector2f platformGravityMovement(sf::Vector2f start, sf::Vector2f move, sf::
 
 	//Falling and jumping
 	foot += velocity;
-	sf::Vector2f footL = foot - sf::Vector2f(physics->nodeSize.x / 4, 0);
-	sf::Vector2f footR = foot + sf::Vector2f(physics->nodeSize.x / 4, 0);
+	Vector2f footL = foot - Vector2f(physics->nodeSize.x / 4, 0);
+	Vector2f footR = foot + Vector2f(physics->nodeSize.x / 4, 0);
 	int tileL = collision->getTile(footL);
 	int tileR = collision->getTile(footR);
 	if(tileL == EMPTY && tileR == EMPTY) {
@@ -129,8 +129,8 @@ sf::Vector2f platformGravityMovement(sf::Vector2f start, sf::Vector2f move, sf::
 	int tile = collision->getTile(foot);
 	if(tile != EMPTY && !(jumpInput && physics->jumpTime < 0.2)) {
 
-		sf::Vector2f ground = collision->snapPosition(foot);
-		sf::Vector2f foot2 = foot - sf::Vector2f(0, 8);
+		Vector2f ground = collision->snapPosition(foot);
+		Vector2f foot2 = foot - Vector2f(0, 8);
 
 		//Allow for upwards slope
 		if(tile != EMPTY && tile != SLOPE_UPLEFT && tile != SLOPE_UPRIGHT &&
@@ -184,7 +184,7 @@ sf::Vector2f platformGravityMovement(sf::Vector2f start, sf::Vector2f move, sf::
 	physics->pushWeight += physics->weight;
 	velocity.x *= 1-std::clamp(0.0f, physics->pushWeight, 1.0f);
 
-	physics->pushDirection = sf::Vector2f(0,0);
+	physics->pushDirection = Vector2f(0,0);
 	for(PersonalPhysicsStats *other : pushing) {
 		other->pushDirection.x = velocity.x / time;
 		if(velocity.x > 0)

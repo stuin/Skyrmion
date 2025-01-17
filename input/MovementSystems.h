@@ -7,9 +7,9 @@
  * Take in movement directions and adjust for collision and physics
  */
 
-sf::Vector2f topDownMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i size, Indexer *collision);
-sf::Vector2f topDownMovement(Node *node, sf::Vector2f move, Indexer *collision);
-sf::Vector2f topDownMovement(Node *node, sf::Vector2f move, Indexer *collision, double distance);
+Vector2f topDownMovement(Vector2f start, Vector2f move, Vector2i size, Indexer *collision);
+Vector2f topDownMovement(Node *node, Vector2f move, Indexer *collision);
+Vector2f topDownMovement(Node *node, Vector2f move, Indexer *collision, double distance);
 
 struct GlobalPhysicsStats {
 	int jumpPower = 340;
@@ -26,10 +26,10 @@ class PersonalPhysicsStats {
 public:
 	bool showDebug = false;
 
-	sf::Vector2f previous = sf::Vector2f(0,0);
-	sf::Vector2f pushDirection = sf::Vector2f(0,0);
-	sf::Vector2f nodePosition = sf::Vector2f(0,0);
-	sf::Vector2i nodeSize = sf::Vector2i(1,1);
+	Vector2f previous = Vector2f(0,0);
+	Vector2f pushDirection = Vector2f(0,0);
+	Vector2f nodePosition = Vector2f(0,0);
+	Vector2i nodeSize = Vector2i(1,1);
 
 	float snapSpeed = 2;
 	float jumpTime = 0;
@@ -43,8 +43,8 @@ public:
 	virtual PersonalPhysicsStats *getPhysics() = 0;
 };
 
-sf::Vector2f platformFrictionMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i size, double time,
-	sf::Vector2f previous, Indexer *collision, Indexer *frictionMap, float frictionValue,
+Vector2f platformFrictionMovement(Vector2f start, Vector2f move, Vector2i size, double time,
+	Vector2f previous, Indexer *collision, Indexer *frictionMap, float frictionValue,
 	GlobalPhysicsStats *globalPhysics);
-sf::Vector2f platformGravityMovement(sf::Vector2f start, sf::Vector2f move, sf::Vector2i size, double time, bool jumpInput,
+Vector2f platformGravityMovement(Vector2f start, Vector2f move, Vector2i size, double time, bool jumpInput,
 	Indexer *collision, GlobalPhysicsStats *globalPhysics, PersonalPhysicsStats *physics, std::vector<PersonalPhysicsStats *> colliding);

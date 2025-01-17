@@ -16,12 +16,12 @@
 class Indexer {
 private:
 	Indexer *previous = NULL;
-	const sf::Vector2i scale;
+	const Vector2i scale;
 
 public:
 	int fallback;
 
-	Indexer(Indexer *_previous, int _fallback, sf::Vector2i _scale)
+	Indexer(Indexer *_previous, int _fallback, Vector2i _scale)
 		: previous(_previous), scale(_scale), fallback(_fallback) {
 
 	}
@@ -29,21 +29,21 @@ public:
 	virtual int mapTile(int c);
 
 	//Indexing access functions
-	int getTile(sf::Vector2f position);
-	void setTile(sf::Vector2f position, int value);
+	int getTile(Vector2f position);
+	void setTile(Vector2f position, int value);
 	virtual int getTileI(int x, int y);
 	virtual void setTileI(int x, int y, int value);
 	bool getTileB(int x, int y, int place);
 	void setTileB(int x, int y, int place, bool value);
-	void mapGrid(std::function<void(int, sf::Vector2f)> func);
+	void mapGrid(std::function<void(int, Vector2f)> func);
 	void printGrid();
 
 	//Check grid size
-	virtual sf::Vector2i getSize();
-	bool inBounds(sf::Vector2f position);
+	virtual Vector2i getSize();
+	bool inBounds(Vector2f position);
 	bool inBounds(int x, int y);
-	sf::Vector2f snapPosition(sf::Vector2f position);
-	sf::Vector2i getScale();
+	Vector2f snapPosition(Vector2f position);
+	Vector2i getScale();
 	Indexer *getPrevious();
 };
 
@@ -59,7 +59,7 @@ public:
 	GridMaker(std::string file, int fallback=' ');
 	GridMaker(int width, int height, int fallback=' ');
 	~GridMaker();
-	void reload(std::string file, int offset=0, sf::Rect<int> border=sf::Rect<int>());
+	void reload(std::string file, int offset=0, Rect<int> border=Rect<int>());
 
 	//Set or get tiles
 	int getTileI(int x, int y) override;
@@ -67,7 +67,7 @@ public:
 	void clearTiles();
 
 	//Check grid size
-	sf::Vector2i getSize() override;
+	Vector2i getSize() override;
 };
 
 //Common indexer to map from tile to property 1x1
@@ -78,11 +78,11 @@ private:
 
 public:
 	MapIndexer(Indexer *previous, std::map<int, int> _indexes, int fallback, int scaleX = 1, int scaleY = 1, bool _keepOthers=false)
-		: Indexer(previous, fallback, sf::Vector2i(scaleX, scaleY)), indexes(_indexes), keepOthers(_keepOthers) {
+		: Indexer(previous, fallback, Vector2i(scaleX, scaleY)), indexes(_indexes), keepOthers(_keepOthers) {
 
 	}
 
-	MapIndexer(Indexer *previous, std::map<int, int> _indexes, int fallback, sf::Vector2i scale)
+	MapIndexer(Indexer *previous, std::map<int, int> _indexes, int fallback, Vector2i scale)
 		: Indexer(previous, fallback, scale), indexes(_indexes) {
 
 	}
