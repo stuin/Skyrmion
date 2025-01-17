@@ -1,5 +1,6 @@
 #include "UpdateList.h"
 #include "Event.h"
+#include "../debug/TimingStats.hpp"
 
 #define TEXTUREERROR "Texture does not exist"
 
@@ -36,11 +37,8 @@ bool UpdateList::running = false;
 
 //Rendering
 Node *UpdateList::camera = NULL;
-sf::FloatRect UpdateList::viewport;
+FloatRect UpdateList::viewport;
 std::vector<Node *> UpdateList::reloadBuffer;
-
-TimingStats UpdateList::frameTimes;
-TimingStats UpdateList::updateTimes;
 
 //Event handling
 std::atomic_int event_count = 0;
@@ -100,14 +98,14 @@ void UpdateList::addListener(Node *item, int type) {
 }
 
 //Set camera to follow node
-Node *UpdateList::setCamera(Node *follow, sf::Vector2f size, sf::Vector2f position) {
+Node *UpdateList::setCamera(Node *follow, Vector2f size, Vector2f position) {
 	if(camera != NULL) {
-		camera->setSize(sf::Vector2i(size.x,size.y));
+		camera->setSize(Vector2i(size.x,size.y));
 		camera->setParent(follow);
 	} else
-		camera = new Node(0, sf::Vector2i(size.x,size.y), true, follow);
+		camera = new Node(0, Vector2i(size.x,size.y), true, follow);
 	//viewPlayer.setSize(size);
-	viewport = sf::FloatRect(position.x, position.y, size.x, size.y);
+	viewport = FloatRect(position.x, position.y, size.x, size.y);
 	camera->setPosition(position);
 	return camera;
 }
@@ -198,7 +196,7 @@ static sg_image load_image(std::string filename) {
     img = sg_make_image(&image_desc);
     stbi_image_free(data);
     textureSet.push_back(img);
-    textureData.emplace_back(filename, sf::Vector2i(width, height));
+    textureData.emplace_back(filename, Vector2i(width, height));
     return img;
 }
 
@@ -214,7 +212,7 @@ int UpdateList::loadTexture(std::string filename) {
 }
 
 //Get size of texture
-sf::Vector2i UpdateList::getTextureSize(sint texture) {
+Vector2i UpdateList::getTextureSize(sint texture) {
 	if(texture >= textureData.size())
 		throw new std::invalid_argument(TEXTUREERROR);
 	return textureData[texture].size;
@@ -235,7 +233,7 @@ unsigned long long UpdateList::getImGuiTexture(sint texture) {
 }
 
 //Pick color from texture
-Color UpdateList::pickColor(int texture, sf::Vector2i position) {
+Color UpdateList::pickColor(sint texture, Vector2i position) {
 	if(texture >= textureData.size() || !textureData[texture].valid)
 		return Color(0,0,0,0);
 
@@ -312,12 +310,12 @@ void UpdateList::update(double time) {
 }
 
 //Thread safe draw nodes in list
-void UpdateList::draw(sf::Vector2f offset, sf::Vector2i size) {
+void UpdateList::draw(Vector2f offset, Vector2i size) {
 	//Find camera position
-	sf::FloatRect cameraRect = sf::FloatRect(0,0,size.x,size.y);
+	FloatRect cameraRect = FloatRect(0,0,size.x,size.y);
 	if(camera != NULL)
 		cameraRect = camera->getRect();
-	cameraRect = sf::FloatRect(cameraRect.left + offset.x, cameraRect.top + offset.y,
+	cameraRect = FloatRect(cameraRect.left + offset.x, cameraRect.top + offset.y,
 		cameraRect.width, cameraRect.height);
 
 	// Begin recording draw commands for a frame buffer of size (width, height).
@@ -357,22 +355,23 @@ void UpdateList::drawNode(Node *source) {
 	sgp_reset_color();
 	sgp_set_blend_mode((sgp_blend_mode)source->getBlendMode());
 
-	sf::FloatRect rect = source->getDrawRect();
+	sint texture = source->getTexture();
+	FloatRect rect = source->getDrawRect();
 	std::vector<TextureRect> *textureRects = source->getTextureRects();
 
-	if(source->getTexture() != -1 && textureRects->size() == 0) {
+	if(texture < textureData.size() && textureData[texture].valid && textureRects->size() == 0) {
 		//Default square texture
-		sgp_set_image(0, textureSet[source->getTexture()]);
+		sgp_set_image(0, textureSet[texture]);
 		sgp_draw_filled_rect(rect.left, rect.top, rect.width, rect.height);
 		sgp_reset_image(0);
-	} else if(source->getTexture() != -1) {
+	} else if(texture != 0) {
 		//Tilemapped or partial texture
-		sgp_set_image(0, textureSet[source->getTexture()]);
+		sgp_set_image(0, textureSet[texture]);
 		//sgp_textured_rect outRects[1];
 		//int renderCount = 0;
 		for(sint i = 0; i < textureRects->size(); i++) {
 			TextureRect tex = (*textureRects)[i];
-			sf::Vector2f scale = source->getScale();
+			Vector2f scale = source->getScale();
 			if(tex.width != 0 && tex.height != 0) {
 				sgp_rect dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, abs(tex.width)*scale.x, abs(tex.height)*scale.y};
 				sgp_rect src = {(float)tex.tx, (float)tex.ty, (float)tex.width, (float)tex.height};
@@ -419,8 +418,9 @@ void UpdateList::startEngine() {
 
 		//Update nodes and sprites
 		double delta = stm_sec(stm_laptime(&lastTime));
-		updateTimes.addDelta(delta);
+		DebugTimers::updateTimes.addDelta(delta);
 		UpdateList::update(delta);
+		DebugTimers::updateLiteralTimes.addDelta(stm_sec(stm_since(lastTime)));
 
 		std::this_thread::sleep_for(
 			std::chrono::milliseconds(10-(int)stm_ms(stm_since(lastTime))));
@@ -506,7 +506,8 @@ void event(const sapp_event* event) {
 }
 
 void UpdateList::frame(void) {
-    frameTimes.addDelta(sapp_frame_duration());
+    DebugTimers::frameTimes.addDelta(sapp_frame_duration());
+    uint64_t lastTime = stm_now();
 
 	// Get current window size.
     int width = sapp_width(), height = sapp_height();
@@ -520,7 +521,7 @@ void UpdateList::frame(void) {
     simgui_new_frame(&simguidesc);
 
     //Main draw function
-    draw(sf::Vector2f(0,0), sf::Vector2i(width, height));
+    draw(Vector2f(0,0), Vector2i(width, height));
 
     //imgui gfx debug
     #if _DEBUG
@@ -569,6 +570,8 @@ void UpdateList::frame(void) {
 		delete node;
 	}
 	deleted.clear();
+
+	DebugTimers::frameLiteralTimes.addDelta(stm_sec(stm_since(lastTime)));
 }
 
 void UpdateList::init(void) {

@@ -26,15 +26,15 @@ private:
 	bool hidden = false;
 
 	//Collision
-	sf::Vector2i size;
+	Vector2i size;
 	std::bitset<MAXLAYER> collisionLayers;
 
 	//Rendering
-	sf::Vector2f position = sf::Vector2f(0,0);
-	sf::Vector2f scale = sf::Vector2f(1,1);
-	sf::Vector2f origin = sf::Vector2f(0,0);
+	Vector2f position = Vector2f(0,0);
+	Vector2f scale = Vector2f(1,1);
+	Vector2f origin = Vector2f(0,0);
 	int blendMode = 1;
-	int texture = -1;
+	sint texture = 0;
 	std::vector<TextureRect> textureRects;
 
 	//Background system variables
@@ -45,7 +45,7 @@ public:
 
 	//Node constructors
 	Node(Layer layer=0,
-		sf::Vector2i size = sf::Vector2i(16, 16),
+		Vector2i size = Vector2i(16, 16),
 		bool hidden = false,
 		Node *parent = NULL);
 
@@ -54,17 +54,17 @@ public:
 	int getLayer();
 	Node *getParent();
 	bool isHidden();
-	sf::Vector2i getSize();
-	sf::FloatRect getRect();
+	Vector2i getSize();
+	FloatRect getRect();
 
-	sf::Vector2f getPosition();
-	sf::Vector2f getGPosition();
-	sf::Vector2f getScale();
-	sf::Vector2f getGScale();
-	sf::Vector2f getInverseScale();
-	sf::Vector2f getInverseGScale();
-	sf::Vector2f getOrigin();
-	sf::FloatRect getDrawRect();
+	Vector2f getPosition();
+	Vector2f getGPosition();
+	Vector2f getScale();
+	Vector2f getGScale();
+	Vector2f getInverseScale();
+	Vector2f getInverseGScale();
+	Vector2f getOrigin();
+	FloatRect getDrawRect();
 	int getBlendMode();
 	int getTexture();
 	virtual std::vector<TextureRect> *getTextureRects();
@@ -72,15 +72,15 @@ public:
 	//General setters
 	void setParent(Node *parent);
 	void setHidden(bool hidden=true);
-	void setSize(sf::Vector2i size);
+	void setSize(Vector2i size);
 
-	void setPosition(sf::Vector2f pos);
+	void setPosition(Vector2f pos);
 	void setPosition(float x, float y);
-	void setGPosition(sf::Vector2f pos);
+	void setGPosition(Vector2f pos);
 	void setGPosition(float x, float y);
-	void setScale(sf::Vector2f scale);
+	void setScale(Vector2f scale);
 	void setScale(float x, float y);
-	void setOrigin(sf::Vector2f origin);
+	void setOrigin(Vector2f origin);
 	void setOrigin(float x, float y);
 	void setBlendMode(int blendMode);
 	void setTexture(int textureChannel);
@@ -129,7 +129,7 @@ private:
 	}
 
 public:
-	DrawNode(sf::Drawable &image, Layer layer, sf::Vector2i size=sf::Vector2i(16,16), Node *parent=NULL) : Node(layer, size, false, parent) {
+	DrawNode(sf::Drawable &image, Layer layer, Vector2i size=Vector2i(16,16), Node *parent=NULL) : Node(layer, size, false, parent) {
 		this->image = &image;
 	}
 
@@ -152,7 +152,7 @@ public:
     double delay = -1;
     bool paused = false;
 public:
-	AnimatedNode(sf::Texture &texture, int _maxFrames, double _delay, Layer layer, sf::Vector2i size) : Node(layer, size) {
+	AnimatedNode(sf::Texture &texture, int _maxFrames, double _delay, Layer layer, Vector2i size) : Node(layer, size) {
 		setTexture(texture);
 
 		maxFrames = _maxFrames;
@@ -176,7 +176,7 @@ public:
                 if(frame == maxFrames)
                     frame = 0;
 
-                setTextureRect(sf::IntRect(frameWidth * frame, 0, frameWidth, frameHeight));
+                setTextureRect(IntRect(frameWidth * frame, 0, frameWidth, frameHeight));
             }
         }
     }

@@ -7,7 +7,7 @@
 unsigned int currentId = 0;
 
 //Base constructor
-Node::Node(Layer layer, sf::Vector2i size, bool hidden, Node *parent) {
+Node::Node(Layer layer, Vector2i size, bool hidden, Node *parent) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	this->layer = layer;
@@ -38,15 +38,15 @@ bool Node::isHidden() {
 }
 
 //Get scaled size of node
-sf::Vector2i Node::getSize() {
-	sf::Vector2f scale = getGScale();
-	return sf::Vector2i(size.x * std::abs(scale.x), size.y * std::abs(scale.y));
+Vector2i Node::getSize() {
+	Vector2f scale = getGScale();
+	return Vector2i(size.x * std::abs(scale.x), size.y * std::abs(scale.y));
 }
 
 //Create full collision box
-sf::FloatRect Node::getRect() {
-	sf::Vector2f pos = this->getGPosition();
-	sf::FloatRect rec;
+FloatRect Node::getRect() {
+	Vector2f pos = this->getGPosition();
+	FloatRect rec;
 	rec.left = pos.x - (this->getOrigin().x * std::abs(this->getScale().x));
 	rec.top = pos.y - (this->getOrigin().y * std::abs(this->getScale().y));
 	rec.width = this->getSize().x;
@@ -55,40 +55,40 @@ sf::FloatRect Node::getRect() {
 }
 
 //Get local position
-sf::Vector2f Node::getPosition() {
+Vector2f Node::getPosition() {
 	return position;
 }
 
 //Get global position
-sf::Vector2f Node::getGPosition() {
+Vector2f Node::getGPosition() {
 	if(parent != NULL)
 		return position * parent->getScale() + parent->getGPosition();
 	return position;
 }
 
 //Get local scale
-sf::Vector2f Node::getScale() {
+Vector2f Node::getScale() {
 	return scale;
 }
 
 //Get global scale
-sf::Vector2f Node::getGScale() {
+Vector2f Node::getGScale() {
 	if(parent != NULL)
 		return parent->getGScale() * getScale();
 	return getScale();
 }
 
 //Get inverted scale for children
-sf::Vector2f Node::getInverseScale() {
-	return sf::Vector2f(1 / getScale().x, 1 / getScale().y);
+Vector2f Node::getInverseScale() {
+	return Vector2f(1 / getScale().x, 1 / getScale().y);
 }
 
-sf::Vector2f Node::getInverseGScale() {
-	return sf::Vector2f(1 / getGScale().x, 1 / getGScale().y);
+Vector2f Node::getInverseGScale() {
+	return Vector2f(1 / getGScale().x, 1 / getGScale().y);
 }
 
 //Get texture origin
-sf::Vector2f Node::getOrigin() {
+Vector2f Node::getOrigin() {
 	return origin;
 }
 
@@ -98,7 +98,7 @@ sf::Vector2f Node::getOrigin() {
 	return getTransform();
 }*/
 
-sf::FloatRect Node::getDrawRect() {
+FloatRect Node::getDrawRect() {
 	return getRect();
 }
 
@@ -128,43 +128,43 @@ void Node::setHidden(bool hidden) {
 }
 
 //Set collision box size
-void Node::setSize(sf::Vector2i size) {
+void Node::setSize(Vector2i size) {
 	this->size = size;
 	setOrigin(size.x / 2, size.y / 2);
 }
 
 //Set position in local coordinates
-void Node::setPosition(sf::Vector2f pos) {
+void Node::setPosition(Vector2f pos) {
 	this->position = pos;
 }
 void Node::setPosition(float x, float y) {
-	this->position = sf::Vector2f(x, y);
+	this->position = Vector2f(x, y);
 }
 
 //Set position in global coordinates
-void Node::setGPosition(sf::Vector2f pos) {
+void Node::setGPosition(Vector2f pos) {
 	if(parent != NULL)
 		pos -= parent->getGPosition();
 	setPosition(pos);
 }
 void Node::setGPosition(float x, float y) {
-	setGPosition(sf::Vector2f(x, y));
+	setGPosition(Vector2f(x, y));
 }
 
 //Set scale
-void Node::setScale(sf::Vector2f scale) {
+void Node::setScale(Vector2f scale) {
 	this->scale = scale;
 }
 void Node::setScale(float x, float y) {
-	this->scale = sf::Vector2f(x, y);
+	this->scale = Vector2f(x, y);
 }
 
 //Set origin
-void Node::setOrigin(sf::Vector2f origin) {
+void Node::setOrigin(Vector2f origin) {
 	this->origin = origin;
 }
 void Node::setOrigin(float x, float y) {
-	this->origin = sf::Vector2f(x, y);
+	this->origin = Vector2f(x, y);
 }
 
 //Set blend mode to use in rendering

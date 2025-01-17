@@ -12,7 +12,6 @@
 
 #include "Node.h"
 #include "Color.h"
-#include "../debug/TimingStats.hpp"
 
 /*
  * Manages list of nodes through update cycle
@@ -30,7 +29,7 @@ struct LayerData {
 
 struct TextureData {
 	std::string filename = "";
-	sf::Vector2i size;
+	Vector2i size;
 	bool buffer = false;
 	bool valid = false;
 
@@ -38,7 +37,7 @@ struct TextureData {
 		filename = _filename;
 	}
 
-	TextureData(std::string _filename, sf::Vector2i _size, bool _buffer=false) {
+	TextureData(std::string _filename, Vector2i _size, bool _buffer=false) {
 		filename = _filename;
 		size = _size;
 		buffer = _buffer;
@@ -56,7 +55,7 @@ private:
 
 	//Viewport variables
 	static Node *camera;
-	static sf::FloatRect viewport;
+	static FloatRect viewport;
 	static std::vector<Node *> reloadBuffer;
 
 	//Window event system
@@ -65,9 +64,6 @@ private:
 	//static std::array<std::vector<Node *>, EVENT_MAX> listeners;
 
 public:
-	//Debug Timing Stats
-	static TimingStats frameTimes;
-	static TimingStats updateTimes;
 
 	//Manage node lists
 	static void addNode(Node *next);
@@ -77,7 +73,7 @@ public:
 	static void addListener(Node *item, int type);
 
 	//Special node features
-	static Node *setCamera(Node *follow, sf::Vector2f size, sf::Vector2f position=sf::Vector2f(0,0));
+	static Node *setCamera(Node *follow, Vector2f size, Vector2f position=Vector2f(0,0));
 	static void sendSignal(Layer layer, int id, Node *sender);
 	static void sendSignal(int id, Node *sender);
 	static void scheduleReload(Node *buffer);
@@ -95,10 +91,10 @@ public:
 
 	//Utility Functions
 	static int loadTexture(std::string filename);
-	static sf::Vector2i getTextureSize(sint index);
+	static Vector2i getTextureSize(sint index);
 	static TextureData &getTextureData(sint index);
 	static unsigned long long getImGuiTexture(sint texture);
-	static Color pickColor(int texture, sf::Vector2i position);
+	static Color pickColor(sint texture, Vector2i position);
 
 	//Start engine
 	static void startEngine();
@@ -108,7 +104,7 @@ public:
 	//Main loop functions
 	static void processEvents();
 	static void update(double time);
-	static void draw(sf::Vector2f offset, sf::Vector2i size);
+	static void draw(Vector2f offset, Vector2i size);
 	static void drawNode(Node *source);
 
 	//Sokol callback functions
