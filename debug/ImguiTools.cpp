@@ -4,9 +4,10 @@
 
 #include "../include/imgui/imgui.h"//
 
+bool fpsWindow = false;
+
 bool layersWindow = false;
 bool layersShown[MAXLAYER];
-int nodesPerLayer[MAXLAYER] = {0};
 
 bool noiseGenWindow = false;
 
@@ -20,14 +21,6 @@ std::vector<Node *> nodes;
 sint debugTextureStart = 0;
 Layer debugLayer = 0;
 
-void Checkbox(std::string name, std::function<bool(int)> getter, std::function<void(int, bool)> setter, int input) {
-	bool result = getter(input);
-	bool changed = result;
-	ImGui::Checkbox(name.c_str(), &result);
-	if(result != changed)
-		setter(input, result);
-}
-
 void Text(std::string name, sf::Vector2f value) {
 	name += " = (%.3f,%.3f)";
 	ImGui::Text(name.c_str(), value.x, value.y);
@@ -40,7 +33,6 @@ void Text(std::string name, sf::Vector2i value) {
 
 void setupNodes() {
 	for(Layer layer = 0; layer < layerNames().size(); layer++) {
-		int count = 0;
 		Node *source = UpdateList::getNode(layer);
 		while(source != NULL) {
 			sint id = source->getId();
@@ -49,31 +41,52 @@ void setupNodes() {
 				nodes.push_back(NULL);
 			}
 			nodes[id] = source;
-			count++;
 			source = source->getNext();
 		}
-		nodesPerLayer[layer] = count;
 	}
+}
+
+void imguiFPSWindow() {
+	ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
+    ImGui::Begin("FPS", &fpsWindow);
+
+    ImGui::SeparatorText("Updates");
+    ImGui::Text("Per Second = %d", UpdateList::updateTimes.getFPS());
+    ImGui::Text("Last delta = %f", UpdateList::updateTimes.last());
+    ImGui::Text("Total updates = %d", UpdateList::updateTimes.totalCount);
+    ImGui::Text("Total time = %f", UpdateList::updateTimes.totalTime);
+    ImGui::Text("Max delta = %f", UpdateList::updateTimes.maxDelta);
+    ImGui::Text("Average delta = %f", UpdateList::updateTimes.totalTime/UpdateList::updateTimes.totalCount);
+
+    ImGui::SeparatorText("Draw Frames");
+    ImGui::Text("Per Second = %d", UpdateList::frameTimes.getFPS());
+    ImGui::Text("Last delta = %f", UpdateList::frameTimes.last());
+    ImGui::Text("Total frames = %d", UpdateList::frameTimes.totalCount);
+    ImGui::Text("Total time = %f", UpdateList::frameTimes.totalTime);
+    ImGui::Text("Max delta = %f", UpdateList::frameTimes.maxDelta);
+    ImGui::Text("Average delta = %f", UpdateList::frameTimes.totalTime/UpdateList::frameTimes.totalCount);
+
+    ImGui::End();
 }
 
 void imguiLayersWindow() {
 	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
     ImGui::Begin("Layers", &layersWindow);
 
-    for(Layer layer = 0; layer < layerNames().size(); layer++) {
+    for(Layer layer = 0; layer < UpdateList::getLayerCount(); layer++) {
     	ImGui::PushID(layer);
 
-    	if(ImGui::CollapsingHeader(layerNames()[layer].c_str())) {
-    		Checkbox("Hidden", UpdateList::isLayerHidden, UpdateList::hideLayer, layer);
-    		Checkbox("Paused", UpdateList::isLayerPaused, UpdateList::pauseLayer, layer);
-    		Checkbox("Screenspace", UpdateList::isLayerScreenSpace, UpdateList::screenSpaceLayer, layer);
-    		Checkbox("Static", UpdateList::isLayerStatic, UpdateList::staticLayer, layer);
+    	LayerData &layerData = UpdateList::getLayerData(layer);
+    	if(ImGui::CollapsingHeader(layerData.name.c_str())) {
+    		ImGui::Checkbox("Hidden", &layerData.hidden);
+    		ImGui::Checkbox("Paused", &layerData.paused);
+    		ImGui::Checkbox("Global Update", &layerData.global);
+    		ImGui::Checkbox("Screenspace", &layerData.screenSpace);
 
-    		ImGui::Text("%d Nodes", nodesPerLayer[layer]);
+    		ImGui::Text("%d Nodes", layerData.count);
 
-    		if(ImGui::BeginChild("##", ImVec2(400.0f, std::min(200.0f, nodesPerLayer[layer]*20.f+10)), ImGuiChildFlags_Borders, 0)) {
-	    		int count = 0;
-	    		Node *source = UpdateList::getNode(layer);
+    		if(ImGui::BeginChild("##", ImVec2(400.0f, std::min(200.0f, layerData.count*20.f+10)), ImGuiChildFlags_Borders, 0)) {
+	    		Node *source = layerData.root;
 	    		while(source != NULL) {
 	    			sint id = source->getId();
 	    			while(id >= nodeWindows.size()) {
@@ -81,7 +94,6 @@ void imguiLayersWindow() {
 	    				nodes.push_back(NULL);
 	    			}
 	    			nodes[id] = source;
-	    			count++;
 
 	    			std::string nodeName = std::to_string(id);
 	    			bool window = nodeWindows[id];
@@ -89,7 +101,6 @@ void imguiLayersWindow() {
 	                    nodeWindows[id] = window;
 					source = source->getNext();
 				}
-				nodesPerLayer[layer] = count;
 			}
 			ImGui::EndChild();
     	}
@@ -143,7 +154,7 @@ void imguiNodeWindow(Node *source) {
         if(ImGui::BeginChild("##", ImVec2(400.0f, 200.0f), ImGuiChildFlags_Borders, 0)) {
             for(TextureRect rect : *source->getTextureRects()) {
                 ImGui::Text("(%.3f,%.3f) = (%d,%d)->(%d,%d) / %.3f",
-                	rect.px, rect.py, rect.tx, rect.ty, rect.width, rect.height, rect.rotation);
+                	rect.px, rect.py, rect.tx, rect.ty, rect.tx+rect.width, rect.ty+rect.height, rect.rotation);
             }
         }
         ImGui::EndChild();
@@ -291,7 +302,8 @@ void imguiColorPickerWindow() {
     int texture = pickTexture;
     ImGui::SliderInt("Texture", &pickTexture, 0, textureFiles().size()-1);
 	ImGui::SliderFloat("Scale", &pickTextureScale, 0.0f, 10.0f, "%.3f");
-    if(textureFiles()[pickTexture].length()==0 || textureFiles()[pickTexture][0] == '#') {
+	TextureData &textureData = UpdateList::getTextureData(pickTexture);
+    if(!textureData.valid) {
     	ImGui::End();
     	return;
     }
@@ -301,7 +313,7 @@ void imguiColorPickerWindow() {
     if(texture != pickTexture)
     	pickPosition = sf::Vector2i(0,0);
 
-    sf::Vector2i size = UpdateList::getTextureSize(pickTexture);
+    sf::Vector2i size = textureData.size;
     ImGui::SliderInt("x", &pickPosition.x, 0, size.x-1);
     ImGui::SliderInt("y", &pickPosition.y, 0, size.y-1);
 
@@ -320,7 +332,7 @@ void imguiColorPickerWindow() {
 	    pickIndex = index;
 	}
 
-	ImGui::Image(UpdateList::getImguiTexture(pickTexture), ImVec2(size.x*pickTextureScale, size.y*pickTextureScale));
+	ImGui::Image(UpdateList::getImGuiTexture(pickTexture), ImVec2(size.x*pickTextureScale, size.y*pickTextureScale));
 
     ImGui::End();
 }
@@ -331,6 +343,7 @@ void imguiShowNode(sint id) {
 
 void skyrmionImguiMenu() {
 	if(ImGui::BeginMenu("Skyrmion")) {
+		ImGui::MenuItem("FPS", 0, &fpsWindow);
 		ImGui::MenuItem("Layers", 0, &layersWindow);
 		ImGui::MenuItem("Noise Map Generator", 0, &noiseGenWindow);
 		ImGui::MenuItem("Color Picker", 0, &colorPickerWindow);
@@ -344,6 +357,9 @@ void skyrmionImgui() {
 		setupNoise();
 		imguiInitialized = true;
 	}
+
+	if(fpsWindow)
+		imguiFPSWindow();
 
 	if(layersWindow)
 		imguiLayersWindow();

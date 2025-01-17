@@ -19,7 +19,7 @@ InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *paren
 : Node(layer, sf::Vector2i(16, 16), true, parent) {
 
 	//Base keys
-	int startSize = keys.size();
+	sint startSize = keys.size();
 	for(sint i = 0; i < keys.size(); i++) {
 		if(i >= startSize) {
 			//Part of key combination

@@ -15,9 +15,10 @@ void setupDebugTools() {
 	Settings::loadSettings("src/Skyrmion/res/debug_settings.json");
 
 	int debugLayer = UpdateList::getLayerCount();
-	UpdateList::staticLayer(debugLayer);
-	UpdateList::screenSpaceLayer(debugLayer);
-	layerNames().push_back("DEBUG");
+	LayerData &data = UpdateList::getLayerData(debugLayer);
+	data.name = "DEBUG";
+	data.global = true;
+	data.screenSpace = true;
 
 	UpdateList::addNode(new DebugLayers(debugLayer));
 

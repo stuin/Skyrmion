@@ -1,6 +1,8 @@
 #include "UpdateList.h"
 #include "Event.h"
 
+#define TEXTUREERROR "Texture does not exist"
+
 #define SOKOL_IMPL
 #define SOKOL_GLCORE
 #define SOKOL_TRACE_HOOKS
@@ -27,28 +29,27 @@
  */
 
 //Static variables
-Node *UpdateList::screen[MAXLAYER];
-std::bitset<MAXLAYER> UpdateList::staticLayers;
-std::bitset<MAXLAYER> UpdateList::pausedLayers;
-std::bitset<MAXLAYER> UpdateList::screenLayers;
+LayerData UpdateList::layers[MAXLAYER];
 std::vector<Node *> UpdateList::deleted;
-
-Node *UpdateList::camera = NULL;
-WindowSize UpdateList::windowSize;
-std::bitset<MAXLAYER> UpdateList::hiddenLayers;
-std::vector<Node *> UpdateList::reloadBuffer;
-
-Layer UpdateList::max = 0;
+Layer UpdateList::maxLayer = 0;
 bool UpdateList::running = false;
 
-//Textures
-std::vector<sg_image> textureSet;
-std::vector<sf::Vector2i> textureSizes;
+//Rendering
+Node *UpdateList::camera = NULL;
+sf::FloatRect UpdateList::viewport;
+std::vector<Node *> UpdateList::reloadBuffer;
+
+TimingStats UpdateList::frameTimes;
+TimingStats UpdateList::updateTimes;
 
 //Event handling
 std::atomic_int event_count = 0;
 std::deque<Event> event_queue;
 std::array<std::vector<Node *>, EVENT_MAX> listeners;
+
+//Textures stored in this file
+std::vector<TextureData> textureData;
+std::vector<sg_image> textureSet;
 
 std::thread updates;
 sgimgui_t sgimgui;
@@ -58,12 +59,15 @@ void UpdateList::addNode(Node *next) {
 	Layer layer = next->getLayer();
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
-	if(layer > max)
-		max = layer;
-	if(screen[layer] == NULL)
-		screen[layer] = next;
-	else
-		screen[layer]->addNode(next);
+	if(layer > maxLayer)
+		maxLayer = layer;
+	if(layers[layer].root == NULL) {
+		layers[layer].root = next;
+		layers[layer].count = 1;
+	} else {
+		layers[layer].root->addNode(next);
+		layers[layer].count++;
+	}
 }
 
 void UpdateList::addNodes(std::vector<Node *> nodes) {
@@ -75,7 +79,7 @@ void UpdateList::addNodes(std::vector<Node *> nodes) {
 Node *UpdateList::getNode(Layer layer) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
-	return screen[layer];
+	return layers[layer].root;
 }
 
 //Remove all nodes in layer
@@ -83,7 +87,7 @@ void UpdateList::clearLayer(Layer layer) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 
-	Node *source = screen[layer];
+	Node *source = layers[layer].root;
 	while(source != NULL) {
 		source->setDelete();
 		source = source->getNext();;
@@ -103,13 +107,14 @@ Node *UpdateList::setCamera(Node *follow, sf::Vector2f size, sf::Vector2f positi
 	} else
 		camera = new Node(0, sf::Vector2i(size.x,size.y), true, follow);
 	//viewPlayer.setSize(size);
+	viewport = sf::FloatRect(position.x, position.y, size.x, size.y);
 	camera->setPosition(position);
 	return camera;
 }
 
 //Send signal message to all nodes in layer
 void UpdateList::sendSignal(Layer layer, int id, Node *sender) {
-	Node *source = screen[layer];
+	Node *source = layers[layer].root;
 	while(source != NULL) {
 		source->recieveSignal(id, sender);
 		source = source->getNext();
@@ -118,7 +123,7 @@ void UpdateList::sendSignal(Layer layer, int id, Node *sender) {
 
 //Send signal message to all nodes in game
 void UpdateList::sendSignal(int id, Node *sender) {
-	for(int layer = 0; layer <= max; layer++)
+	for(Layer layer = 0; layer <= maxLayer; layer++)
 		sendSignal(layer, id, sender);
 }
 
@@ -128,74 +133,61 @@ void UpdateList::scheduleReload(Node *buffer) {
 		reloadBuffer.push_back(buffer);
 }
 
-//Update nodes event when not in camera
-void UpdateList::staticLayer(Layer layer, bool _static) {
-	if(layer >= MAXLAYER)
-		throw new std::invalid_argument(LAYERERROR);
-	staticLayers[layer] = _static;
-}
-
 //Do not update nodes
 void UpdateList::pauseLayer(Layer layer, bool pause) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
-	pausedLayers[layer] = pause;
-}
-
-//Nodes placed relative to camera
-void UpdateList::screenSpaceLayer(Layer layer, bool screen) {
-	if(layer >= MAXLAYER)
-		throw new std::invalid_argument(LAYERERROR);
-	screenLayers[layer] = screen;
+	layers[layer].paused = pause;
 }
 
 //Do not render nodes
 void UpdateList::hideLayer(Layer layer, bool hidden) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
-	hiddenLayers[layer] = hidden;
+	layers[layer].hidden = hidden;
 }
 
-//Check if layer is marked static
-bool UpdateList::isLayerStatic(Layer layer) {
+//Update nodes outside of camera bounds
+void UpdateList::globalLayer(Layer layer, bool global) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
-	return staticLayers[layer];
+	layers[layer].global = global;
 }
 
 //Check if layer is paused
 bool UpdateList::isLayerPaused(Layer layer) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
-	return pausedLayers[layer];
-}
-
-//Check if layer is marked screen space
-bool UpdateList::isLayerScreenSpace(Layer layer) {
-	if(layer >= MAXLAYER)
-		throw new std::invalid_argument(LAYERERROR);
-	return screenLayers[layer];
+	return layers[layer].paused;
 }
 
 //Check if layer is marked hidden
 bool UpdateList::isLayerHidden(Layer layer) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
-	return hiddenLayers[layer];
+	return layers[layer].hidden;
+}
+
+//Get all data for layer
+LayerData &UpdateList::getLayerData(Layer layer) {
+	if(layer >= MAXLAYER)
+		throw new std::invalid_argument(LAYERERROR);
+	return layers[layer];
 }
 
 //Get number of occupied layers
 int UpdateList::getLayerCount() {
-	return max + 1;
+	return maxLayer + 1;
 }
 
-static sg_image load_image(const char *filename) {
+//Load image from file
+static sg_image load_image(std::string filename) {
     int width, height, channels;
-    uint8_t* data = stbi_load(filename, &width, &height, &channels, 4);
+    uint8_t* data = stbi_load(filename.c_str(), &width, &height, &channels, 4);
     sg_image img = {SG_INVALID_ID};
-    if (!data) {
+    if(!data) {
     	textureSet.push_back(img);
-    	textureSizes.push_back(sf::Vector2i(0,0));
+    	textureData.push_back(filename);
         return img;
     }
     sg_image_desc image_desc = {0};
@@ -206,37 +198,53 @@ static sg_image load_image(const char *filename) {
     img = sg_make_image(&image_desc);
     stbi_image_free(data);
     textureSet.push_back(img);
-    textureSizes.push_back(sf::Vector2i(width, height));
+    textureData.emplace_back(filename, sf::Vector2i(width, height));
     return img;
 }
 
 //Load texture from file and add to set
 int UpdateList::loadTexture(std::string filename) {
 	if(filename.length() > 0 && filename[0] != '#')
-		load_image(filename.c_str());
+		load_image(filename);
 	else {
 		textureSet.emplace_back();
-		textureSizes.push_back(sf::Vector2i(0,0));
+		textureData.emplace_back(filename);
 	}
 	return textureSet.size() - 1;
 }
 
 //Get size of texture
-sf::Vector2i UpdateList::getTextureSize(int index) {
-	return textureSizes[index];
+sf::Vector2i UpdateList::getTextureSize(sint texture) {
+	if(texture >= textureData.size())
+		throw new std::invalid_argument(TEXTUREERROR);
+	return textureData[texture].size;
 }
 
-unsigned long long UpdateList::getImguiTexture(int index) {
-	return simgui_imtextureid(textureSet[index]);
+//Get all texture data
+TextureData &UpdateList::getTextureData(sint texture) {
+	if(texture >= textureData.size())
+		throw new std::invalid_argument(TEXTUREERROR);
+	return textureData[texture];
+}
+
+//Create ImGui id for texture
+unsigned long long UpdateList::getImGuiTexture(sint texture) {
+	if(texture >= textureData.size())
+		throw new std::invalid_argument(TEXTUREERROR);
+	return simgui_imtextureid(textureSet[texture]);
 }
 
 //Pick color from texture
 Color UpdateList::pickColor(int texture, sf::Vector2i position) {
-	sint index = (position.x+position.y*textureSizes[texture].x)*4;
+	if(texture >= textureData.size() || !textureData[texture].valid)
+		return Color(0,0,0,0);
+
+	TextureData data = textureData[texture];
+	sint index = (position.x+position.y*data.size.x)*4;
 	int width, height, channels;
-	uint8_t* data = stbi_load(textureFiles()[texture].c_str(), &width, &height, &channels, 4);
-	Color color(data + index);
-	stbi_image_free(data);
+	uint8_t* image = stbi_load(data.filename.c_str(), &width, &height, &channels, 4);
+	Color color(image + index);
+	stbi_image_free(image);
 	return color;
 }
 
@@ -256,20 +264,20 @@ void UpdateList::processEvents() {
 //Update all nodes in list
 void UpdateList::update(double time) {
 	//Check collisions and updates
-	for(int layer = 0; layer <= max; layer++) {
-		Node *source = screen[layer];
+	for(Layer layer = 0; layer <= maxLayer; layer++) {
+		Node *source = layers[layer].root;
 
-		if(!pausedLayers[layer]) {
+		if(!layers[layer].paused) {
 			//Check first node for deletion
 			if(source != NULL && source->isDeleted()) {
 				deleted.push_back(source);
 				source = source->getNext();
-				screen[layer] = source;
+				layers[layer].root = source;
 			}
 
 			//For each node in layer order
 			while(source != NULL) {
-				if(staticLayers[layer] || camera == NULL || source->getRect().intersects(camera->getRect())) {
+				if(layers[layer].global || camera == NULL || source->getRect().intersects(camera->getRect())) {
 					//Check each selected collision layer
 					int collisionLayer = 0;
 					for(int i = 0; i < (int)source->getCollisionLayers().count(); i++) {
@@ -277,7 +285,7 @@ void UpdateList::update(double time) {
 							collisionLayer++;
 
 						//Check collision box of each node
-						Node *other = screen[collisionLayer];
+						Node *other = layers[collisionLayer].root;
 						while(other != NULL && !other->isDeleted()) {
 							if(other != source && source->getRect().intersects(other->getRect()))
 								source->collide(other, time);
@@ -290,10 +298,11 @@ void UpdateList::update(double time) {
 					source->update(time);
 				}
 
-				//Check next node for deletion
+				//Check next node for removing from list
 				while(source->getNext() != NULL && source->getNext()->isDeleted()) {
 					deleted.push_back(source->getNext());
 					source->deleteNext();
+					layers[source->getLayer()].count--;
 				}
 
 				source = source->getNext();
@@ -323,23 +332,24 @@ void UpdateList::draw(sf::Vector2f offset, sf::Vector2i size) {
     sgp_clear();
 
 	//Render each node in order
-	for(int layer = 0; layer <= max; layer++) {
-		Node *source = screen[layer];
+	for(Layer layer = 0; layer <= maxLayer; layer++) {
+		Node *source = layers[layer].root;
 
-		if(screenLayers[layer])
+		if(layers[layer].screenSpace)
 			sgp_project(0, 0+size.x, 0, 0+size.y);
 		else
 			sgp_project(cameraRect.left, cameraRect.left+cameraRect.width, cameraRect.top, cameraRect.top+cameraRect.height);
 
-		if(!hiddenLayers[layer])
+		if(!layers[layer].hidden) {
 			while(source != NULL) {
 				if(!source->isHidden() &&
-					(staticLayers[layer] || source->getRect().intersects(cameraRect))) {
+					(layers[layer].global || source->getRect().intersects(cameraRect))) {
 
 					drawNode(source);
 				}
 				source = source->getNext();
 			}
+		}
 	}
 }
 
@@ -360,7 +370,7 @@ void UpdateList::drawNode(Node *source) {
 		sgp_set_image(0, textureSet[source->getTexture()]);
 		//sgp_textured_rect outRects[1];
 		//int renderCount = 0;
-		for(int i = 0; i < textureRects->size(); i++) {
+		for(sint i = 0; i < textureRects->size(); i++) {
 			TextureRect tex = (*textureRects)[i];
 			sf::Vector2f scale = source->getScale();
 			if(tex.width != 0 && tex.height != 0) {
@@ -384,11 +394,6 @@ void UpdateList::drawNode(Node *source) {
 	}
 }
 
-void UpdateList::updateThread() {
-	std::cout << "Initializing game\n";
-    initialize();
-}
-
 void UpdateList::startEngine() {
 	std::cout << "Update thread starting\n";
 
@@ -397,8 +402,8 @@ void UpdateList::startEngine() {
 	#endif
 
 	//Initial node update
-	for(int layer = 0; layer <= max; layer++) {
-		Node *source = screen[layer];
+	for(Layer layer = 0; layer <= maxLayer; layer++) {
+		Node *source = layers[layer].root;
 
 		while(source != NULL) {
 			source->update(-1);
@@ -414,6 +419,7 @@ void UpdateList::startEngine() {
 
 		//Update nodes and sprites
 		double delta = stm_sec(stm_laptime(&lastTime));
+		updateTimes.addDelta(delta);
 		UpdateList::update(delta);
 
 		std::this_thread::sleep_for(
@@ -422,13 +428,6 @@ void UpdateList::startEngine() {
 
 	std::cout << "Update thread ending\n";
 }
-
-#if __linux__
-	#include <X11/Xlib.h>
-	#define initThreads XInitThreads
-#else
-	#define initThreads void
-#endif
 
 void event(const sapp_event* event) {
 	switch(event->type) {
@@ -507,7 +506,7 @@ void event(const sapp_event* event) {
 }
 
 void UpdateList::frame(void) {
-    //update(sapp_frame_duration());
+    frameTimes.addDelta(sapp_frame_duration());
 
 	// Get current window size.
     int width = sapp_width(), height = sapp_height();
@@ -520,7 +519,7 @@ void UpdateList::frame(void) {
     simguidesc.dpi_scale = sapp_dpi_scale();
     simgui_new_frame(&simguidesc);
 
-    //Main draw functions
+    //Main draw function
     draw(sf::Vector2f(0,0), sf::Vector2i(width, height));
 
     //imgui gfx debug
@@ -562,7 +561,7 @@ void UpdateList::frame(void) {
     // Commit Sokol render.
     sg_commit();
 
-    //Loop through list to delete nodes
+    //Loop through list to delete nodes from memory
 	std::vector<Node *>::iterator dit = deleted.begin();
 	while(dit != deleted.end()) {
 		Node *node = *dit;
@@ -599,6 +598,10 @@ void UpdateList::init(void) {
     sgimgui_desc_t gimgui_desc = { };
     sgimgui_init(&sgimgui, &gimgui_desc);
 
+    //Set layer names
+    for(Layer layer = 0; layer < layerNames().size(); layer++)
+    	layers[layer].name = layerNames()[layer];
+
     #ifdef _DEBUG
     addDebugTextures();
     #endif
@@ -608,8 +611,7 @@ void UpdateList::init(void) {
 		UpdateList::loadTexture(file);
 
     //Start update thread and initialize
-    initThreads();
-	updates = std::thread(UpdateList::updateThread);
+	updates = std::thread(initialize);
 
 	while(!UpdateList::running) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -648,14 +650,12 @@ sapp_desc sokol_main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;
 
-    std::string title = windowTitle();
-
    	sapp_desc desc = {0};
    	desc.init_cb = UpdateList::init;
    	desc.frame_cb = UpdateList::frame;
    	desc.event_cb = event;
    	desc.cleanup_cb = UpdateList::cleanup;
-   	desc.window_title = title.c_str();
+   	desc.window_title = windowTitle()->c_str();
    	desc.logger.func = slog_func;
     return desc;
 }

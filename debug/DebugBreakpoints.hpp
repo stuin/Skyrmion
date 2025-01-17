@@ -1,3 +1,5 @@
+#include "../include/backward-cpp/backward.hpp"
+
 #include "../core/UpdateList.h"
 
 /*
@@ -42,6 +44,12 @@ public:
 	void enterBreakpoint() {
 		std::cout << "Breakpoint hit\n";
 		stayPaused = true;
+
+		backward::StackTrace st;
+		st.load_here(32);
+		backward::Printer p;
+		p.print(st);
+
 		while(stayPaused && UpdateList::isRunning()) {
 			//Process input events
 			UpdateList::processEvents();

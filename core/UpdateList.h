@@ -12,52 +12,63 @@
 
 #include "Node.h"
 #include "Color.h"
+#include "../debug/TimingStats.hpp"
 
 /*
  * Manages list of nodes through update cycle
  */
 
-struct WindowSize {
-	float shiftX;
-	float shiftY;
-	int cornerX;
-	int cornerY;
+struct LayerData {
+	std::string name = "";
+	bool paused = false;
+	bool hidden = false;
+	bool global = false;
+	bool screenSpace = false;
+	Node *root = NULL;
+	int count = 0;
+};
 
-	sf::Vector2f worldPos(int x, int y) {
-		return sf::Vector2f(x * shiftX + cornerX, y * shiftY + cornerY);
+struct TextureData {
+	std::string filename = "";
+	sf::Vector2i size;
+	bool buffer = false;
+	bool valid = false;
+
+	TextureData(std::string _filename) {
+		filename = _filename;
+	}
+
+	TextureData(std::string _filename, sf::Vector2i _size, bool _buffer=false) {
+		filename = _filename;
+		size = _size;
+		buffer = _buffer;
+		valid = true;
 	}
 };
 
 class UpdateList {
 private:
 	//Node management
-	static Node *screen[MAXLAYER];
-	static std::bitset<MAXLAYER> staticLayers;
-	static std::bitset<MAXLAYER> pausedLayers;
-	static std::bitset<MAXLAYER> screenLayers;
+	static LayerData layers[MAXLAYER];
+	static Layer maxLayer;
+	static bool running;
 	static std::vector<Node *> deleted;
-
-	//Window event system
-	//static std::atomic_int event_count;
-	//static std::deque<sapp_event*> event_queue;
-	//static std::unordered_map<sapp_event_type, std::vector<Node *>> listeners;
 
 	//Viewport variables
 	static Node *camera;
-	static WindowSize windowSize;
-
-	//Display special cases
-	static std::bitset<MAXLAYER> hiddenLayers;
+	static sf::FloatRect viewport;
 	static std::vector<Node *> reloadBuffer;
-	//static std::vector<sg_image> textureSet;
 
-	static Layer max;
-	static bool running;
-
-	static void renderingThread(std::string title);
-	static void updateThread();
+	//Window event system
+	//static std::atomic_int event_count;
+	//static std::deque<Event> event_queue;
+	//static std::array<std::vector<Node *>, EVENT_MAX> listeners;
 
 public:
+	//Debug Timing Stats
+	static TimingStats frameTimes;
+	static TimingStats updateTimes;
+
 	//Manage node lists
 	static void addNode(Node *next);
 	static void addNodes(std::vector<Node *> nodes);
@@ -72,24 +83,22 @@ public:
 	static void scheduleReload(Node *buffer);
 
 	//Layer control features
-	static void staticLayer(Layer layer, bool _static=true);
 	static void pauseLayer(Layer layer, bool pause=true);
-	static void screenSpaceLayer(Layer layer, bool pause=true);
 	static void hideLayer(Layer layer, bool hidden=true);
+	static void globalLayer(Layer layer, bool global=true);
 
 	//Layer read features
-	static bool isLayerStatic(Layer layer);
 	static bool isLayerPaused(Layer layer);
-	static bool isLayerScreenSpace(Layer layer);
 	static bool isLayerHidden(Layer layer);
+	static LayerData &getLayerData(Layer layer);
 	static int getLayerCount();
 
 	//Utility Functions
 	static int loadTexture(std::string filename);
-	static sf::Vector2i getTextureSize(int index);
-	static unsigned long long getImguiTexture(int index);
+	static sf::Vector2i getTextureSize(sint index);
+	static TextureData &getTextureData(sint index);
+	static unsigned long long getImGuiTexture(sint texture);
 	static Color pickColor(int texture, sf::Vector2i position);
-	//static sf::Texture *getTexture(sint index);
 
 	//Start engine
 	static void startEngine();
@@ -110,17 +119,16 @@ public:
 
 //Functions to be implemented by the game
 void initialize();
-std::string windowTitle();
 Color backgroundColor();
+std::string *windowTitle();
 std::vector<std::string> &textureFiles();
 std::vector<std::string> &layerNames();
 
 //Debug tool insertions
 void setupDebugTools();
 void addDebugTextures();
-int getDebugTextures();
 
-//Imgui debug functions
+//Debug ImGui functions
 void imguiShowNode(sint id);
 void skyrmionImguiMenu();
 void skyrmionImgui();

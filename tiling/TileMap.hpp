@@ -81,9 +81,10 @@ public:
 
     void reload() {
         int numTextures = countTextures();
+        int usedRects = 0;
 
         // populate the vertex array, with one quad per tile
-        for(unsigned int i = 0; i < width; ++i)
+        for(unsigned int i = 0; i < width; ++i) {
             for(unsigned int j = 0; j < height; ++j) {
                 // get the current tile number
                 int tileValue = indexes->getTile(sf::Vector2f(i + startX, j + startY));
@@ -97,7 +98,7 @@ public:
                 int tv = tileNumber / (UpdateList::getTextureSize(tileset).x / tileX);
 
                 // get a pointer to the current tile's quad
-                TextureRect quad = (*getTextureRects())[i + j * width];
+                TextureRect quad = (*getTextureRects())[usedRects];
                 //sf::Vertex* quad = &vertices[(i + j * width) * 4];
 
                 if(tileNumber - offset != -1) {
@@ -108,11 +109,8 @@ public:
                     quad.px = i * tileX;
                     quad.py = j * tileY;
                     quad.rotation = PIO2*rotations;
-                } else {
-                    quad.width = 0;
-                    quad.height = 0;
+                    setTextureRect(quad, usedRects++);
                 }
-                setTextureRect(quad, i + j * width);
 
                 /*if(tileNumber - offset != -1) {
                     // define its 4 texture coordinates
@@ -133,6 +131,8 @@ public:
                     quad[3].position = sf::Vector2f(0, 0);
                 }*/
             }
+        }
+        getTextureRects()->resize(usedRects);
         UpdateList::scheduleReload(this);
     }
 
