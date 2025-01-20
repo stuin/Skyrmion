@@ -103,7 +103,6 @@ void imguiLayersWindow() {
     		ImGui::Checkbox("Hidden", &layerData.hidden);
     		ImGui::Checkbox("Paused", &layerData.paused);
     		ImGui::Checkbox("Global Update", &layerData.global);
-    		ImGui::Checkbox("Screenspace", &layerData.screenSpace);
 
     		ImGui::Text("%d Nodes", layerData.count);
 
@@ -209,7 +208,7 @@ void setupNoise() {
 		std::find(layerNames().begin(), layerNames().end(), "DEBUG"));
 
 	debugNoise = new TileMap(debugTextureStart+1, 1, 1, noiseIndexer, debugLayer);
-	debugNoise->setScale(3,3);
+	debugNoise->setScale(0.6,0.6);
 	UpdateList::addNode(debugNoise);
 }
 
@@ -218,7 +217,7 @@ void imguiNoiseGenWindow() {
     ImGui::Begin("Noise Map Generator", &noiseGenWindow);
 
 	float scale = debugNoise->getScale().x;
-	ImGui::SliderFloat("Scale", &scale, 0.0f, 10.0f, "%.3f");
+	ImGui::SliderFloat("Scale", &scale, 0.0f, 2.0f, "%.3f");
 	debugNoise->setScale(scale, scale);
 
 	ImGui::SeparatorText("Random Input");
@@ -281,7 +280,7 @@ void imguiNoiseGenWindow() {
 	//addNoise.SetSourceModule(0, testNoise);
 	//addNoise.SetSourceModule(1, checkerNoise);
 
-	debugNoise->setPosition(ImGui::GetWindowPos().x+ImGui::GetWindowSize().x, ImGui::GetWindowPos().y);
+	debugNoise->setSPosition(ImGui::GetWindowPos().x+ImGui::GetWindowSize().x, ImGui::GetWindowPos().y);
 	if(redraw) {
 		debugNoise->reload();
 		redraw = false;

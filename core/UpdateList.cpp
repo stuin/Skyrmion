@@ -37,7 +37,8 @@ bool UpdateList::running = false;
 
 //Rendering
 Node *UpdateList::camera = NULL;
-FloatRect UpdateList::viewport;
+FloatRect UpdateList::cameraRect;
+FloatRect UpdateList::screenRect;
 std::vector<Node *> UpdateList::reloadBuffer;
 
 //Event handling
@@ -97,19 +98,6 @@ void UpdateList::addListener(Node *item, int type) {
 	listeners[type].push_back(item);
 }
 
-//Set camera to follow node
-Node *UpdateList::setCamera(Node *follow, Vector2f size, Vector2f position) {
-	if(camera != NULL) {
-		camera->setSize(Vector2i(size.x,size.y));
-		camera->setParent(follow);
-	} else
-		camera = new Node(0, Vector2i(size.x,size.y), true, follow);
-	//viewPlayer.setSize(size);
-	viewport = FloatRect(position.x, position.y, size.x, size.y);
-	camera->setPosition(position);
-	return camera;
-}
-
 //Send signal message to all nodes in layer
 void UpdateList::sendSignal(Layer layer, int id, Node *sender) {
 	Node *source = layers[layer].root;
@@ -129,6 +117,29 @@ void UpdateList::sendSignal(int id, Node *sender) {
 void UpdateList::scheduleReload(Node *buffer) {
 	if(buffer != NULL)
 		reloadBuffer.push_back(buffer);
+}
+
+//Set camera to follow node
+Node *UpdateList::setCamera(Node *follow, Vector2f size, Vector2f position) {
+	if(camera != NULL) {
+		camera->setSize(Vector2i(size.x,size.y));
+		camera->setParent(follow);
+	} else
+		camera = new Node(0, Vector2i(size.x,size.y), true, follow);
+	cameraRect = FloatRect(position.x, position.y, size.x, size.y);
+	camera->setPosition(position);
+	return camera;
+}
+
+//Get camera and screen sizes
+FloatRect UpdateList::getCameraRect() {
+	return cameraRect;
+}
+FloatRect UpdateList::getScreenRect() {
+	return screenRect;
+}
+Vector2f UpdateList::getScaleFactor() {
+	return cameraRect.getSize() / screenRect.getSize();
 }
 
 //Do not update nodes
@@ -310,19 +321,12 @@ void UpdateList::update(double time) {
 }
 
 //Thread safe draw nodes in list
-void UpdateList::draw(Vector2f offset, Vector2i size) {
-	//Find camera position
-	FloatRect cameraRect = FloatRect(0,0,size.x,size.y);
-	if(camera != NULL)
-		cameraRect = camera->getRect();
-	cameraRect = FloatRect(cameraRect.left + offset.x, cameraRect.top + offset.y,
-		cameraRect.width, cameraRect.height);
-
+void UpdateList::draw(FloatRect cameraRect) {
 	// Begin recording draw commands for a frame buffer of size (width, height).
-    sgp_begin(size.x, size.y);
+    sgp_begin(cameraRect.width, cameraRect.height);
     // Set frame buffer drawing region to (0,0,width,height).
     //sgp_viewport(cameraRect.left, cameraRect.top, cameraRect.width, cameraRect.height);
-    sgp_viewport(0,0,size.x,size.y);
+    sgp_viewport(0,0,cameraRect.width, cameraRect.height);
 
     // Clear the frame buffer.
     Color background = backgroundColor();
@@ -333,10 +337,7 @@ void UpdateList::draw(Vector2f offset, Vector2i size) {
 	for(Layer layer = 0; layer <= maxLayer; layer++) {
 		Node *source = layers[layer].root;
 
-		if(layers[layer].screenSpace)
-			sgp_project(0, 0+size.x, 0, 0+size.y);
-		else
-			sgp_project(cameraRect.left, cameraRect.left+cameraRect.width, cameraRect.top, cameraRect.top+cameraRect.height);
+		sgp_project(cameraRect.left, cameraRect.left+cameraRect.width, cameraRect.top, cameraRect.top+cameraRect.height);
 
 		if(!layers[layer].hidden) {
 			while(source != NULL) {
@@ -520,8 +521,15 @@ void UpdateList::frame(void) {
     simguidesc.dpi_scale = sapp_dpi_scale();
     simgui_new_frame(&simguidesc);
 
+    //Find camera position
+	screenRect = FloatRect(0,0,width,height);
+	if(camera != NULL)
+		cameraRect = camera->getRect();
+	else
+		cameraRect = screenRect;
+
     //Main draw function
-    draw(Vector2f(0,0), Vector2i(width, height));
+    draw(cameraRect);
 
     //imgui gfx debug
     #if _DEBUG

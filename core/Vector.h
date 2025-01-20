@@ -46,6 +46,14 @@ public:
 		height = _height;
 	}
 
+	Vector2<T> getPos() {
+		return Vector2<T>(left, top);
+	}
+
+	Vector2<T> getSize() {
+		return Vector2<T>(width, height);
+	}
+
 	bool contains(const Vector2<T> point) const {
 		return point.x >= left && point.x <= left+width &&
 			point.y >= top && point.y <= top+height;

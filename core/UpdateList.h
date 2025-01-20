@@ -22,7 +22,6 @@ struct LayerData {
 	bool paused = false;
 	bool hidden = false;
 	bool global = false;
-	bool screenSpace = false;
 	Node *root = NULL;
 	int count = 0;
 };
@@ -55,7 +54,8 @@ private:
 
 	//Viewport variables
 	static Node *camera;
-	static FloatRect viewport;
+	static FloatRect cameraRect;
+	static FloatRect screenRect;
 	static std::vector<Node *> reloadBuffer;
 
 	//Window event system
@@ -73,10 +73,15 @@ public:
 	static void addListener(Node *item, int type);
 
 	//Special node features
-	static Node *setCamera(Node *follow, Vector2f size, Vector2f position=Vector2f(0,0));
 	static void sendSignal(Layer layer, int id, Node *sender);
 	static void sendSignal(int id, Node *sender);
 	static void scheduleReload(Node *buffer);
+
+	//Screen view
+	static Node *setCamera(Node *follow, Vector2f size, Vector2f position=Vector2f(0,0));
+	static FloatRect getCameraRect();
+	static FloatRect getScreenRect();
+	static Vector2f getScaleFactor();
 
 	//Layer control features
 	static void pauseLayer(Layer layer, bool pause=true);
@@ -104,7 +109,7 @@ public:
 	//Main loop functions
 	static void processEvents();
 	static void update(double time);
-	static void draw(Vector2f offset, Vector2i size);
+	static void draw(FloatRect cameraRect);
 	static void drawNode(Node *source);
 
 	//Sokol callback functions

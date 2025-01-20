@@ -18,7 +18,6 @@ void setupDebugTools() {
 	LayerData &data = UpdateList::getLayerData(debugLayer);
 	data.name = "DEBUG";
 	data.global = true;
-	data.screenSpace = true;
 
 	UpdateList::addNode(new DebugLayers(debugLayer));
 

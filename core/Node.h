@@ -78,6 +78,8 @@ public:
 	void setPosition(float x, float y);
 	void setGPosition(Vector2f pos);
 	void setGPosition(float x, float y);
+	void setSPosition(Vector2f pos);
+	void setSPosition(float x, float y);
 	void setScale(Vector2f scale);
 	void setScale(float x, float y);
 	void setOrigin(Vector2f origin);
@@ -115,69 +117,3 @@ public:
 	virtual void recieveSignal(int id, Node *sender) {}
 	virtual void reloadBuffer() {}
 };
-
-// Use SFML drawable instead of texture
-/*class DrawNode : public Node {
-private:
-	sf::Drawable *image = NULL;
-
-	void draw(sf::RenderTarget& target, sf::RenderStates states) const {
-		if(image != NULL) {
-			states.transform *= getTransform();
-			target.draw(*image, states);
-		}
-	}
-
-public:
-	DrawNode(sf::Drawable &image, Layer layer, Vector2i size=Vector2i(16,16), Node *parent=NULL) : Node(layer, size, false, parent) {
-		this->image = &image;
-	}
-
-	void setImage(sf::Drawable &image) {
-		this->image = &image;
-	}
-
-	sf::Drawable *getImage() {
-		return image;
-	}
-};*/
-
-//Handles simple animations with horizontal spritesheets
-/*class AnimatedNode : public Node {
-	int frameWidth = 0;
-	int frameHeight = 0;
-    int maxFrames = 0;
-    int frame = 0;
-    double nextTime = 0;
-    double delay = -1;
-    bool paused = false;
-public:
-	AnimatedNode(sf::Texture &texture, int _maxFrames, double _delay, Layer layer, Vector2i size) : Node(layer, size) {
-		setTexture(texture);
-
-		maxFrames = _maxFrames;
-		delay = _delay;
-		frameWidth = texture.getSize().x / _maxFrames;
-		frameHeight = texture.getSize().y;
-	}
-
-    void update(double time) {
-        updateAnimation(time);
-    }
-
-    //Update timer
-    void updateAnimation(double time) {
-    	if(!paused) {
-            if((nextTime -= time) <= 0) {
-                nextTime = delay;
-                frame++;
-
-                //Reset to start frame
-                if(frame == maxFrames)
-                    frame = 0;
-
-                setTextureRect(IntRect(frameWidth * frame, 0, frameWidth, frameHeight));
-            }
-        }
-    }
-};*/

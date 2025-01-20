@@ -1,4 +1,4 @@
-#include "Node.h"
+#include "UpdateList.h"
 
 /*
  * Sprite with collision
@@ -92,12 +92,6 @@ Vector2f Node::getOrigin() {
 	return origin;
 }
 
-/*sf::Transform Node::getGTransform() {
-	if(parent != NULL)
-		return parent->getGTransform().combine(getTransform());
-	return getTransform();
-}*/
-
 FloatRect Node::getDrawRect() {
 	return getRect();
 }
@@ -149,6 +143,16 @@ void Node::setGPosition(Vector2f pos) {
 }
 void Node::setGPosition(float x, float y) {
 	setGPosition(Vector2f(x, y));
+}
+
+//Set position in screen coordinates
+void Node::setSPosition(Vector2f pos) {
+	pos *= UpdateList::getScaleFactor();
+	pos += UpdateList::getCameraRect().getPos();
+	setGPosition(pos);
+}
+void Node::setSPosition(float x, float y) {
+	setSPosition(Vector2f(x, y));
 }
 
 //Set scale
