@@ -34,7 +34,6 @@ std::array<std::vector<Node *>, EVENT_MAX> listeners;
 //Textures stored in this file
 std::vector<TextureData> textureData;
 std::vector<Texture2D> textureSet;
-std::vector<Image> textureSetImage;
 
 std::thread updates;
 
@@ -179,11 +178,9 @@ int UpdateList::loadTexture(std::string filename) {
 	if(filename.length() > 0 && filename[0] != '#') {
 		Texture2D texture = LoadTexture(filename.c_str());
 		textureSet.push_back(texture);
-		textureSetImage.push_back(LoadImage(filename.c_str()));
 		textureData.emplace_back(filename, Vector2i(texture.width, texture.height));
 	} else {
 		textureSet.emplace_back();
-		textureSetImage.emplace_back();
 		textureData.emplace_back(filename);
 	}
 	return textureSet.size() - 1;
@@ -207,7 +204,7 @@ TextureData &UpdateList::getTextureData(sint texture) {
 void UpdateList::drawImGuiTexture(sint texture, Vector2i size) {
 	if(texture >= textureData.size())
 		throw new std::invalid_argument(TEXTUREERROR);
-	rlImGuiImage(&(textureSet[texture]));
+	rlImGuiImageSize(&(textureSet[texture]), size.x, size.y);
 }
 
 //Pick color from texture
@@ -215,7 +212,7 @@ skColor UpdateList::pickColor(sint texture, Vector2i position) {
 	if(texture >= textureData.size() || !textureData[texture].valid)
 		return skColor(0,0,0,0);
 
-	Color color = GetImageColor(textureSetImage[texture], position.x, position.y);
+	Color color = GetImageColor(LoadImageFromTexture(textureSet[texture]), position.x, position.y);
 	return skColor(color.r, color.g, color.b, color.a);
 }
 
@@ -336,7 +333,7 @@ void UpdateList::drawNode(Node *source) {
 			if(tex.width != 0 && tex.height != 0) {
 				Rectangle dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, abs(tex.width)*scale.x, abs(tex.height)*scale.y};
 				Rectangle src = {(float)tex.tx, (float)tex.ty, (float)tex.width, (float)tex.height};
-				Vector2 origin = Vector2{source->getOrigin().x, source->getOrigin().y};
+				Vector2 origin = Vector2{dst.width/2.0, dst.height/2.0};
 				DrawTexturePro(textureSet[source->getTexture()], src, dst, origin, (float)tex.rotation, WHITE);
 			}
 		}
