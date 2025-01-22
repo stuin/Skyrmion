@@ -10,3 +10,9 @@
 [submodule "include/backward-cpp"]
 	path = include/backward-cpp
 	url = https://github.com/bombela/backward-cpp.git
+[submodule "include/rlImGui"]
+	path = include/rlImGui
+	url = https://github.com/raylib-extras/rlImGui.git
+[submodule "include/raylib"]
+	path = include/raylib
+	url = https://github.com/raysan5/raylib.git
