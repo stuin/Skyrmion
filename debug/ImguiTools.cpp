@@ -324,19 +324,25 @@ void imguiColorPickerWindow() {
     ImGui::SliderInt("Texture", &pickTexture, 0, textureFiles().size()-1);
 	ImGui::SliderFloat("Scale", &pickTextureScale, 0.0f, 10.0f, "%.3f");
 	TextureData &textureData = UpdateList::getTextureData(pickTexture);
+	ImGui::Text(textureData.filename.c_str());
     if(!textureData.valid) {
     	ImGui::End();
     	return;
     }
 
-    ImGui::SeparatorText("Image Picker");
+    ImGui::SeparatorText("Color Picker");
 
     if(texture != pickTexture)
     	pickPosition = Vector2i(0,0);
 
     Vector2i size = textureData.size;
     ImGui::SliderInt("x", &pickPosition.x, 0, size.x-1);
+    ImGui::SameLine();
+    ImGui::Text("/ %d", size.x);
+
     ImGui::SliderInt("y", &pickPosition.y, 0, size.y-1);
+    ImGui::SameLine();
+    ImGui::Text("/ %d", size.y);
 
     int index = pickPosition.x + pickPosition.y*size.x;
     ImGui::SliderInt("Index", &index, 0, size.x*size.y-1);
