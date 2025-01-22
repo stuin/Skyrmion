@@ -47,8 +47,8 @@ Vector2i Node::getSize() {
 FloatRect Node::getRect() {
 	Vector2f pos = this->getGPosition();
 	FloatRect rec;
-	rec.left = pos.x - (this->getOrigin().x * std::abs(this->getScale().x));
-	rec.top = pos.y - (this->getOrigin().y * std::abs(this->getScale().y));
+	rec.left = pos.x - (origin.x * std::abs(getGScale().x));
+	rec.top = pos.y - (origin.y * std::abs(getGScale().y));
 	rec.width = this->getSize().x;
 	rec.height = this->getSize().y;
 	return rec;
@@ -92,8 +92,15 @@ Vector2f Node::getOrigin() {
 	return origin;
 }
 
+//Scaled draw rectangle
 FloatRect Node::getDrawRect() {
-	return getRect();
+	Vector2f pos = this->getGPosition();
+	FloatRect rec;
+	rec.left = pos.x - (origin.x * getGScale().x);
+	rec.top = pos.y - (origin.y * getGScale().y);
+	rec.width = size.x * getGScale().x;
+	rec.height = size.y * getGScale().y;
+	return rec;
 }
 
 //Get blend mode for rendering
@@ -104,6 +111,11 @@ int Node::getBlendMode() {
 //Get texture number
 int Node::getTexture() {
 	return texture;
+}
+
+//Get dirty flag
+bool Node::isDirty() {
+	return dirty;
 }
 
 //Get sections of texture to render
@@ -179,6 +191,11 @@ void Node::setBlendMode(int blendMode) {
 //Set texture channel
 void Node::setTexture(int texture) {
 	this->texture = texture;
+}
+
+//Set dirty flag
+void Node::setDirty(bool dirty) {
+	this->dirty = dirty;
 }
 
 //Set texture rect

@@ -7,7 +7,9 @@
 
 #define DTOR 0.0174532925199
 #define RTOD 57.2957795131
+
 #define TEXTUREERROR "Texture does not exist"
+#define BUFFERERROR "Cannot replace texture with render buffer"
 
 /*
  * Manages layers of nodes through update cycle
@@ -24,7 +26,6 @@ Node *UpdateList::camera = NULL;
 FloatRect UpdateList::cameraRect;
 FloatRect UpdateList::screenRect;
 Camera2D raycamera;
-std::vector<Node *> UpdateList::reloadBuffer;
 
 //Event handling
 std::atomic_int event_count = 0;
@@ -34,6 +35,15 @@ std::array<std::vector<Node *>, EVENT_MAX> listeners;
 //Textures stored in this file
 std::vector<TextureData> textureData;
 std::vector<Texture2D> textureSet;
+std::vector<RenderTexture2D> bufferSet;
+
+//Buffers
+struct BufferQueue {
+	sint buffer;
+	Node *source;
+	skColor clear;
+};
+std::vector<BufferQueue> reloadBuffer;
 
 std::thread updates;
 
@@ -95,12 +105,6 @@ void UpdateList::sendSignal(Layer layer, int id, Node *sender) {
 void UpdateList::sendSignal(int id, Node *sender) {
 	for(Layer layer = 0; layer <= maxLayer; layer++)
 		sendSignal(layer, id, sender);
-}
-
-//Schedule reload call before next draw
-void UpdateList::scheduleReload(Node *buffer) {
-	if(buffer != NULL)
-		reloadBuffer.push_back(buffer);
 }
 
 //Set camera to follow node
@@ -184,6 +188,25 @@ int UpdateList::loadTexture(std::string filename) {
 		textureData.emplace_back(filename);
 	}
 	return textureSet.size() - 1;
+}
+
+//Replace blank texture with render buffer
+int UpdateList::createBuffer(sint texture, Vector2i size) {
+	if(texture >= textureData.size())
+		throw new std::invalid_argument(TEXTUREERROR);
+	if(texture < textureData.size() && textureData[texture].valid)
+		throw new std::invalid_argument(BUFFERERROR);
+
+	//Create and add buffer
+	sint i = bufferSet.size();
+	textureData[texture].size = size;
+	textureData[texture].buffer = i;
+	return i;
+}
+
+//Schedule reload call before next draw
+void UpdateList::scheduleReload(sint buffer, Node *source, skColor clear) {
+	reloadBuffer.push_back(BufferQueue{buffer, source, clear});
 }
 
 //Get size of texture
@@ -279,6 +302,43 @@ void UpdateList::update(double time) {
 	}
 }
 
+static const std::map<int, int> blendModeMap = {
+	{SK_BLEND_ALPHA, BLEND_ALPHA},
+	{SK_BLEND_ALPHA_MULT, BLEND_ALPHA_PREMULTIPLY},
+	{SK_BLEND_ADD, BLEND_ADDITIVE},
+	{SK_BLEND_MULT, BLEND_MULTIPLIED},
+};
+
+void UpdateList::drawNode(Node *source) {
+	BeginBlendMode(blendModeMap.at(source->getBlendMode()));
+
+	sint texture = source->getTexture();
+	FloatRect rect = source->getDrawRect();
+	Vector2f scale = source->getGScale();
+	std::vector<TextureRect> *textureRects = source->getTextureRects();
+
+	if(texture < textureData.size() && textureData[texture].valid && textureRects->size() == 0) {
+		//Default square texture
+		Rectangle src = {0, 0, (float)rect.width, (float)rect.height};
+		Vector2 position = {rect.left, rect.top};
+		DrawTextureRec(textureSet[source->getTexture()], src, position, WHITE);
+	} else if(textureData[texture].valid) {
+		//Tilemapped or partial texture
+		for(sint i = 0; i < textureRects->size(); i++) {
+			TextureRect tex = (*textureRects)[i];
+			if(tex.width != 0 && tex.height != 0) {
+				Rectangle dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, abs(tex.width)*scale.x, abs(tex.height)*scale.y};
+				Rectangle src = {(float)tex.tx, (float)tex.ty, (float)tex.width, (float)tex.height};
+				Vector2 origin = Vector2{abs(tex.width)*scale.x/2, abs(tex.height)*scale.y/2};
+				DrawTexturePro(textureSet[source->getTexture()], src, dst, origin, (float)tex.rotation, WHITE);
+			}
+		}
+	} else {
+		DrawRectangle(rect.left, rect.top, rect.width, rect.height, WHITE);
+	}
+	EndBlendMode();
+}
+
 //Thread safe draw nodes in list
 void UpdateList::draw(FloatRect cameraRect) {
 	skColor color = backgroundColor();
@@ -307,40 +367,12 @@ void UpdateList::draw(FloatRect cameraRect) {
 	EndMode2D();
 }
 
-static const std::map<int, int> blendModeMap = {
-	{SK_BLEND_ALPHA, BLEND_ALPHA},
-	{SK_BLEND_ALPHA_MULT, BLEND_ALPHA_PREMULTIPLY},
-	{SK_BLEND_ADD, BLEND_ADDITIVE},
-	{SK_BLEND_MULT, BLEND_MULTIPLIED},
-};
-
-void UpdateList::drawNode(Node *source) {
-	if(source->getBlendMode() != SK_BLEND_NONE)
-		BeginBlendMode(blendModeMap[source->getBlendMode()]);
-
-	sint texture = source->getTexture();
-	FloatRect rect = source->getDrawRect();
-	std::vector<TextureRect> *textureRects = source->getTextureRects();
-
-	if(texture < textureData.size() && textureData[texture].valid && textureRects->size() == 0) {
-		//Default square texture
-		DrawTexture(textureSet[source->getTexture()], rect.left, rect.top, WHITE);
-	} else if(source->getTexture() != -1) {
-		//Tilemapped or partial texture
-		for(sint i = 0; i < textureRects->size(); i++) {
-			TextureRect tex = (*textureRects)[i];
-			Vector2f scale = source->getGScale();
-			if(tex.width != 0 && tex.height != 0) {
-				Rectangle dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, abs(tex.width)*scale.x, abs(tex.height)*scale.y};
-				Rectangle src = {(float)tex.tx, (float)tex.ty, (float)tex.width, (float)tex.height};
-				Vector2 origin = Vector2{dst.width/2.0, dst.height/2.0};
-				DrawTexturePro(textureSet[source->getTexture()], src, dst, origin, (float)tex.rotation, WHITE);
-			}
-		}
-	} else {
-		DrawRectangle(rect.left, rect.top, rect.width, rect.height, WHITE);
-	}
-	EndBlendMode();
+void UpdateList::drawBuffer(sint buffer, Node *source, skColor clear) {
+	BeginTextureMode(bufferSet[textureData[buffer].buffer]);
+	ClearBackground(Color{(Layer)(clear.red*255), (Layer)(clear.green*255), (Layer)(clear.blue*255)});
+	drawNode(source);
+	EndTextureMode();
+	source->setDirty(false);
 }
 
 void UpdateList::startEngine() {
@@ -459,7 +491,7 @@ void UpdateList::startEngine() {
 
 void UpdateList::frame(void) {
     DebugTimers::frameTimes.addDelta(GetFrameTime());
-    uint64_t lastTime = GetTime();
+    double lastTime = GetTime();
 
 	// Get current window size.
     int width = GetRenderWidth();
@@ -468,6 +500,11 @@ void UpdateList::frame(void) {
 
     //Start imgui frame
     rlImGuiBegin();
+
+    //Reload buffer textures
+	for(BufferQueue queue : reloadBuffer)
+		drawBuffer(queue.buffer, queue.source, queue.clear);
+	reloadBuffer.clear();
 
     //Find camera position
 	screenRect = FloatRect(0,0,width,height);
@@ -522,6 +559,7 @@ void UpdateList::init() {
     #endif
 
     //Load textures
+    bufferSet.emplace_back();
 	for(std::string file : textureFiles())
 		UpdateList::loadTexture(file);
 
@@ -530,6 +568,16 @@ void UpdateList::init() {
 
 	while(!UpdateList::running) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+
+	//Prepare buffer textures
+	for(sint texture = 0; texture < textureData.size(); texture++) {
+		TextureData &data = textureData[texture];
+		if(data.buffer != 0) {
+			bufferSet.push_back(LoadRenderTexture(data.size.x, data.size.y));
+			textureSet[texture] = bufferSet[data.buffer].texture;
+			data.valid = true;
+		}
 	}
 
     std::cout << "Starting Rendering\n";

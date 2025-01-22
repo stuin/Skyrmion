@@ -29,12 +29,15 @@ private:
 	Vector2i size;
 	std::bitset<MAXLAYER> collisionLayers;
 
-	//Rendering
+	//Positioning
 	Vector2f position = Vector2f(0,0);
 	Vector2f scale = Vector2f(1,1);
 	Vector2f origin = Vector2f(0,0);
+
+	//Rendering
 	int blendMode = 1;
 	sint texture = 0;
+	bool dirty = false;
 	std::vector<TextureRect> textureRects;
 
 	//Background system variables
@@ -57,6 +60,7 @@ public:
 	Vector2i getSize();
 	FloatRect getRect();
 
+	//Positioning
 	Vector2f getPosition();
 	Vector2f getGPosition();
 	Vector2f getScale();
@@ -64,9 +68,12 @@ public:
 	Vector2f getInverseScale();
 	Vector2f getInverseGScale();
 	Vector2f getOrigin();
+
+	//Rendering
 	FloatRect getDrawRect();
 	int getBlendMode();
 	int getTexture();
+	bool isDirty();
 	virtual std::vector<TextureRect> *getTextureRects();
 
 	//General setters
@@ -74,6 +81,7 @@ public:
 	void setHidden(bool hidden=true);
 	void setSize(Vector2i size);
 
+	//Positioning
 	void setPosition(Vector2f pos);
 	void setPosition(float x, float y);
 	void setGPosition(Vector2f pos);
@@ -84,8 +92,11 @@ public:
 	void setScale(float x, float y);
 	void setOrigin(Vector2f origin);
 	void setOrigin(float x, float y);
+
+	//Rendering
 	void setBlendMode(int blendMode);
 	void setTexture(int textureChannel);
+	void setDirty(bool dirty=true);
 	void setTextureRect(TextureRect &rectangle, sint i=0);
 
 	//Collision system

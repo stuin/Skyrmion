@@ -29,17 +29,17 @@ struct LayerData {
 struct TextureData {
 	std::string filename = "";
 	Vector2i size;
-	bool buffer = false;
 	bool valid = false;
+	sint buffer = 0;
 
 	TextureData(std::string _filename) {
 		filename = _filename;
 	}
 
-	TextureData(std::string _filename, Vector2i _size, bool _buffer=false) {
+	TextureData(std::string _filename, Vector2i _size) {
 		filename = _filename;
 		size = _size;
-		buffer = _buffer;
+		buffer = 0;
 		valid = true;
 	}
 };
@@ -56,7 +56,6 @@ private:
 	static Node *camera;
 	static FloatRect cameraRect;
 	static FloatRect screenRect;
-	static std::vector<Node *> reloadBuffer;
 
 	//Window event system
 	//static std::atomic_int event_count;
@@ -75,7 +74,6 @@ public:
 	//Special node features
 	static void sendSignal(Layer layer, int id, Node *sender);
 	static void sendSignal(int id, Node *sender);
-	static void scheduleReload(Node *buffer);
 
 	//Screen view
 	static Node *setCamera(Node *follow, Vector2f size, Vector2f position=Vector2f(0,0));
@@ -96,6 +94,8 @@ public:
 
 	//Utility Functions
 	static int loadTexture(std::string filename);
+	static int createBuffer(sint texture, Vector2i size);
+	static void scheduleReload(sint buffer, Node *source, skColor clear);
 	static Vector2i getTextureSize(sint index);
 	static TextureData &getTextureData(sint index);
 	static void drawImGuiTexture(sint texture, Vector2i size);
@@ -109,8 +109,9 @@ public:
 	//Main loop functions
 	static void processEvents();
 	static void update(double time);
-	static void draw(FloatRect cameraRect);
 	static void drawNode(Node *source);
+	static void draw(FloatRect cameraRect);
+	static void drawBuffer(sint buffer, Node *source, skColor clear);
 
 	//Sokol callback functions
 	static void frame(void);

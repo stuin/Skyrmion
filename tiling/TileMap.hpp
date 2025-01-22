@@ -18,7 +18,7 @@ private:
     const int tileY;
     Indexer *indexes;
     int offset = 0;
-    int tileset = 0;
+    sint tileset = 0;
 
     uint fullWidth = 0;
     uint fullHeight = 0;
@@ -29,7 +29,7 @@ private:
 
 public:
 
-    TileMap(int _tileset, int _tileX, int _tileY, Indexer *_indexes, Layer layer = 0, int _offset = 0, Rect<uint> border=Rect<uint>())
+    TileMap(sint _tileset, int _tileX, int _tileY, Indexer *_indexes, Layer layer=0, int _offset=0, Rect<uint> border=Rect<uint>())
      : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes), offset(_offset), tileset(_tileset) {
 
         //Set sizing
@@ -49,7 +49,7 @@ public:
         setSize(Vector2i(tileX * width, tileY * height));
         setOrigin(0, 0);
         setPosition(startX * tileX, startY * tileY);
-        setTexture(tileset);
+        setTexture(_tileset);
 
         //std::cout << " " << startX << "," << startY << ", " << width << "," << height << "\n";
         //std::cout << toString(getGPosition()) << ":" << toString(getGScale()) <<  "\n";
@@ -133,14 +133,7 @@ public:
             }
         }
         getTextureRects()->resize(usedRects);
-        UpdateList::scheduleReload(this);
-    }
-
-    void reloadBuffer() {
-        //Draw to buffer
-        //buffer.clear(sf::Color::Transparent);
-        //buffer.draw(vertices, sf::RenderStates(tileset));
-        //buffer.display();
+        setDirty();
     }
 
     void setIndexer(Indexer *indexes) {
@@ -252,6 +245,7 @@ public:
     void reload() {
         for(int i = 0; i < maxFrames; i++)
             tilemaps[i]->reload();
+        setDirty();
     }
 
     std::vector<Node *> getNodes() {
@@ -307,6 +301,7 @@ public:
     void reload() {
         for(TileMap *map : tilemaps)
             map->reload();
+        setDirty();
     }
 
     std::vector<Node *> getNodes() {

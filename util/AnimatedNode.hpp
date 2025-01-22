@@ -1,4 +1,4 @@
-#include "../UpdateList.h"
+#include "../core/UpdateList.h"
 
 //Handles simple animations with horizontal spritesheets
 class AnimatedNode : public Node {
