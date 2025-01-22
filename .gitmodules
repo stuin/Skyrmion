@@ -10,3 +10,12 @@
 [submodule "include/raylib"]
 	path = include/raylib
 	url = https://github.com/raysan5/raylib.git
+[submodule "include/backward-cpp"]
+	path = include/backward-cpp
+	url = https://github.com/bombela/backward-cpp.git
+[submodule "include/sokol_gp"]
+	path = include/sokol_gp
+	url = https://github.com/edubart/sokol_gp.git
+[submodule "include/sokol"]
+	path = include/sokol
+	url = https://github.com/floooh/sokol.git
