@@ -413,6 +413,38 @@ void UpdateList::startEngine() {
 	std::cout << "Update thread ending\n";
 }
 
+bool UpdateList::useDirectInputs = true;
+
+Event UpdateList::queryInput(int type, int code) {
+	switch(type) {
+	case EVENT_KEYPRESS:
+		if(code < MOUSE_OFFSET)
+			return Event(type, IsKeyDown(code), code);
+		else if(code < MOUSE_OFFSET+7)
+			return Event(type, IsMouseButtonDown(code-MOUSE_OFFSET), code);
+		else if(code == MOUSE_OFFSET+7)
+			return Event(type, GetMouseWheelMoveV().y>0, code);
+		else if(code == MOUSE_OFFSET+8)
+			return Event(type, GetMouseWheelMoveV().y<0, code);
+		else if(code == MOUSE_OFFSET+9)
+			return Event(type, GetTouchPointCount()>0, code);
+	case EVENT_MOUSE:
+		return Event(type, IsMouseButtonDown(0), MOUSE_OFFSET+0, GetMouseX(), GetMouseY());
+	case EVENT_SCROLL:
+		return Event(type, GetMouseWheelMoveV().y<0, -1, GetMouseWheelMoveV().x, GetMouseWheelMoveV().y);
+	case EVENT_TOUCH:
+		return Event(type, GetTouchPointCount()>0, MOUSE_OFFSET+9, GetTouchX(), GetTouchY());
+	case EVENT_RESIZE:
+		return Event(type, IsWindowResized(), GetRenderWidth()/GetScreenWidth(), GetScreenWidth(), GetScreenHeight());
+	case EVENT_FOCUS:
+		return Event(type, !IsWindowFocused(), 0);
+	case EVENT_SUSPEND:
+		return Event(type, IsWindowHidden(), 0);
+	default:
+		return Event(EVENT_MAX, 0, 0);
+	}
+}
+
 /*void event(const sapp_event* event) {
 	switch(event->type) {
 	case SAPP_EVENTTYPE_KEY_DOWN: case SAPP_EVENTTYPE_KEY_UP:
@@ -438,9 +470,9 @@ void UpdateList::startEngine() {
 	case SAPP_EVENTTYPE_MOUSE_SCROLL:
 		//Mouse Scrolling
 		event_queue.emplace_front(EVENT_KEYPRESS, event->scroll_y > 0,
-			MOUSE_OFFSET+5);
+			MOUSE_OFFSET+7);
 		event_queue.emplace_front(EVENT_KEYPRESS, event->scroll_y < 0,
-			MOUSE_OFFSET+6);
+			MOUSE_OFFSET+8);
 		event_queue.emplace_front(EVENT_SCROLL, event->scroll_y < 0,
 			-1, event->scroll_x, event->scroll_y);
 		event_count += 3;
@@ -448,11 +480,11 @@ void UpdateList::startEngine() {
 	case SAPP_EVENTTYPE_TOUCHES_BEGAN: case SAPP_EVENTTYPE_TOUCHES_ENDED:
 		//Touch
 		event_queue.emplace_front(EVENT_KEYPRESS, event->type == SAPP_EVENTTYPE_TOUCHES_BEGAN,
-			MOUSE_OFFSET+7);
+			MOUSE_OFFSET+9);
 		event_count++;
 		for(int i = 0; i < event->num_touches; i++) {
 			event_queue.emplace_front(EVENT_TOUCH, event->type == SAPP_EVENTTYPE_TOUCHES_BEGAN,
-				MOUSE_OFFSET+7, event->touches[i].pos_x, event->touches[i].pos_y);
+				i, event->touches[i].pos_x, event->touches[i].pos_y);
 			event_count++;
 		}
 		break;
@@ -460,12 +492,12 @@ void UpdateList::startEngine() {
 		//Touch movement
 		for(int i = 0; i < event->num_touches; i++) {
 			event_queue.emplace_front(EVENT_TOUCH, true,
-				-1, event->touches[i].pos_x, event->touches[i].pos_y);
+				i, event->touches[i].pos_x, event->touches[i].pos_y);
 			event_count++;
 		}
 		break;
 	case SAPP_EVENTTYPE_RESIZED:
-		event_queue.emplace_front(EVENT_RESIZE, false,
+		event_queue.emplace_front(EVENT_RESIZE, true,
 			event->framebuffer_width/event->window_width, event->window_width, event->window_height);
 		event_count++;
 		break;

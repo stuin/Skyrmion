@@ -21,15 +21,18 @@ struct Keybind {
 	long int duplicate = -1;
 	bool pressed = false;
 	bool held = false;
+	bool query = true;
 
 	Keybind(int _key) {
 		key = _key;
 	}
-	Keybind(int _key, const std::string& _configName, int _combo=-1) {
+	Keybind(int _key, const std::string& _configName, long int _combo=-1) {
 		key = _key;
 		configName = _configName;
 		combo = _combo;
 		duplicate = -1;
+		if(combo >= 0)
+			query = false;
 	}
 };
 

@@ -69,9 +69,11 @@ public:
 	static void addNodes(std::vector<Node *> nodes);
 	static Node *getNode(Layer layer);
 	static void clearLayer(Layer layer);
-	static void addListener(Node *item, int type);
 
-	//Special node features
+	//Events and signals
+	static bool useDirectInputs;
+	static Event queryInput(int type, int key=0);
+	static void addListener(Node *item, int type);
 	static void sendSignal(Layer layer, int id, Node *sender);
 	static void sendSignal(int id, Node *sender);
 
@@ -92,7 +94,7 @@ public:
 	static LayerData &getLayerData(Layer layer);
 	static int getLayerCount();
 
-	//Utility Functions
+	//Texture Handling
 	static int loadTexture(std::string filename);
 	static int createBuffer(sint texture, Vector2i size);
 	static void scheduleReload(sint buffer, Node *source, skColor clear);
