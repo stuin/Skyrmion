@@ -19,6 +19,7 @@ private:
     Indexer *indexes;
     int offset = 0;
     sint tileset = 0;
+    uint gridUpdates = 0;
 
     uint fullWidth = 0;
     uint fullHeight = 0;
@@ -54,14 +55,6 @@ public:
         //std::cout << " " << startX << "," << startY << ", " << width << "," << height << "\n";
         //std::cout << toString(getGPosition()) << ":" << toString(getGScale()) <<  "\n";
 
-        //Set up buffer texture
-        //if(!buffer.create(tileX * width, tileY * height))
-        //    throw std::logic_error("Error creating TileMap buffer");
-        //setTexture(buffer.getTexture());
-
-        // resize the vertex array to fit the level size
-        //vertices.setPrimitiveType(sf::Quads);
-        //vertices.resize(width * height * 4);
         getTextureRects()->reserve(width * height);
 
         //Load textures
@@ -102,36 +95,20 @@ public:
                 //sf::Vertex* quad = &vertices[(i + j * width) * 4];
 
                 if(tileNumber - offset != -1) {
-                    quad.tx = (tu+fliph) * tileX;
-                    quad.ty = (tv+flipv) * tileY;
-                    quad.width = fliph ? -tileX : tileX;
-                    quad.height = flipv ? -tileY : tileY;
                     quad.px = i * tileX;
                     quad.py = j * tileY;
+                    quad.pwidth = tileX;
+                    quad.pheight = tileY;
+                    quad.tx = (tu+fliph) * tileX;
+                    quad.ty = (tv+flipv) * tileY;
+                    quad.twidth = fliph ? -tileX : tileX;
+                    quad.theight = flipv ? -tileY : tileY;
                     quad.rotation = 90*rotations;
                     setTextureRect(quad, usedRects++);
                 }
-
-                /*if(tileNumber - offset != -1) {
-                    // define its 4 texture coordinates
-                    quad[(0 + rotations + fliph - flipv) % 4].texCoords = Vector2f(tu * tileX, tv * tileY);
-                    quad[(1 + rotations - fliph + flipv) % 4].texCoords = Vector2f((tu + 1) * tileX, tv * tileY);
-                    quad[(2 + rotations + fliph - flipv) % 4].texCoords = Vector2f((tu + 1) * tileX, (tv + 1) * tileY);
-                    quad[(3 + rotations - fliph + flipv) % 4].texCoords = Vector2f(tu * tileX, (tv + 1) * tileY);
-
-                    // define its 4 corners
-                    quad[0].position = Vector2f((i) * tileX, (j) * tileY);
-                    quad[1].position = Vector2f((i + 1) * tileX, (j) * tileY);
-                    quad[2].position = Vector2f((i + 1) * tileX, (j + 1) * tileY);
-                    quad[3].position = Vector2f((i) * tileX, (j + 1) * tileY);
-                } else {
-                    quad[0].position = Vector2f(0, 0);
-                    quad[1].position = Vector2f(0, 0);
-                    quad[2].position = Vector2f(0, 0);
-                    quad[3].position = Vector2f(0, 0);
-                }*/
             }
         }
+        gridUpdates = indexes->getUpdateCount();
         getTextureRects()->resize(usedRects);
         setDirty();
     }
@@ -139,6 +116,11 @@ public:
     void setIndexer(Indexer *indexes) {
         this->indexes = indexes;
         reload();
+    }
+
+    void update(double time) {
+        if(this->indexes->getUpdateCount() != gridUpdates)
+            reload();
     }
 };
 
@@ -209,6 +191,8 @@ public:
                     frame = 0;
             }
         }
+        for(TileMap *map : tilemaps)
+            map->update(time);
     }
 
     std::vector<TextureRect> *getTextureRects() {

@@ -56,6 +56,10 @@ void Indexer::mapGrid(std::function<void(int, Vector2f)> func) {
 		}
 }
 
+uint Indexer::getUpdateCount() {
+	return previous->getUpdateCount();
+}
+
 bool Indexer::inBounds(Vector2f pos) {
 	return pos.x >= 0 && pos.x < getSize().x*getScale().x &&
 		pos.y >= 0 && pos.y < getSize().y*getScale().y;
@@ -161,6 +165,7 @@ void GridMaker::reload(std::string file, int offset, Rect<int> border) {
 		i++;
 	}
 	mapFile.close();
+	updates++;
 }
 
 //Get tile value
@@ -173,8 +178,10 @@ int GridMaker::getTileI(int x, int y) {
 
 //Set tile value
 void GridMaker::setTileI(int x, int y, int value) {
-	if(inBounds(x, y))
+	if(inBounds(x, y)) {
 		tiles[y][x] = value;
+		updates++;
+	}
 }
 
 //Set all tiles
@@ -182,6 +189,11 @@ void GridMaker::clearTiles() {
 	for(int y = 0; y < height; y++)
 		for(int x = 0; x < width; x++)
 			tiles[y][x] = fallback;
+	updates++;
+}
+
+uint GridMaker::getUpdateCount() {
+	return updates;
 }
 
 //Get size of grid

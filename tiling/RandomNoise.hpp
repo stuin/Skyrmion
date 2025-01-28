@@ -1,6 +1,6 @@
 #include "GridMaker.h"
 
-#include <noise/noise.h>
+#include "../include/libnoise/src/noise/noise.h"
 
 /*
  * Random noise tiling
@@ -125,6 +125,10 @@ public:
 	//Do nothing
 	void setTileI(int x, int y, int value) {
 
+	}
+
+	uint getUpdateCount() override {
+		return 0;
 	}
 
 	//Return actual size

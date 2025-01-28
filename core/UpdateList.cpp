@@ -5,6 +5,10 @@
 #include "../include/imgui/imgui.h"//
 #include "../include/rlImGui/rlImGui.h"//
 
+#if defined(PLATFORM_WEB)
+    #include <emscripten/emscripten.h>
+#endif
+
 #define DTOR 0.0174532925199
 #define RTOD 57.2957795131
 
@@ -326,10 +330,10 @@ void UpdateList::drawNode(Node *source) {
 		//Tilemapped or partial texture
 		for(sint i = 0; i < textureRects->size(); i++) {
 			TextureRect tex = (*textureRects)[i];
-			if(tex.width != 0 && tex.height != 0) {
-				Rectangle dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, abs(tex.width)*scale.x, abs(tex.height)*scale.y};
-				Rectangle src = {(float)tex.tx, (float)tex.ty, (float)tex.width, (float)tex.height};
-				Vector2 origin = Vector2{abs(tex.width)*scale.x/2, abs(tex.height)*scale.y/2};
+			if(tex.pwidth != 0 && tex.pheight != 0) {
+				Rectangle dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, tex.pwidth*scale.x, tex.pheight*scale.y};
+				Rectangle src = {(float)tex.tx, (float)tex.ty, (float)tex.twidth, (float)tex.theight};
+				Vector2 origin = Vector2{tex.pwidth*scale.x/2, tex.pheight*scale.y/2};
 				DrawTexturePro(textureSet[source->getTexture()], src, dst, origin, (float)tex.rotation, WHITE);
 			}
 		}
@@ -382,6 +386,18 @@ void UpdateList::startEngine() {
 	setupDebugTools();
 	#endif
 
+	#if defined(PLATFORM_WEB)
+		//Prepare buffer textures
+		for(sint texture = 0; texture < textureData.size(); texture++) {
+			TextureData &data = textureData[texture];
+			if(data.buffer != 0) {
+				bufferSet.push_back(LoadRenderTexture(data.size.x, data.size.y));
+				textureSet[texture] = bufferSet[data.buffer].texture;
+				data.valid = true;
+			}
+		}
+	#endif
+
 	//Initial node update
 	for(Layer layer = 0; layer <= maxLayer; layer++) {
 		Node *source = layers[layer].root;
@@ -393,22 +409,27 @@ void UpdateList::startEngine() {
 	}
 	UpdateList::running = true;
 
-	double lastTime = GetTime();
-	while(UpdateList::running) {
-		UpdateList::processEvents();
+	#if defined(PLATFORM_WEB)
+	    emscripten_set_main_loop(UpdateList::frame, 0, 1);
+	#else
 
-		//Calculate delta times
-		double delta = GetTime()-lastTime;
-		DebugTimers::updateTimes.addDelta(delta);
-		lastTime = GetTime();
+		double lastTime = GetTime();
+		while(UpdateList::running) {
+			UpdateList::processEvents();
 
-		//Update nodes and sprites
-		UpdateList::update(delta);
-		DebugTimers::updateLiteralTimes.addDelta(GetTime()-lastTime);
+			//Calculate delta times
+			double delta = GetTime()-lastTime;
+			DebugTimers::updateTimes.addDelta(delta);
+			lastTime = GetTime();
 
-		std::this_thread::sleep_for(
-			std::chrono::milliseconds(10-(int)((GetTime()-lastTime)/1000)));
-	}
+			//Update nodes and sprites
+			UpdateList::update(delta);
+			DebugTimers::updateLiteralTimes.addDelta(GetTime()-lastTime);
+
+			std::this_thread::sleep_for(
+				std::chrono::milliseconds(10-(int)((GetTime()-lastTime)/1000)));
+		}
+	#endif
 
 	std::cout << "Update thread ending\n";
 }
@@ -522,7 +543,13 @@ Event UpdateList::queryInput(int type, int code) {
 }*/
 
 void UpdateList::frame(void) {
-    DebugTimers::frameTimes.addDelta(GetFrameTime());
+	double delta = GetFrameTime();
+    DebugTimers::frameTimes.addDelta(delta);
+
+    #if defined(PLATFORM_WEB)
+    	UpdateList::update(delta);
+    #endif
+
     double lastTime = GetTime();
 
 	// Get current window size.
@@ -552,11 +579,18 @@ void UpdateList::frame(void) {
     #if _DEBUG
     if(ImGui::BeginMainMenuBar()) {
         skyrmionImguiMenu();
-        gameImguiMenu();
+        if(listeners[EVENT_IMGUI].size() > 0) {
+        	if(ImGui::BeginMenu("Game")) {
+	        	for(Node *node : listeners[EVENT_IMGUI])
+					node->recieveEvent(Event(EVENT_IMGUI, true, 0));
+				ImGui::EndMenu();
+			}
+        }
         ImGui::EndMainMenuBar();
     }
     skyrmionImgui();
-    gameImgui();
+    for(Node *node : listeners[EVENT_IMGUI])
+		node->recieveEvent(Event(EVENT_IMGUI, false, 0));
     #endif
 
     rlImGuiEnd();
@@ -595,27 +629,34 @@ void UpdateList::init() {
 	for(std::string file : textureFiles())
 		UpdateList::loadTexture(file);
 
-    //Start update thread and initialize
-	updates = std::thread(initialize);
+	#if defined(PLATFORM_WEB)
+		std::cout << "Initializing web\n";
+	    initialize();
+	#else
+	    std::cout << "Initializing desktop\n";
 
-	while(!UpdateList::running) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	}
+	    //Start update thread and initialize
+		updates = std::thread(initialize);
 
-	//Prepare buffer textures
-	for(sint texture = 0; texture < textureData.size(); texture++) {
-		TextureData &data = textureData[texture];
-		if(data.buffer != 0) {
-			bufferSet.push_back(LoadRenderTexture(data.size.x, data.size.y));
-			textureSet[texture] = bufferSet[data.buffer].texture;
-			data.valid = true;
+		while(!UpdateList::running) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
-	}
 
-    std::cout << "Starting Rendering\n";
-    while(!WindowShouldClose() && UpdateList::running) {
-		frame();
-	}
+		//Prepare buffer textures
+		for(sint texture = 0; texture < textureData.size(); texture++) {
+			TextureData &data = textureData[texture];
+			if(data.buffer != 0) {
+				bufferSet.push_back(LoadRenderTexture(data.size.x, data.size.y));
+				textureSet[texture] = bufferSet[data.buffer].texture;
+				data.valid = true;
+			}
+		}
+
+	    std::cout << "Starting Rendering\n";
+	    while(!WindowShouldClose() && UpdateList::running) {
+			frame();
+		}
+	#endif
 
 	cleanup();
 }

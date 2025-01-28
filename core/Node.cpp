@@ -1,4 +1,4 @@
-#include "UpdateList.h"
+#include "Node.h"
 
 /*
  * Sprite with collision
@@ -159,12 +159,10 @@ void Node::setGPosition(float x, float y) {
 
 //Set position in screen coordinates
 void Node::setSPosition(Vector2f pos) {
-	pos *= UpdateList::getScaleFactor();
-	pos += UpdateList::getCameraRect().getPos();
-	setGPosition(pos);
+	setGPosition(screenToGlobal(pos.x, pos.y));
 }
 void Node::setSPosition(float x, float y) {
-	setSPosition(Vector2f(x, y));
+	setGPosition(screenToGlobal(x, y));
 }
 
 //Set scale
@@ -199,10 +197,19 @@ void Node::setDirty(bool dirty) {
 }
 
 //Set texture rect
-void Node::setTextureRect(TextureRect &rectangle, sint i) {
+void Node::setTextureRect(TextureRect rectangle, sint i) {
 	while(i >= textureRects.size())
 		textureRects.push_back({0});
 	textureRects[i] = rectangle;
+}
+
+//Create rectangle borders from one pixel of texture
+void Node::createPixelRect(FloatRect rect, Vector2i pixel, sint i) {
+	Vector2f offset = (Vector2f)rect.getSize()/2.0f;
+	setTextureRect({rect.left+offset.x,rect.top, 			rect.width,1,  pixel.x,pixel.y, 1,1,0}, i+0);
+	setTextureRect({rect.left+offset.x,rect.top+rect.height,rect.width,1,  pixel.x,pixel.y, 1,1,0}, i+1);
+	setTextureRect({rect.left,rect.top+offset.y, 			1,rect.height, pixel.x,pixel.y, 1,1,0}, i+2);
+	setTextureRect({rect.left+rect.width,rect.top+offset.y, 1,rect.height, pixel.x,pixel.y, 1,1,0}, i+3);
 }
 
 //Get list of layers node collides with

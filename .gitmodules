@@ -19,3 +19,6 @@
 [submodule "include/sokol"]
 	path = include/sokol
 	url = https://github.com/floooh/sokol.git
+[submodule "include/libnoise"]
+	path = include/libnoise
+	url = https://github.com/qknight/libnoise.git

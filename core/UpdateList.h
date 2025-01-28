@@ -136,5 +136,3 @@ void addDebugTextures();
 void imguiShowNode(sint id);
 void skyrmionImguiMenu();
 void skyrmionImgui();
-void gameImguiMenu();
-void gameImgui();

@@ -24,6 +24,9 @@ std::vector<Node *> nodes;
 sint debugTextureStart = 0;
 Layer debugLayer = 0;
 
+Node *debugCursor = NULL;
+TextureRect currentRect = {0};
+
 TimingStats DebugTimers::frameTimes;
 TimingStats DebugTimers::frameLiteralTimes;
 TimingStats DebugTimers::updateTimes;
@@ -141,6 +144,16 @@ void imguiNodeWindow(Node *source) {
     ImGui::Begin(nodeName.c_str(), &window);
     nodeWindows[id] = window;
 
+    //Display node borders
+    if(ImGui::IsWindowFocused()) {
+	    debugCursor->setSize((Vector2f)source->getSize());
+	    debugCursor->setOrigin(0,0);
+	    debugCursor->setTextureRect({0,0,1,1, 22,8,1,1,0}, 8);
+	    debugCursor->createPixelRect(FloatRect(0,0, source->getSize().x,source->getSize().y), Vector2i(18,8), 0);
+	    debugCursor->setPosition(source->getPosition()-source->getOrigin());
+	}
+	debugCursor->setHidden(false);
+
     if(source->getParent() != NULL) {
 		sint pid = source->getParent()->getId();
     	std::string parentName = "Parent = " + std::to_string(pid);
@@ -173,9 +186,21 @@ void imguiNodeWindow(Node *source) {
 		ImGui::Text("Texture Rects = %lu", source->getTextureRects()->size());
 
         if(ImGui::BeginChild("##", ImVec2(400.0f, 200.0f), ImGuiChildFlags_Borders, 0)) {
+        	int rectId = 0;
             for(TextureRect rect : *source->getTextureRects()) {
+            	bool rectBorder = rect == currentRect;
+            	ImGui::PushID(rectId++);
+            	ImGui::Checkbox("##", &rectBorder);
+            	ImGui::SameLine();
                 ImGui::Text("(%.3f,%.3f) = (%d,%d)->(%d,%d) / %d",
-                	rect.px, rect.py, rect.tx, rect.ty, rect.tx+rect.width, rect.ty+rect.height, rect.rotation);
+                	rect.px, rect.py, rect.tx, rect.ty, rect.tx+rect.twidth, rect.ty+rect.theight, rect.rotation);
+
+                if(rectBorder) {
+                	debugCursor->createPixelRect(FloatRect(rect.px-rect.pwidth/2.0,rect.py-rect.pheight/2.0, rect.pwidth,rect.pheight), Vector2i(18,13), 4);
+                	currentRect = rect;
+                }
+
+            	ImGui::PopID();
             }
         }
         ImGui::EndChild();
@@ -187,6 +212,7 @@ void imguiNodeWindow(Node *source) {
 
 int testSize = 100;
 int testDivisions = 4;
+int distributionCounters[100] = {0};
 bool perlin = true;
 noise::module::Perlin testNoise;
 ConstIndexer *zeroIndexer;
@@ -197,7 +223,7 @@ TileMap *debugNoise;
 
 void setupNoise() {
 	zeroIndexer = new ConstIndexer(0, testSize, testSize);
-	limitIndexer = new ConstIndexer(testDivisions, testSize, testSize);
+	limitIndexer = new ConstIndexer(100, testSize, testSize);
 
 	noiseIndexer = new NoiseIndexer(zeroIndexer, limitIndexer, &testNoise, 100 / testDivisions);
 	randomIndexer = new RandomIndexer(zeroIndexer, limitIndexer, 100 / testDivisions);
@@ -206,6 +232,10 @@ void setupNoise() {
 		std::find(textureFiles().begin(), textureFiles().end(), "#DEBUG"));
 	debugLayer = std::distance(layerNames().begin(),
 		std::find(layerNames().begin(), layerNames().end(), "DEBUG"));
+
+	debugCursor = new Node(debugLayer, Vector2i(1, 1), true);
+	debugCursor->setTexture(debugTextureStart+3);
+	UpdateList::addNode(debugCursor);
 
 	debugNoise = new TileMap(debugTextureStart+1, 1, 1, noiseIndexer, debugLayer);
 	debugNoise->setScale(0.6,0.6);
@@ -226,8 +256,10 @@ void imguiNoiseGenWindow() {
 
 	bool _perlin = perlin;
 	ImGui::Checkbox("Perlin Noise", &perlin);
-	if(_perlin != perlin)
+	if(_perlin != perlin) {
 		debugNoise->setIndexer(perlin ? (Indexer*)noiseIndexer : (Indexer*)randomIndexer);
+		redraw = true;
+	}
 
 	ImGui::SliderInt("Color Divisions", &testDivisions, 2, 100);
 	if(testDivisions != limitIndexer->fallback) {
@@ -284,21 +316,22 @@ void imguiNoiseGenWindow() {
 	if(redraw) {
 		debugNoise->reload();
 		redraw = false;
+
+		for(int i = 0; i < testDivisions; i++)
+			distributionCounters[i] = 0;
+
+		(perlin ? (Indexer*)noiseIndexer : (Indexer*)randomIndexer)->
+			mapGrid([&distributionCounters, testDivisions](int c, Vector2f pos) {
+
+			distributionCounters[c / (100/testDivisions)]++;
+		});
 	}
 
-	//
-	//
+	ImGui::SeparatorText("Noise Distribution");
+	ImGui::Text("Expected Value: %d", testSize*testSize/testDivisions);
 
-	/*int counters[testDivisions] = {0};
-	randomIndexer->mapGrid([&counters, testDivisions](int c, Vector2f pos) {
-		counters[c/ (100/testDivisions)]++;
-	});
-	int sum = 0;
-	for(int c : counters) {
-		std::cout << c << "\n";
-		sum += c;
-	}
-	std::cout << sum << "\n";*/
+	for(int i = 0; i < testDivisions; i++)
+		ImGui::Text("%d", distributionCounters[i]);
 
     ImGui::End();
 }
@@ -324,7 +357,7 @@ void imguiColorPickerWindow() {
     ImGui::SliderInt("Texture", &pickTexture, 0, textureFiles().size()-1);
 	ImGui::SliderFloat("Scale", &pickTextureScale, 0.0f, 10.0f, "%.3f");
 	TextureData &textureData = UpdateList::getTextureData(pickTexture);
-	ImGui::Text(textureData.filename.c_str());
+	ImGui::Text("%s", textureData.filename.c_str());
     if(!textureData.valid) {
     	ImGui::End();
     	return;
@@ -399,6 +432,7 @@ void skyrmionImgui() {
 	if(colorPickerWindow)
 		imguiColorPickerWindow();
 
+	debugCursor->setHidden(true);
 	for(sint i = 0; i < nodeWindows.size(); i++)
 		if(nodeWindows[i] && nodes[i] != NULL)
 			imguiNodeWindow(nodes[i]);

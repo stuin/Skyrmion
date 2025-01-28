@@ -8,8 +8,9 @@
 
 struct TextureRect {
 	float px, py;
+	int pwidth, pheight;
 	int tx, ty;
-	int width, height;
+	int twidth, theight;
 	int rotation;
 };
 
@@ -24,6 +25,12 @@ public:
 	skVector2(T _x, T _y) {
 		x = _x;
 		y = _y;
+	}
+
+	template <typename T2>
+	skVector2(skVector2<T2> _v) {
+		x = (T)_v.x;
+		y = (T)_v.y;
 	}
 };
 typedef skVector2<int> Vector2i;
@@ -46,7 +53,7 @@ public:
 		height = _height;
 	}
 
-	skVector2<T> getPos() {
+	skVector2<T> getPosition() {
 		return skVector2<T>(left, top);
 	}
 
@@ -139,8 +146,13 @@ constexpr skVector2<T> operator/(const skVector2<T>& first, T second) {
 
 Vector2f operator*(const Vector2f &first, const Vector2i &second);
 Vector2f operator*(const Vector2i &first, const float second);
+Vector2f operator/(const Vector2f &first, const Vector2i &second);
 std::ostream& operator<<(std::ostream& os, const Vector2f &pos);
 std::ostream& operator<<(std::ostream& os, const Vector2i &pos);
 
+bool operator==(const TextureRect &first, const TextureRect &second);
+
 Vector2f vectorLength(Vector2f dir, double distance);
 float distance(Vector2f start, Vector2f end);
+Vector2i round(Vector2f pos);
+Vector2f screenToGlobal(float x, float y);

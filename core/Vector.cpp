@@ -1,7 +1,14 @@
-#include "Vector.h"
+#include "UpdateList.h"
 
 Vector2f operator*(const Vector2f &first, const Vector2i &second) {
 	return Vector2f(first.x * second.x, first.y * second.y);
+}
+Vector2f operator*(const Vector2f &first, const float second) {
+	return Vector2f(first.x * second, first.y * second);
+}
+
+Vector2f operator/(const Vector2f &first, const Vector2i &second) {
+	return Vector2f(first.x / second.x, first.y / second.y);
 }
 
 std::ostream& operator<<(std::ostream& os, const Vector2f &pos) {
@@ -9,6 +16,10 @@ std::ostream& operator<<(std::ostream& os, const Vector2f &pos) {
 }
 std::ostream& operator<<(std::ostream& os, const Vector2i &pos) {
 	return os << "(" << std::to_string(pos.x) << "," << std::to_string(pos.y) << ") ";
+}
+
+bool operator==(const TextureRect &first, const TextureRect &second) {
+	return first.px == second.px && first.py == second.py && first.tx == second.tx && first.ty == second.ty;
 }
 
 //Create a vector with fixed length in any direction
@@ -36,4 +47,16 @@ Vector2f vectorLength(Vector2f dir, double distance) {
 //Get length of a vector or distance between points
 float distance(Vector2f start, Vector2f end) {
 	return std::sqrt(std::pow(end.x - start.x, 2) + std::pow(end.y - start.y, 2));
+}
+
+Vector2i round(Vector2f pos) {
+	return Vector2i(round(pos.x), round(pos.y));
+}
+
+//Convert screen space coordinates to global
+Vector2f screenToGlobal(float x, float y) {
+	Vector2f pos = Vector2f(x,y);
+	pos *= UpdateList::getScaleFactor();
+	pos += UpdateList::getCameraRect().getPosition();
+	return pos;
 }

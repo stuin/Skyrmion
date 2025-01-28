@@ -36,6 +36,7 @@ public:
 	bool getTileB(int x, int y, int place);
 	void setTileB(int x, int y, int place, bool value);
 	void mapGrid(std::function<void(int, Vector2f)> func);
+	virtual uint getUpdateCount();
 	void printGrid();
 
 	//Check grid size
@@ -54,6 +55,8 @@ private:
 	int width = 0;
 	int **tiles;
 
+	uint updates = 0;
+
 public:
 	//Build and convert grid
 	GridMaker(std::string file, int fallback=' ');
@@ -65,6 +68,7 @@ public:
 	int getTileI(int x, int y) override;
 	void setTileI(int x, int y, int value) override;
 	void clearTiles();
+	uint getUpdateCount() override;
 
 	//Check grid size
 	Vector2i getSize() override;

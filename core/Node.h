@@ -8,10 +8,11 @@
 #include "Event.h"
 
 #define MAXLAYER 16
-#define LAYERERROR "Used collision layer > " + MAXLAYER
+#define LAYERERROR "Used collision layer > " + std::to_string(MAXLAYER)
 
 using Layer = unsigned char;
 using sint = long unsigned int;
+using uint = unsigned int;
 
 /*
  * Sprite with collision, events, parenting, etc.
@@ -97,7 +98,8 @@ public:
 	void setBlendMode(int blendMode);
 	void setTexture(int textureChannel);
 	void setDirty(bool dirty=true);
-	void setTextureRect(TextureRect &rectangle, sint i=0);
+	void setTextureRect(TextureRect rectangle, sint i=0);
+	void createPixelRect(FloatRect rect, Vector2i pixel, sint i=0);
 
 	//Collision system
 	std::bitset<MAXLAYER> getCollisionLayers();
