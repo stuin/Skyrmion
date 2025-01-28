@@ -61,14 +61,13 @@ public:
 
 				if(event.down && !ImGui::GetIO().WantCaptureMouse) {
 					pos = (pos + Vector2f(tileSize/2)) / tileSize;
-					grid->setTileI(pos.x, pos.y, current);
+					if(event.code == MOUSE_OFFSET)
+						grid->setTileI(pos.x, pos.y, current);
+					else if(event.code == MOUSE_OFFSET+2)
+						current = grid->getTileI(pos.x, pos.y);
 				}
 			}
 		}
-	}
-
-	void update(double time) {
-		recieveEvent(UpdateList::queryInput(EVENT_MOUSE, 0));
 	}
 };
 
@@ -76,5 +75,5 @@ void addGridEditor(std::string name, GridMaker *grid, FloatRect bounds, std::map
 	GridEditor *editor = new GridEditor(name, grid, tiles, bounds.getSize(), layer);
 	editor->setPosition(bounds.getPosition());
 	editor->setOrigin(0,0);
-	editor->setTexture(texture);
+	//editor->setTexture(texture);
 }

@@ -71,9 +71,8 @@ public:
 	static void clearLayer(Layer layer);
 
 	//Events and signals
-	static bool useDirectInputs;
-	static Event queryInput(int type, int key=0);
 	static void addListener(Node *item, int type);
+	static void watchKeycode(int keycode);
 	static void sendSignal(Layer layer, int id, Node *sender);
 	static void sendSignal(int id, Node *sender);
 

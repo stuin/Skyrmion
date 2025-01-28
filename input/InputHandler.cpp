@@ -60,6 +60,7 @@ InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *paren
 					controls[j].query = false;
 				}
 			}
+			UpdateList::watchKeycode(controls[i].key);
 		}
 	}
 
@@ -83,6 +84,8 @@ int InputHandler::addKey(std::string key) {
 //Register key with pressed/held states
 int InputHandler::addKey(int code, int alt) {
 	controls.insert(controls.begin() + count, Keybind(code));
+	UpdateList::watchKeycode(code);
+	UpdateList::watchKeycode(alt);
 
 	//Alternate keys
 	for(int i = 2; i <= MAXALTS; i++)
@@ -148,10 +151,10 @@ void InputHandler::updateKey(int code, bool press) {
 
 //Clear pressed to separate newly pressed keys from held keys
 void InputHandler::clearPressed(bool clearHeld) {
-
-	//Mouse wheel special case
 	for(long unsigned int i = 0; i < controls.size(); i++) {
 		controls[i].pressed = false;
+
+		//Mouse wheel special case
 		if(controls[i].key == MOUSE_OFFSET+7 || controls[i].key == MOUSE_OFFSET+8 || clearHeld)
 			controls[i].held = false;
 	}
@@ -167,11 +170,6 @@ void InputHandler::recieveEvent(Event event) {
 
 //Run key press functions
 void InputHandler::update(double time) {
-	if(UpdateList::useDirectInputs)
-		for(sint i = 0; i < controls.size(); i++)
-			if(UpdateList::useDirectInputs && controls[i].query && controls[i].key > 0)
-				recieveEvent(UpdateList::queryInput(EVENT_KEYPRESS, controls[i].key));
-
 	for(sint i = 0; i < controls.size(); i++) {
 		if(controls[i].held && controls[i].combo != -3) {
 			if(heldFunc != NULL)
@@ -181,10 +179,7 @@ void InputHandler::update(double time) {
 		}
 	}
 
-	if(UpdateList::useDirectInputs && UpdateList::queryInput(EVENT_FOCUS).down)
-		clearPressed(true);
-	else
-		clearPressed();
+	clearPressed(false);
 }
 
 DirectionHandler::DirectionHandler(std::vector<int> _controls, int layer, Node *parent)
@@ -205,11 +200,6 @@ DirectionHandler::DirectionHandler(std::string field, int layer, Node *parent)
 //Calculate direction from joystick and keyboard
 void DirectionHandler::update(double time) {
 	direction = Vector2f(0, 0);
-
-	if(UpdateList::useDirectInputs)
-		for(sint i = 0; i < controls.size(); i++)
-			if(UpdateList::useDirectInputs && controls[i].query && controls[i].key > 0)
-				recieveEvent(UpdateList::queryInput(EVENT_KEYPRESS, controls[i].key));
 
 	//Button Input
 	for(sint i = 0; i < controls.size(); i++) {
@@ -270,10 +260,7 @@ void DirectionHandler::update(double time) {
 		}
 	}
 
-	if(UpdateList::useDirectInputs && UpdateList::queryInput(EVENT_FOCUS).down)
-		clearPressed(true);
-	else
-		clearPressed();
+	clearPressed();
 }
 
 //Get direct 2d direction based on inputs

@@ -32,9 +32,9 @@ FloatRect UpdateList::screenRect;
 Camera2D raycamera;
 
 //Event handling
-std::atomic_int event_count = 0;
 std::deque<Event> event_queue;
 std::array<std::vector<Node *>, EVENT_MAX> listeners;
+std::vector<int> watchedKeycodes;
 
 //Textures stored in this file
 std::vector<TextureData> textureData;
@@ -94,6 +94,10 @@ void UpdateList::clearLayer(Layer layer) {
 //Subscribe node to cetain event type
 void UpdateList::addListener(Node *item, int type) {
 	listeners[type].push_back(item);
+}
+
+void UpdateList::watchKeycode(int keycode) {
+	watchedKeycodes.push_back(keycode);
 }
 
 //Send signal message to all nodes in layer
@@ -245,8 +249,7 @@ skColor UpdateList::pickColor(sint texture, Vector2i position) {
 
 //Process window events on update thread
 void UpdateList::processEvents() {
-	int count = event_count;
-	event_count -= count;
+	int count = event_queue.size();
 	for(int i = 0; i < count; i++) {
 		//Send event to marked listeners
 		Event event = event_queue.back();
@@ -321,12 +324,17 @@ void UpdateList::drawNode(Node *source) {
 	Vector2f scale = source->getGScale();
 	std::vector<TextureRect> *textureRects = source->getTextureRects();
 
-	if(texture < textureData.size() && textureData[texture].valid && textureRects->size() == 0) {
+	if(textureRects->size() == 0) {
 		//Default square texture
-		Rectangle src = {0, 0, (float)rect.width, (float)rect.height};
-		Vector2 position = {rect.left, rect.top};
-		DrawTextureRec(textureSet[source->getTexture()], src, position, WHITE);
-	} else if(textureData[texture].valid) {
+		if(textureData[texture].valid) {
+			Rectangle src = {0, 0, (float)rect.width, (float)rect.height};
+			Vector2 position = {rect.left, rect.top};
+			DrawTextureRec(textureSet[source->getTexture()], src, position, WHITE);
+		} else {
+			Rectangle dst = {rect.left, rect.top, (float)rect.width, (float)rect.height};
+			DrawRectangleRec(dst, PURPLE);
+		}
+	} else {
 		//Tilemapped or partial texture
 		for(sint i = 0; i < textureRects->size(); i++) {
 			TextureRect tex = (*textureRects)[i];
@@ -334,11 +342,12 @@ void UpdateList::drawNode(Node *source) {
 				Rectangle dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, tex.pwidth*scale.x, tex.pheight*scale.y};
 				Rectangle src = {(float)tex.tx, (float)tex.ty, (float)tex.twidth, (float)tex.theight};
 				Vector2 origin = Vector2{tex.pwidth*scale.x/2, tex.pheight*scale.y/2};
-				DrawTexturePro(textureSet[source->getTexture()], src, dst, origin, (float)tex.rotation, WHITE);
+				if(textureData[texture].valid)
+					DrawTexturePro(textureSet[source->getTexture()], src, dst, origin, (float)tex.rotation, WHITE);
+				else
+					DrawRectanglePro(dst, origin, (float)tex.rotation, PURPLE);
 			}
 		}
-	} else {
-		DrawRectangle(rect.left, rect.top, rect.width, rect.height, WHITE);
 	}
 	EndBlendMode();
 }
@@ -434,113 +443,46 @@ void UpdateList::startEngine() {
 	std::cout << "Update thread ending\n";
 }
 
-bool UpdateList::useDirectInputs = true;
-
-Event UpdateList::queryInput(int type, int code) {
-	switch(type) {
-	case EVENT_KEYPRESS:
+void queueEvents() {
+	//Keyboard
+	for(int code : watchedKeycodes) {
 		if(code < MOUSE_OFFSET)
-			return Event(type, IsKeyDown(code), code);
+			event_queue.emplace_back(EVENT_KEYPRESS, IsKeyDown(code), code);
 		else if(code < MOUSE_OFFSET+7)
-			return Event(type, IsMouseButtonDown(code-MOUSE_OFFSET), code);
+			event_queue.emplace_back(EVENT_KEYPRESS, IsMouseButtonDown(code-MOUSE_OFFSET), code);
 		else if(code == MOUSE_OFFSET+7)
-			return Event(type, GetMouseWheelMoveV().y>0, code);
+			event_queue.emplace_back(EVENT_KEYPRESS, GetMouseWheelMoveV().y>0, code);
 		else if(code == MOUSE_OFFSET+8)
-			return Event(type, GetMouseWheelMoveV().y<0, code);
+			event_queue.emplace_back(EVENT_KEYPRESS, GetMouseWheelMoveV().y<0, code);
 		else if(code == MOUSE_OFFSET+9)
-			return Event(type, GetTouchPointCount()>0, code);
-	case EVENT_MOUSE:
-		return Event(type, IsMouseButtonDown(0), MOUSE_OFFSET+0, GetMouseX(), GetMouseY());
-	case EVENT_SCROLL:
-		return Event(type, GetMouseWheelMoveV().y<0, -1, GetMouseWheelMoveV().x, GetMouseWheelMoveV().y);
-	case EVENT_TOUCH:
-		return Event(type, GetTouchPointCount()>0, MOUSE_OFFSET+9, GetTouchX(), GetTouchY());
-	case EVENT_RESIZE:
-		return Event(type, IsWindowResized(), GetRenderWidth()/GetScreenWidth(), GetScreenWidth(), GetScreenHeight());
-	case EVENT_FOCUS:
-		return Event(type, !IsWindowFocused(), 0);
-	case EVENT_SUSPEND:
-		return Event(type, IsWindowHidden(), 0);
-	default:
-		return Event(EVENT_MAX, 0, 0);
+			event_queue.emplace_back(EVENT_KEYPRESS, GetTouchPointCount()>0, code);
 	}
+
+	//Mouse
+	bool pressed = false;
+	for(int button = 0; button < 7; button++) {
+		if(IsMouseButtonDown(button)) {
+			event_queue.emplace_back(EVENT_MOUSE, IsMouseButtonDown(button), MOUSE_OFFSET+button, GetMouseX(), GetMouseY());
+			pressed = true;
+		}
+	}
+	if(!pressed)
+		event_queue.emplace_back(EVENT_MOUSE, false, MOUSE_OFFSET+0, GetMouseX(), GetMouseY());
+	if(GetMouseWheelMoveV().y != 0 || GetMouseWheelMoveV().x != 0)
+		event_queue.emplace_back(EVENT_SCROLL, GetMouseWheelMoveV().y<0, 0, GetMouseWheelMoveV().x, GetMouseWheelMoveV().y);
+
+	//Touch
+	for(int touch = 0; touch < GetTouchPointCount(); touch++)
+		event_queue.emplace_back(EVENT_TOUCH, true, touch, GetTouchPosition(touch).x, GetTouchPosition(touch).y);
+	if(GetTouchPointCount() == 0)
+		event_queue.emplace_back(EVENT_TOUCH, false, 0, GetTouchX(), GetTouchY());
+
+	//Window
+	if(IsWindowResized())
+		event_queue.emplace_back(EVENT_RESIZE, IsWindowResized(), GetRenderWidth()/GetScreenWidth(), GetScreenWidth(), GetScreenHeight());
+	event_queue.emplace_back(EVENT_FOCUS, !IsWindowFocused(), 0);
+	event_queue.emplace_back(EVENT_SUSPEND, IsWindowHidden() || IsWindowMinimized(), 0);
 }
-
-/*void event(const sapp_event* event) {
-	switch(event->type) {
-	case SAPP_EVENTTYPE_KEY_DOWN: case SAPP_EVENTTYPE_KEY_UP:
-		//Keyboard
-		event_queue.emplace_front(EVENT_KEYPRESS, event->type == SAPP_EVENTTYPE_KEY_DOWN,
-			event->key_code, event->frame_count, 0);
-		event_count++;
-		break;
-	case SAPP_EVENTTYPE_MOUSE_DOWN: case SAPP_EVENTTYPE_MOUSE_UP:
-		//Mouse button
-		event_queue.emplace_front(EVENT_KEYPRESS, event->type == SAPP_EVENTTYPE_MOUSE_DOWN,
-			event->mouse_button + MOUSE_OFFSET);
-		event_queue.emplace_front(EVENT_MOUSE, event->type == SAPP_EVENTTYPE_MOUSE_DOWN,
-			event->mouse_button + MOUSE_OFFSET, event->mouse_x, event->mouse_y);
-		event_count += 2;
-		break;
-	case SAPP_EVENTTYPE_MOUSE_MOVE:
-		//Mouse movement
-		event_queue.emplace_front(EVENT_MOUSE, event->modifiers & 0x100,
-			-1, event->mouse_x, event->mouse_y);
-		event_count++;
-		break;
-	case SAPP_EVENTTYPE_MOUSE_SCROLL:
-		//Mouse Scrolling
-		event_queue.emplace_front(EVENT_KEYPRESS, event->scroll_y > 0,
-			MOUSE_OFFSET+7);
-		event_queue.emplace_front(EVENT_KEYPRESS, event->scroll_y < 0,
-			MOUSE_OFFSET+8);
-		event_queue.emplace_front(EVENT_SCROLL, event->scroll_y < 0,
-			-1, event->scroll_x, event->scroll_y);
-		event_count += 3;
-		break;
-	case SAPP_EVENTTYPE_TOUCHES_BEGAN: case SAPP_EVENTTYPE_TOUCHES_ENDED:
-		//Touch
-		event_queue.emplace_front(EVENT_KEYPRESS, event->type == SAPP_EVENTTYPE_TOUCHES_BEGAN,
-			MOUSE_OFFSET+9);
-		event_count++;
-		for(int i = 0; i < event->num_touches; i++) {
-			event_queue.emplace_front(EVENT_TOUCH, event->type == SAPP_EVENTTYPE_TOUCHES_BEGAN,
-				i, event->touches[i].pos_x, event->touches[i].pos_y);
-			event_count++;
-		}
-		break;
-	case SAPP_EVENTTYPE_TOUCHES_MOVED:
-		//Touch movement
-		for(int i = 0; i < event->num_touches; i++) {
-			event_queue.emplace_front(EVENT_TOUCH, true,
-				i, event->touches[i].pos_x, event->touches[i].pos_y);
-			event_count++;
-		}
-		break;
-	case SAPP_EVENTTYPE_RESIZED:
-		event_queue.emplace_front(EVENT_RESIZE, true,
-			event->framebuffer_width/event->window_width, event->window_width, event->window_height);
-		event_count++;
-		break;
-	case SAPP_EVENTTYPE_UNFOCUSED: case SAPP_EVENTTYPE_FOCUSED:
-		event_queue.emplace_front(EVENT_FOCUS, event->type == SAPP_EVENTTYPE_UNFOCUSED, 0);
-		event_count++;
-		break;
-	case SAPP_EVENTTYPE_ICONIFIED: case SAPP_EVENTTYPE_SUSPENDED: case SAPP_EVENTTYPE_QUIT_REQUESTED:
-		event_queue.emplace_front(EVENT_SUSPEND, true, 0);
-		event_count++;
-		break;
-	case SAPP_EVENTTYPE_RESTORED: case SAPP_EVENTTYPE_RESUMED:
-		event_queue.emplace_front(EVENT_SUSPEND, false, 0);
-		event_count++;
-		break;
-	default:
-		break;
-	}
-
-	simgui_handle_event(event);
-	sapp_consume_event();
-}*/
 
 void UpdateList::frame(void) {
 	double delta = GetFrameTime();
@@ -556,6 +498,8 @@ void UpdateList::frame(void) {
     int width = GetRenderWidth();
     int height = GetRenderHeight();
     BeginDrawing();
+
+    queueEvents();
 
     //Start imgui frame
     rlImGuiBegin();
