@@ -12,8 +12,6 @@
 #define LAYERERROR "Used collision layer > " + std::to_string(MAXLAYER)
 
 using Layer = unsigned char;
-using sint = long unsigned int;
-using uint = unsigned int;
 
 /*
  * Sprite with collision, events, parenting, etc.

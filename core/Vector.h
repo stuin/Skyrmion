@@ -6,6 +6,9 @@
 #define RT2O2 sqrt(2) / 2.0
 #define PIO2 1.570796
 
+using uint = unsigned int;
+using sint = long unsigned int;
+
 struct TextureRect {
 	float px, py;
 	int pwidth, pheight;

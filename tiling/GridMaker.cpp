@@ -1,5 +1,7 @@
 #include "GridMaker.h"
 
+#include "../core/UpdateList.h"
+
 /*
  * Generates and stores main tilemap
  */
@@ -100,16 +102,24 @@ void Indexer::printGrid() {
 
 //Convert file to int[][]
 GridMaker::GridMaker(std::string file, int fallback) : Indexer(NULL, fallback, Vector2i(1, 1)) {
-	std::string line;
-	std::ifstream mapFile(file);
+	char *mapFile = UpdateList::openFile(file);
+	char *line = mapFile;
 
 	//Get maximum file size
-	while(std::getline(mapFile, line)) {
-		if((int)line.size() > width)
-			width = line.size();
+	while(line[0] != '\0') {
+		int i = 0;
+		while(line[i] != '\n' && line[i] != '\0')
+			i++;
+
+		if(i > width)
+			width = i;
 		++height;
+
+		line += i;
+		while(line[0] == '\n' || line[0] == '\r')
+			line++;
 	}
-	mapFile.close();
+	UpdateList::closeFile(mapFile);
 
 	//Build array
 	this->tiles = new int*[height];
@@ -149,11 +159,11 @@ void GridMaker::reload(std::string file, int offset, Rect<int> border) {
 
 	//Set reading variables
 	int i = border.top;
-	std::string line;
-	std::ifstream mapFile(file);
+	char *mapFile = UpdateList::openFile(file);
+	char *line = mapFile;
 
 	//Read file by line
-	while(std::getline(mapFile, line) && i < border.top + border.height) {
+	while(line[0] != '\0' && i < border.top + border.height) {
 		//Copy string
 		int j = border.left;
 		while(line[j-border.left] != '\0' && line[j-border.left] != '\n' &&
@@ -163,8 +173,12 @@ void GridMaker::reload(std::string file, int offset, Rect<int> border) {
 			++j;
 		}
 		i++;
+
+		line += j;
+		while(line[0] == '\n' || line[0] == '\r')
+			line++;
 	}
-	mapFile.close();
+	UpdateList::closeFile(mapFile);
 	updates++;
 }
 

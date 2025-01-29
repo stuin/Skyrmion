@@ -249,6 +249,14 @@ skColor UpdateList::pickColor(sint texture, Vector2i position) {
 	return skColor(color.r, color.g, color.b, color.a);
 }
 
+//Engine compatible file read/write
+char *UpdateList::openFile(std::string filename) {
+	return LoadFileText(filename.c_str());
+}
+void UpdateList::closeFile(char *file) {
+	UnloadFileText(file);
+}
+
 //Process window events on update thread
 void UpdateList::processEvents() {
 	int count = event_queue.size();
@@ -491,6 +499,7 @@ void UpdateList::frame(void) {
     DebugTimers::frameTimes.addDelta(delta);
 
     #if defined(PLATFORM_WEB)
+    	UpdateList::processEvents();
     	UpdateList::update(delta);
     #endif
 

@@ -150,7 +150,7 @@ SquareMap genSquareRotations(SquareMap squares, int size) {
 SquareMap readSquareFile(std::string filename) {
 	SquareMap out;
 
-	std::string line;
+	/*std::string line;
 	std::ifstream listFile(filename);
 	std::array<int,10> square = {0};
 
@@ -176,7 +176,7 @@ SquareMap readSquareFile(std::string filename) {
 			}
 		}
 	}
-	listFile.close();
+	listFile.close();*/
 	return out;
 }
 

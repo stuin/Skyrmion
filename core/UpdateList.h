@@ -102,6 +102,10 @@ public:
 	static void drawImGuiTexture(sint texture, Vector2i size);
 	static skColor pickColor(sint texture, Vector2i position);
 
+	//Engine compatible file read/write
+	static char *openFile(std::string filename);
+	static void closeFile(char *file);
+
 	//Start engine
 	static void startEngine();
 	static void stopEngine();

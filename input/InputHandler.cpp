@@ -18,6 +18,8 @@ InputHandler::InputHandler(std::vector<int> _controls, int layer, Node *parent)
 InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *parent)
 : Node(layer, Vector2i(16, 16), true, parent) {
 
+	std::cout << "Start input\n";
+
 	//Base keys
 	sint startSize = keys.size();
 	for(sint i = 0; i < keys.size(); i++) {
@@ -40,14 +42,17 @@ InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *paren
 	}
 	count = keys.size();
 
+	std::cout << "Keys\n";
+
 	//Alternate keys
 	for(int i = 1; i < MAXALTS; i++) {
 		for(sint j = 0; j < keys.size(); j++) {
-			std::string s = controls[j].configName;
+			std::string s = controls[j].configName + "&" + std::to_string(i);
+			std::cout << s << "\n";
 			if(j >= startSize)
-				controls.push_back(Keybind(0, s + "&" + std::to_string(i)));
+				controls.push_back(Keybind(0, s));
 			else
-				controls.push_back(Keybind(Settings::getControl(s + "&" + std::to_string(i)), s + "&" + std::to_string(i)));
+				controls.push_back(Keybind(0, s));// Settings::getControl(s), s));
 		}
 	}
 
@@ -65,6 +70,8 @@ InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *paren
 	}
 
 	add_listeners();
+
+	std::cout << "End input\n";
 }
 
 //Subscribe to all input types
@@ -194,7 +201,9 @@ DirectionHandler::DirectionHandler(std::vector<std::string> keys, int layer, Nod
 
 DirectionHandler::DirectionHandler(std::string field, int layer, Node *parent)
 : DirectionHandler(listKeys(field), layer, parent) {
-	joystick = Settings::getInt(field + "/joystick");
+	field += "/joystick";
+	//joystick = Settings::getInt(field);
+	std::cout << "End movement\n";
 }
 
 //Calculate direction from joystick and keyboard

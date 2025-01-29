@@ -1,12 +1,10 @@
 #pragma once
 
-#include "../include/json.hpp"
-
-#include <fstream>
 #include <iostream>
 #include <string>
 
-#include "../core/Event.h"
+#include "../include/json.hpp"
+#include "../core/UpdateList.h"
 
 using json_pointer = nlohmann::json::json_pointer;
 
@@ -23,27 +21,28 @@ private:
 public:
 	//Load settings from file
 	static void loadSettings(std::string filename) {
-		std::ifstream file(filename);
-		nlohmann::json input = nlohmann::json::parse(file);
+		char *text = UpdateList::openFile(filename);
+		nlohmann::json input = nlohmann::json::parse(text);
 		for(auto& el : input.items())
 			data[el.key()] = el.value();
+		UpdateList::closeFile(text);
 	}
 
 	//Get value functions
-	static bool getBool(std::string field) {
+	static bool getBool(std::string &field) {
 		return data.value(json_pointer(field), false);
 	}
 
-	static int getInt(std::string field) {
+	static int getInt(std::string &field) {
 		return data.value(json_pointer(field), 0);
 	}
 
-	static std::string getString(std::string field) {
+	static std::string getString(std::string &field) {
 		return data.value(json_pointer(field), "");
 	}
 
 	//Get key number from key name
-	static int mapKeycode(std::string keyname) {
+	static int mapKeycode(std::string &keyname) {
 		//Convert to uppercase
 		for(long unsigned int i = 0; i < keyname.length(); i++)
 			keyname[i] = toupper(keyname[i]);
@@ -51,7 +50,7 @@ public:
 	}
 
 	//Get key number from settings field
-	static int getControl(std::string field) {
+	static int getControl(std::string &field) {
 		std::string keyname = data.value(json_pointer(field), "");
 		return mapKeycode(keyname);
 	}
@@ -83,7 +82,7 @@ public:
 
 	//Save edited values back to file
 	static void save(std::string filename) {
-		std::string tempname = filename + ".replace";
+		/*std::string tempname = filename + ".replace";
 		std::ifstream in(filename);
 		std::ofstream out(tempname);
 		std::string line;
@@ -109,6 +108,6 @@ public:
 
 		//Replace original file with new
 		std::remove(filename.c_str());
-		std::rename(tempname.c_str(), filename.c_str());
+		std::rename(tempname.c_str(), filename.c_str());*/
 	}
 };
