@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <array>
 
 #include "../core/UpdateList.h"
 #include "../tiling/TileMap.hpp"
@@ -212,7 +213,7 @@ void imguiNodeWindow(Node *source) {
 
 int testSize = 100;
 int testDivisions = 4;
-int distributionCounters[100] = {0};
+std::array<int, 100> distributionCounters = {0};
 bool perlin = true;
 noise::module::Perlin testNoise;
 ConstIndexer *zeroIndexer;
@@ -320,10 +321,12 @@ void imguiNoiseGenWindow() {
 		for(int i = 0; i < testDivisions; i++)
 			distributionCounters[i] = 0;
 
+        int _testDivisions = testDivisions;
+        std::array<int, 100> *_distributionCounters = &distributionCounters;
 		(perlin ? (Indexer*)noiseIndexer : (Indexer*)randomIndexer)->
-			mapGrid([&distributionCounters, testDivisions](int c, Vector2f pos) {
+			mapGrid([_distributionCounters, _testDivisions](int c, Vector2f pos) {
 
-			distributionCounters[c / (100/testDivisions)]++;
+			(*_distributionCounters)[c / (100/_testDivisions)]++;
 		});
 	}
 

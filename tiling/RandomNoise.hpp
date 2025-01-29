@@ -118,12 +118,12 @@ public:
 	}
 
 	//Get tile value
-	int getTileI(int x, int y) {
+	int getTileI(int x, int y) override {
 		return fallback;
 	}
 
 	//Do nothing
-	void setTileI(int x, int y, int value) {
+	void setTileI(int x, int y, int value) override {
 
 	}
 
@@ -132,7 +132,7 @@ public:
 	}
 
 	//Return actual size
-	Vector2i getSize() {
+	Vector2i getSize() override {
 		return size;
 	}
 

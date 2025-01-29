@@ -3,6 +3,7 @@
 #include <bitset>
 #include <functional>
 #include <stdexcept>
+#include <vector>
 
 #include "Vector.h"
 #include "Event.h"

@@ -1,3 +1,5 @@
+#include <array>
+
 #include "UpdateList.h"
 #include "Event.h"
 #include "../debug/TimingStats.hpp"

@@ -1,5 +1,8 @@
 #include <algorithm>
+#include <array>
 #include <iostream>
+#include <unordered_map>
+#include <vector>
 
 #include "GridMaker.h"
 

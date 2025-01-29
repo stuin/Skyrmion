@@ -32,7 +32,7 @@ public:
 
     	ImGui::Text("Tile Size = (%d,%d)", tileSize.x, tileSize.y);
     	ImGui::Text("Grid Size = (%d,%d)", getSize().x/tileSize.x, getSize().y/tileSize.y);
-    	ImGui::Text("%d Tile Types", getSize().x/tileSize.x, getSize().y/tileSize.y);
+    	ImGui::Text("%lu Tile Types", tiles.size());
     	ImGui::Text("Selected = %c", (char)current);
 
     	ImGui::SeparatorText("Tiles");
@@ -57,7 +57,7 @@ public:
 			Vector2f pos = screenToGlobal(event.x, event.y);
 			if(getRect().contains(pos)) {
 				pos = round(pos / tileSize) * tileSize - tileSize / 2;
-				createPixelRect({pos.x, pos.y, tileSize.x, tileSize.y}, Vector2i(0,0), 0);
+				createPixelRect({pos.x, pos.y, (float)tileSize.x, (float)tileSize.y}, Vector2i(0,0), 0);
 
 				if(event.down && !ImGui::GetIO().WantCaptureMouse) {
 					pos = (pos + Vector2f(tileSize/2)) / tileSize;

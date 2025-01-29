@@ -206,10 +206,10 @@ void Node::setTextureRect(TextureRect rectangle, sint i) {
 //Create rectangle borders from one pixel of texture
 void Node::createPixelRect(FloatRect rect, Vector2i pixel, sint i) {
 	Vector2f offset = (Vector2f)rect.getSize()/2.0f;
-	setTextureRect({rect.left+offset.x,rect.top, 			rect.width,1,  pixel.x,pixel.y, 1,1,0}, i+0);
-	setTextureRect({rect.left+offset.x,rect.top+rect.height,rect.width,1,  pixel.x,pixel.y, 1,1,0}, i+1);
-	setTextureRect({rect.left,rect.top+offset.y, 			1,rect.height, pixel.x,pixel.y, 1,1,0}, i+2);
-	setTextureRect({rect.left+rect.width,rect.top+offset.y, 1,rect.height, pixel.x,pixel.y, 1,1,0}, i+3);
+	setTextureRect({rect.left+offset.x,rect.top, 			(int)rect.width,1,  pixel.x,pixel.y, 1,1,0}, i+0);
+	setTextureRect({rect.left+offset.x,rect.top+rect.height,(int)rect.width,1,  pixel.x,pixel.y, 1,1,0}, i+1);
+	setTextureRect({rect.left,rect.top+offset.y, 			1,(int)rect.height, pixel.x,pixel.y, 1,1,0}, i+2);
+	setTextureRect({rect.left+rect.width,rect.top+offset.y, 1,(int)rect.height, pixel.x,pixel.y, 1,1,0}, i+3);
 }
 
 //Get list of layers node collides with
