@@ -7,7 +7,7 @@
 #include "../include/imgui/imgui.h"//
 #include "../include/rlImGui/rlImGui.h"//
 
-#if defined(PLATFORM_WEB)
+#ifdef PLATFORM_WEB
     #include <emscripten/emscripten.h>
 #endif
 
@@ -402,10 +402,10 @@ void UpdateList::startEngine() {
 	std::cout << "Update thread starting\n";
 
     #ifdef _DEBUG
-	setupDebugTools();
+	    setupDebugTools();
 	#endif
 
-	#if defined(PLATFORM_WEB)
+	#ifdef PLATFORM_WEB
 		//Prepare buffer textures
 		for(sint texture = 0; texture < textureData.size(); texture++) {
 			TextureData &data = textureData[texture];
@@ -428,10 +428,9 @@ void UpdateList::startEngine() {
 	}
 	UpdateList::running = true;
 
-	#if defined(PLATFORM_WEB)
+	#ifdef PLATFORM_WEB
 	    emscripten_set_main_loop(UpdateList::frame, 0, 1);
 	#else
-
 		double lastTime = GetTime();
 		while(UpdateList::running) {
 			UpdateList::processEvents();
@@ -498,7 +497,7 @@ void UpdateList::frame(void) {
 	double delta = GetFrameTime();
     DebugTimers::frameTimes.addDelta(delta);
 
-    #if defined(PLATFORM_WEB)
+    #ifdef PLATFORM_WEB
     	UpdateList::processEvents();
     	UpdateList::update(delta);
     #endif
@@ -584,8 +583,15 @@ void UpdateList::init() {
 	for(std::string file : textureFiles())
 		UpdateList::loadTexture(file);
 
-	#if defined(PLATFORM_WEB)
+	//Show loading screen
+    BeginDrawing();
+    skColor color = backgroundColor();
+    ClearBackground(Color{(Layer)(color.red*255), (Layer)(color.green*255), (Layer)(color.blue*255)});
+    EndDrawing();
+
+	#ifdef PLATFORM_WEB
 		std::cout << "Initializing web\n";
+
 	    initialize();
 	#else
 	    std::cout << "Initializing desktop\n";

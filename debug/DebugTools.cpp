@@ -6,13 +6,13 @@
 
 void addDebugTextures() {
 	textureFiles().push_back("#DEBUG");
-	textureFiles().push_back("src/Skyrmion/res/heatmapG.png");
-	textureFiles().push_back("src/Skyrmion/res/heatmap.png");
-	textureFiles().push_back("src/Skyrmion/res/colors.png");
+	textureFiles().push_back("res/debug/heatmapG.png");
+	textureFiles().push_back("res/debug/heatmap.png");
+	textureFiles().push_back("res/debug/colors.png");
 }
 
 void setupDebugTools() {
-	Settings::loadSettings("src/Skyrmion/res/debug_settings.json");
+	Settings::loadSettings("res/debug/debug_settings.json");
 
 	int debugLayer = UpdateList::getLayerCount();
 	LayerData &data = UpdateList::getLayerData(debugLayer);
