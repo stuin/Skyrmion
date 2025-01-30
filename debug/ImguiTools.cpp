@@ -8,7 +8,7 @@
 
 #include "../include/imgui/imgui.h"//
 
-bool fpsWindow = false;
+bool fpsWindow = true;
 
 bool layersWindow = false;
 bool layersShown[MAXLAYER];
@@ -62,20 +62,22 @@ void imguiFPSWindow() {
 	ImGui::SetNextWindowSize(ImVec2(300, 500), ImGuiCond_FirstUseEver);
     ImGui::Begin("FPS", &fpsWindow);
 
-    ImGui::SeparatorText("Updates");
-    ImGui::Text("Per Second = %d", DebugTimers::updateTimes.getFPS());
-    ImGui::Text("Last delta = %f", DebugTimers::updateTimes.last());
-    ImGui::Text("Average delta = %f", DebugTimers::updateTimes.totalTime/DebugTimers::updateTimes.totalCount);
-    ImGui::Text("Max delta = %f", DebugTimers::updateTimes.maxDelta);
-    ImGui::Text("Total updates = %d", DebugTimers::updateTimes.totalCount);
-    ImGui::Text("Total time = %f", DebugTimers::updateTimes.totalTime);
+    #ifndef PLATFORM_WEB
+	    ImGui::SeparatorText("Updates");
+	    ImGui::Text("Per Second = %d", DebugTimers::updateTimes.getFPS());
+	    ImGui::Text("Last delta = %f", DebugTimers::updateTimes.last());
+	    ImGui::Text("Average delta = %f", DebugTimers::updateTimes.totalTime/DebugTimers::updateTimes.totalCount);
+	    ImGui::Text("Max delta = %f", DebugTimers::updateTimes.maxDelta);
+	    ImGui::Text("Total updates = %d", DebugTimers::updateTimes.totalCount);
+	    ImGui::Text("Total time = %f", DebugTimers::updateTimes.totalTime);
 
-    ImGui::SeparatorText("Literal Update Length");
-    ImGui::Text("Theoretical Per Second = %d", DebugTimers::updateLiteralTimes.getFPS());
-    ImGui::Text("Last delta = %f", DebugTimers::updateLiteralTimes.last());
-    ImGui::Text("Average delta = %f", DebugTimers::updateLiteralTimes.totalTime/DebugTimers::updateLiteralTimes.totalCount);
-    ImGui::Text("Max delta = %f", DebugTimers::updateLiteralTimes.maxDelta);
-    ImGui::Text("Total time = %f", DebugTimers::updateLiteralTimes.totalTime);
+	    ImGui::SeparatorText("Literal Update Length");
+	    ImGui::Text("Theoretical Per Second = %d", DebugTimers::updateLiteralTimes.getFPS());
+	    ImGui::Text("Last delta = %f", DebugTimers::updateLiteralTimes.last());
+	    ImGui::Text("Average delta = %f", DebugTimers::updateLiteralTimes.totalTime/DebugTimers::updateLiteralTimes.totalCount);
+	    ImGui::Text("Max delta = %f", DebugTimers::updateLiteralTimes.maxDelta);
+	    ImGui::Text("Total time = %f", DebugTimers::updateLiteralTimes.totalTime);
+	#endif
 
     ImGui::SeparatorText("Draw Frames");
     ImGui::Text("Per Second = %d", DebugTimers::frameTimes.getFPS());
@@ -149,7 +151,7 @@ void imguiNodeWindow(Node *source) {
     if(ImGui::IsWindowFocused()) {
 	    debugCursor->setSize((Vector2f)source->getSize());
 	    debugCursor->setOrigin(0,0);
-	    debugCursor->setTextureRect({0,0,1,1, 22,8,1,1,0}, 8);
+	    debugCursor->setTextureRect({source->getOrigin().x,source->getOrigin().y,1,1, 22,8,1,1,0}, 8);
 	    debugCursor->createPixelRect(FloatRect(0,0, source->getSize().x,source->getSize().y), Vector2i(18,8), 0);
 	    debugCursor->setPosition(source->getPosition()-source->getOrigin());
 	}

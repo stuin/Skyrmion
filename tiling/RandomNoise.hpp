@@ -35,7 +35,7 @@ public:
 	}
 
 	//Consistant locational randomness
-	int getTileI(int x, int y) {
+	int getTileI(int x, int y) override {
 		if(inBounds(x, y)) {
 			int rOffset = 0;
 			int limit = limits->getTileI(x, y);
@@ -47,7 +47,7 @@ public:
 	}
 
 	//Backup linear random function
-	int mapTile(int c) {
+	int mapTile(int c) override {
 		int rOffset = 0;
 		int limit = limits->mapTile(c);
 		double input = IntegerNoise(linearPosition++);
@@ -65,6 +65,7 @@ public:
 	int seed = 0;
 	int multiplier;
 	int linearPosition = 0;
+	uint noiseUpdateCount = 0;
 
 	NoiseIndexer(Indexer *previous, std::map<int, int> _limits, noise::module::Module *_noise, int _multiplier=1, Vector2i scale=Vector2i(1,1))
 		: Indexer(previous, previous->fallback, scale), limits(new MapIndexer(previous, _limits, 0)), noise(_noise), multiplier(_multiplier) {
@@ -77,7 +78,7 @@ public:
 	}
 
 	//Correct locational randomness
-	int getTileI(int x, int y) {
+	int getTileI(int x, int y) override {
 		if(inBounds(x, y)) {
 			int rOffset = 0;
 			int limit = limits->getTileI(x, y);
@@ -89,12 +90,16 @@ public:
 	}
 
 	//Backup linear random function
-	int mapTile(int c) {
+	int mapTile(int c) override {
 		int rOffset = 0;
 		int limit = limits->mapTile(c);
 		double input = noise->GetValue(linearPosition++/100.0, 0, 0);
 		rOffset = (int)floor(fmod(input+1, 1.0) * limit);
 		return getPrevious()->mapTile(c) + rOffset * multiplier;
+	}
+
+	uint getUpdateCount() override {
+		return getPrevious()->getUpdateCount() + noiseUpdateCount;
 	}
 };
 

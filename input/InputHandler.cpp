@@ -17,9 +17,6 @@ InputHandler::InputHandler(std::vector<int> _controls, int layer, Node *parent)
 //Set controls through configurable settings
 InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *parent)
 : Node(layer, Vector2i(16, 16), true, parent) {
-
-	std::cout << "Start input\n";
-
 	//Base keys
 	sint startSize = keys.size();
 	for(sint i = 0; i < keys.size(); i++) {
@@ -42,13 +39,10 @@ InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *paren
 	}
 	count = keys.size();
 
-	std::cout << "Keys\n";
-
 	//Alternate keys
 	for(int i = 1; i < MAXALTS; i++) {
 		for(sint j = 0; j < keys.size(); j++) {
 			std::string s = controls[j].configName + "&" + std::to_string(i);
-			std::cout << s << "\n";
 			if(j >= startSize)
 				controls.push_back(Keybind(0, s));
 			else
@@ -70,8 +64,6 @@ InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *paren
 	}
 
 	add_listeners();
-
-	std::cout << "End input\n";
 }
 
 //Subscribe to all input types
@@ -189,21 +181,20 @@ void InputHandler::update(double time) {
 	clearPressed(false);
 }
 
-DirectionHandler::DirectionHandler(std::vector<int> _controls, int layer, Node *parent)
-: InputHandler(_controls, layer, parent) {
+DirectionHandler::DirectionHandler(std::vector<int> _controls, int layer, uint screenInput, Node *parent)
+: InputHandler(_controls, layer, parent), touchJoystick(screenInput, layer) {
 	moving = addKey(-2);
 }
 
-DirectionHandler::DirectionHandler(std::vector<std::string> keys, int layer, Node *parent)
-: InputHandler(keys, layer, parent) {
+DirectionHandler::DirectionHandler(std::vector<std::string> keys, int layer, uint screenInput, Node *parent)
+: InputHandler(keys, layer, parent), touchJoystick(screenInput, layer) {
 	moving = addKey(-2);
 }
 
-DirectionHandler::DirectionHandler(std::string field, int layer, Node *parent)
-: DirectionHandler(listKeys(field), layer, parent) {
+DirectionHandler::DirectionHandler(std::string field, int layer, uint screenInput, Node *parent)
+: DirectionHandler(listKeys(field), layer, screenInput, parent) {
 	field += "/joystick";
 	//joystick = Settings::getInt(field);
-	std::cout << "End movement\n";
 }
 
 //Calculate direction from joystick and keyboard
@@ -253,6 +244,11 @@ void DirectionHandler::update(double time) {
 			}
 		}
 	}*/
+
+	//Read from touch joystick
+	Vector2f touchDirection = touchJoystick.getDirection();
+	if(direction == Vector2f(0,0) && touchDirection != Vector2f(0,0) && distance(touchDirection) > 4)
+		direction = touchDirection;
 
 	//Update moving placeholder key
 	bool moved = direction != Vector2f(0, 0);

@@ -264,8 +264,13 @@ void UpdateList::processEvents() {
 		//Send event to marked listeners
 		Event event = event_queue.back();
 		event_queue.pop_back();
-		for(Node *node : listeners[event.type])
-			node->recieveEvent(event);
+		for(auto it = listeners[event.type].begin(); it != listeners[event.type].end();)
+			if((*it)->isDeleted()) {
+				listeners[event.type].erase(it);
+			} else {
+				(*it)->recieveEvent(event);
+				++it;
+			}
 	}
 }
 
