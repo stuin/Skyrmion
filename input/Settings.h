@@ -3,8 +3,11 @@
 #include <iostream>
 #include <string>
 
+#include "../core/IO.h"
+#include "../core/Vector.h"
+#include "../core/Event.h"
+
 #include "../include/json.hpp"
-#include "../core/UpdateList.h"
 
 using json_pointer = nlohmann::json::json_pointer;
 
@@ -21,36 +24,37 @@ private:
 public:
 	//Load settings from file
 	static void loadSettings(std::string filename) {
-		char *text = UpdateList::openFile(filename);
+		char *text = IO::openFile(filename);
 		nlohmann::json input = nlohmann::json::parse(text);
 		for(auto& el : input.items())
 			data[el.key()] = el.value();
-		UpdateList::closeFile(text);
+		IO::closeFile(text);
 	}
 
 	//Get value functions
-	static bool getBool(std::string &field) {
+	static bool getBool(const std::string &field) {
 		return data.value(json_pointer(field), false);
 	}
 
-	static int getInt(std::string &field) {
+	static int getInt(const std::string &field) {
 		return data.value(json_pointer(field), 0);
 	}
 
-	static std::string getString(std::string &field) {
+	static std::string getString(const std::string &field) {
 		return data.value(json_pointer(field), "");
 	}
 
 	//Get key number from key name
-	static int mapKeycode(std::string &keyname) {
+	static int mapKeycode(const std::string &_keyname) {
 		//Convert to uppercase
-		for(long unsigned int i = 0; i < keyname.length(); i++)
+		std::string keyname = _keyname;
+		for(sint i = 0; i < keyname.length(); i++)
 			keyname[i] = toupper(keyname[i]);
 		return EVENT_KEYMAP[keyname];
 	}
 
 	//Get key number from settings field
-	static int getControl(std::string &field) {
+	static int getControl(const std::string &field) {
 		std::string keyname = data.value(json_pointer(field), "");
 		return mapKeycode(keyname);
 	}

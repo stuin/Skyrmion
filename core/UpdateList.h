@@ -50,7 +50,8 @@ private:
 	static LayerData layers[MAXLAYER];
 	static Layer maxLayer;
 	static bool running;
-	static std::vector<Node *> deleted;
+	static std::vector<Node *> deleted1;
+	static std::vector<Node *> deleted2;
 
 	//Viewport variables
 	static Node *camera;
@@ -73,6 +74,7 @@ public:
 	//Events and signals
 	static void addListener(Node *item, int type);
 	static void watchKeycode(int keycode);
+	static void queueEvent(Event event);
 	static void sendSignal(Layer layer, int id, Node *sender);
 	static void sendSignal(int id, Node *sender);
 
@@ -102,10 +104,6 @@ public:
 	static void drawImGuiTexture(sint texture, Vector2i size);
 	static skColor pickColor(sint texture, Vector2i position);
 
-	//Engine compatible file read/write
-	static char *openFile(std::string filename);
-	static void closeFile(char *file);
-
 	//Start engine
 	static void startEngine();
 	static void stopEngine();
@@ -113,6 +111,7 @@ public:
 
 	//Main loop functions
 	static void processEvents();
+	static void queueEvents();
 	static void update(double time);
 	static void drawNode(Node *source);
 	static void draw(FloatRect cameraRect);

@@ -1,7 +1,7 @@
 #include <array>
 
 #include "UpdateList.h"
-#include "Event.h"
+#include "IO.h"
 #include "../debug/TimingStats.hpp"
 
 #include "../include/imgui/imgui.h"//
@@ -23,7 +23,8 @@
 
 //Static variables
 LayerData UpdateList::layers[MAXLAYER];
-std::vector<Node *> UpdateList::deleted;
+std::vector<Node *> UpdateList::deleted1;
+std::vector<Node *> UpdateList::deleted2;
 Layer UpdateList::maxLayer = 0;
 bool UpdateList::running = false;
 
@@ -35,8 +36,10 @@ Camera2D raycamera;
 
 //Event handling
 std::deque<Event> event_queue;
+std::array<Event, EVENT_MAX> event_previous;
 std::array<std::vector<Node *>, EVENT_MAX> listeners;
 std::vector<int> watchedKeycodes;
+std::vector<bool> watchedKeycodesPrevious;
 
 //Textures stored in this file
 std::vector<TextureData> textureData;
@@ -52,6 +55,21 @@ struct BufferQueue {
 std::vector<BufferQueue> reloadBuffer;
 
 std::thread updates;
+
+
+//Engine compatible file read/write
+char *IO::openFile(std::string filename) {
+	return LoadFileText(filename.c_str());
+}
+void IO::closeFile(char *file) {
+	UnloadFileText(file);
+}
+
+//Logging passthrough
+template<typename... Args>
+static void log(int logLevel, const char *text, Args... args) {
+	TraceLog(logLevel, text, args...);
+}
 
 //Add node to update cycle
 void UpdateList::addNode(Node *next) {
@@ -100,6 +118,14 @@ void UpdateList::addListener(Node *item, int type) {
 
 void UpdateList::watchKeycode(int keycode) {
 	watchedKeycodes.push_back(keycode);
+	watchedKeycodesPrevious.push_back(false);
+}
+
+//Send custom event
+void UpdateList::queueEvent(Event event) {
+	event.type += EVENT_MAX;
+	if(event != event_previous[event.type])
+		event_queue.push_back(event);
 }
 
 //Send signal message to all nodes in layer
@@ -249,33 +275,12 @@ skColor UpdateList::pickColor(sint texture, Vector2i position) {
 	return skColor(color.r, color.g, color.b, color.a);
 }
 
-//Engine compatible file read/write
-char *UpdateList::openFile(std::string filename) {
-	return LoadFileText(filename.c_str());
-}
-void UpdateList::closeFile(char *file) {
-	UnloadFileText(file);
-}
-
-//Process window events on update thread
-void UpdateList::processEvents() {
-	int count = event_queue.size();
-	for(int i = 0; i < count; i++) {
-		//Send event to marked listeners
-		Event event = event_queue.back();
-		event_queue.pop_back();
-		for(auto it = listeners[event.type].begin(); it != listeners[event.type].end();)
-			if((*it)->isDeleted()) {
-				listeners[event.type].erase(it);
-			} else {
-				(*it)->recieveEvent(event);
-				++it;
-			}
-	}
-}
-
 //Update all nodes in list
 void UpdateList::update(double time) {
+	UpdateList::processEvents();
+	deleted2.insert(deleted2.end(), deleted1.begin(), deleted1.end());
+	deleted1.clear();
+
 	//Check collisions and updates
 	for(Layer layer = 0; layer <= maxLayer; layer++) {
 		Node *source = layers[layer].root;
@@ -283,7 +288,7 @@ void UpdateList::update(double time) {
 		if(!layers[layer].paused) {
 			//Check first node for deletion
 			if(source != NULL && source->isDeleted()) {
-				deleted.push_back(source);
+				deleted1.push_back(source);
 				source = source->getNext();
 				layers[layer].root = source;
 			}
@@ -313,7 +318,7 @@ void UpdateList::update(double time) {
 
 				//Check next node for removing from list
 				while(source->getNext() != NULL && source->getNext()->isDeleted()) {
-					deleted.push_back(source->getNext());
+					deleted1.push_back(source->getNext());
 					source->deleteNext();
 					layers[source->getLayer()].count--;
 				}
@@ -404,7 +409,7 @@ void UpdateList::drawBuffer(sint buffer, Node *source, skColor clear) {
 }
 
 void UpdateList::startEngine() {
-	std::cout << "Update thread starting\n";
+	log(SKLOG_INFO, "SKYRMION: Update thread starting");
 
     #ifdef _DEBUG
 	    setupDebugTools();
@@ -438,7 +443,6 @@ void UpdateList::startEngine() {
 	#else
 		double lastTime = GetTime();
 		while(UpdateList::running) {
-			UpdateList::processEvents();
 
 			//Calculate delta times
 			double delta = GetTime()-lastTime;
@@ -454,34 +458,84 @@ void UpdateList::startEngine() {
 		}
 	#endif
 
-	std::cout << "Update thread ending\n";
+	log(SKLOG_INFO, "SKYRMION: Update thread ending");
 }
 
-void queueEvents() {
+//Process window events on update thread
+void UpdateList::processEvents() {
+	//Remove deleted nodes
+	for(int type = 0; type < EVENT_MAX; type++) {
+		for(auto it = listeners[type].begin(); it != listeners[type].end();) {
+			if((*it)->isDeleted())
+				it = listeners[type].erase(it);
+			else
+				++it;
+		}
+	}
+
+	//Send event to marked listeners
+	int count = event_queue.size();
+	for(int i = 0; i < count; i++) {
+		Event event = event_queue.front();
+		event_queue.pop_front();
+
+		//Skip duplicates
+		if(event != event_previous[event.type % EVENT_MAX]) {
+			for(Node *node : listeners[event.type % EVENT_MAX])
+				node->recieveEvent(event);
+			event_previous[event.type % EVENT_MAX] = event;
+		}
+	}
+}
+
+//Add events to queue on draw thread
+void UpdateList::queueEvents() {
 	//Keyboard
-	for(int code : watchedKeycodes) {
+	for(int i = 0; i < watchedKeycodes.size(); i++) {
+		bool down = watchedKeycodesPrevious[i];
+		int code = watchedKeycodes[i];
+
+		//Check keypress by input type
 		if(code < MOUSE_OFFSET)
-			event_queue.emplace_back(EVENT_KEYPRESS, IsKeyDown(code), code);
+			down = IsKeyDown(code);
 		else if(code < MOUSE_OFFSET+7)
-			event_queue.emplace_back(EVENT_KEYPRESS, IsMouseButtonDown(code-MOUSE_OFFSET), code);
+			down = IsMouseButtonDown(code-MOUSE_OFFSET);
 		else if(code == MOUSE_OFFSET+7)
-			event_queue.emplace_back(EVENT_KEYPRESS, GetMouseWheelMoveV().y>0, code);
+			down = GetMouseWheelMoveV().y>0;
 		else if(code == MOUSE_OFFSET+8)
-			event_queue.emplace_back(EVENT_KEYPRESS, GetMouseWheelMoveV().y<0, code);
+			down = GetMouseWheelMoveV().y<0;
 		else if(code == MOUSE_OFFSET+9)
-			event_queue.emplace_back(EVENT_KEYPRESS, GetTouchPointCount()>0, code);
+			down = GetTouchPointCount()>0;
+		else if(code >= JOYSTICK_OFFSET) {
+			int joystickId = (code-JOYSTICK_OFFSET)/50;
+			int buttonId = (code-JOYSTICK_OFFSET)%50;
+			int axisId = (buttonId-33)/2;
+			bool negative = (buttonId-33)%2 == 0;
+			if(buttonId<33 && IsGamepadAvailable(joystickId))
+				down = IsGamepadButtonDown(joystickId, buttonId);
+			else if(IsGamepadAvailable(joystickId) && axisId < GetGamepadAxisCount(joystickId) && negative)
+				down = GetGamepadAxisMovement(joystickId, axisId) < -JOYSTICK_DEADZONE;
+			else if(IsGamepadAvailable(joystickId) && axisId < GetGamepadAxisCount(joystickId) && !negative)
+				down = GetGamepadAxisMovement(joystickId, axisId) > JOYSTICK_DEADZONE;
+		}
+
+		//Only send changed keys
+		if(down != watchedKeycodesPrevious[i]) {
+			event_queue.emplace_back(EVENT_KEYPRESS, down, code);
+			watchedKeycodesPrevious[i] = down;
+		}
 	}
 
 	//Mouse
 	bool pressed = false;
 	for(int button = 0; button < 7; button++) {
 		if(IsMouseButtonDown(button)) {
-			event_queue.emplace_back(EVENT_MOUSE, IsMouseButtonDown(button), MOUSE_OFFSET+button, GetMouseX(), GetMouseY());
+			event_queue.emplace_back(EVENT_MOUSE, true, button, GetMouseX(), GetMouseY());
 			pressed = true;
 		}
 	}
 	if(!pressed)
-		event_queue.emplace_back(EVENT_MOUSE, false, MOUSE_OFFSET+0, GetMouseX(), GetMouseY());
+		event_queue.emplace_back(EVENT_MOUSE, false, 0, GetMouseX(), GetMouseY());
 	if(GetMouseWheelMoveV().y != 0 || GetMouseWheelMoveV().x != 0)
 		event_queue.emplace_back(EVENT_SCROLL, GetMouseWheelMoveV().y<0, 0, GetMouseWheelMoveV().x, GetMouseWheelMoveV().y);
 
@@ -489,7 +543,20 @@ void queueEvents() {
 	for(int touch = 0; touch < GetTouchPointCount(); touch++)
 		event_queue.emplace_back(EVENT_TOUCH, true, touch, GetTouchPosition(touch).x, GetTouchPosition(touch).y);
 	if(GetTouchPointCount() == 0)
-		event_queue.emplace_back(EVENT_TOUCH, false, 0, GetTouchX(), GetTouchY());
+		event_queue.emplace_back(EVENT_TOUCH, false, 0, 0, 0);
+
+	//Joystick
+	int joystickId = 0;
+	while(joystickId < 4 && IsGamepadAvailable(joystickId)) {
+		for(int axisId = 0; axisId+1 < GetGamepadAxisCount(joystickId); axisId += 2) {
+			float x = GetGamepadAxisMovement(joystickId, axisId);
+			float y = GetGamepadAxisMovement(joystickId, axisId+1);
+			x = (std::abs(x) > JOYSTICK_DEADZONE) ? x : 0;
+			y = (std::abs(y) > JOYSTICK_DEADZONE) ? y : 0;
+			event_queue.emplace_back(EVENT_JOYSTICK, x != 0 || y != 0, axisId/2, x, y);
+		}
+		joystickId++;
+	}
 
 	//Window
 	if(IsWindowResized())
@@ -503,7 +570,6 @@ void UpdateList::frame(void) {
     DebugTimers::frameTimes.addDelta(delta);
 
     #ifdef PLATFORM_WEB
-    	UpdateList::processEvents();
     	UpdateList::update(delta);
     #endif
 
@@ -514,7 +580,7 @@ void UpdateList::frame(void) {
     int height = GetRenderHeight();
     BeginDrawing();
 
-    queueEvents();
+    UpdateList::queueEvents();
 
     //Start imgui frame
     rlImGuiBegin();
@@ -555,13 +621,12 @@ void UpdateList::frame(void) {
     rlImGuiEnd();
 
     //Loop through list to delete nodes from memory
-	std::vector<Node *>::iterator dit = deleted.begin();
-	while(dit != deleted.end()) {
+	std::vector<Node *>::iterator dit = deleted2.begin();
+	while(dit != deleted2.end()) {
 		Node *node = *dit;
-		dit++;
+		dit = deleted2.erase(dit);
 		delete node;
 	}
-	deleted.clear();
 
 	DebugTimers::frameLiteralTimes.addDelta(GetTime()-lastTime);
 
@@ -595,11 +660,11 @@ void UpdateList::init() {
     EndDrawing();
 
 	#ifdef PLATFORM_WEB
-		std::cout << "Initializing web\n";
+		log(SKLOG_INFO, "SKYRMION: Initializing web");
 
 	    initialize();
 	#else
-	    std::cout << "Initializing desktop\n";
+	    log(SKLOG_INFO, "SKYRMION: Initializing desktop");
 
 	    //Start update thread and initialize
 		updates = std::thread(initialize);
@@ -618,7 +683,7 @@ void UpdateList::init() {
 			}
 		}
 
-	    std::cout << "Starting Rendering\n";
+	    log(SKLOG_INFO, "SKYRMION: Starting Rendering");
 	    while(!WindowShouldClose() && UpdateList::running) {
 			frame();
 		}
@@ -628,7 +693,7 @@ void UpdateList::init() {
 }
 
 void UpdateList::cleanup() {
-	std::cout << "Cleanup Rendering\n";
+	log(SKLOG_INFO, "SKYRMION: Cleanup Rendering");
 	running = false;
 	updates.join();
 

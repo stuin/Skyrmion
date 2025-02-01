@@ -8,7 +8,7 @@
 
 #include "../include/imgui/imgui.h"//
 
-bool fpsWindow = true;
+bool fpsWindow = false;
 
 bool layersWindow = false;
 bool layersShown[MAXLAYER];

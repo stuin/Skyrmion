@@ -3,8 +3,8 @@
 //Concat 2 quad maps
 QuadMap operator+(const QuadMap &first, const QuadMap &second) {
 	QuadMap third;
-	third.insert(third.begin(), first.begin(), first.end());
-	third.insert(third.begin(), second.begin(), second.end());
+	third.insert(third.end(), first.begin(), first.end());
+	third.insert(third.end(), second.begin(), second.end());
 	return third;
 }
 

@@ -2,13 +2,9 @@
 
 #include <algorithm>
 
-#include "Settings.h"
-#include "MovementEnums.h"
-#include "TouchscreenInput.hpp"
-#include "../core/UpdateList.h"
+#include "../core/Node.h"
 
 #define MAXALTS 2
-#define JOYSTICK_ZONE 5.0f
 
 /*
  * Read input events and collect them into remmappable keybinds
@@ -68,21 +64,24 @@ public:
 class DirectionHandler : public InputHandler {
 private:
 	Vector2f direction = Vector2f(0, 0);
+	Vector2f joystickDirection = Vector2f(0,0);
 
-	TouchscreenInput touchJoystick;
 	int joystick = 0;
+	bool joystickSim = false;
 
 public:
 	bool joystickMovement = false;
 	int moving = 0;
 
-	DirectionHandler(std::vector<int> _controls, int layer, uint screenInput, Node *parent = NULL);
-	DirectionHandler(std::vector<std::string> keys, int layer, uint screenInput, Node *parent = NULL);
-	DirectionHandler(std::string field, int layer, uint screenInput, Node *parent = NULL);
+	DirectionHandler(std::vector<int> _controls, int layer, Node *parent = NULL);
+	DirectionHandler(std::vector<std::string> keys, int layer, Node *parent = NULL);
+	DirectionHandler(std::string field, int layer, Node *parent = NULL);
 
 	Vector2f getDirection();
 	Vector2f getMovement(double distance);
 
+	//System updates loop
+	void recieveEvent(Event event);
 	void update(double time);
 
 	static std::vector<std::string> listKeys(std::string field);

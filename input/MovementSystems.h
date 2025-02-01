@@ -2,6 +2,7 @@
 
 #include "../tiling/GridMaker.h"
 #include "InputHandler.h"
+#include "MovementEnums.h"
 
 /*
  * Take in movement directions and adjust for collision and physics

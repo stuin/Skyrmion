@@ -56,7 +56,20 @@ Vector2i round(Vector2f pos) {
 //Convert screen space coordinates to global
 Vector2f screenToGlobal(float x, float y) {
 	Vector2f pos = Vector2f(x,y);
+	if(pos.x < 0)
+		pos.x += UpdateList::getScreenRect().getSize().x;
+	if(pos.y < 0)
+		pos.y += UpdateList::getScreenRect().getSize().y;
 	pos *= UpdateList::getScaleFactor();
 	pos += UpdateList::getCameraRect().getPosition();
 	return pos;
+}
+
+//Event operators
+bool operator==(const Event &first, const Event &second) {
+	return first.type == second.type && first.down == second.down && first.code == second.code &&
+		first.x == second.x && first.y == second.y;
+}
+bool operator!=(const Event &first, const Event &second) {
+	return !(first == second);
 }

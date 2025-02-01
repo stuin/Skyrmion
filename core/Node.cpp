@@ -1,4 +1,5 @@
 #include "Node.h"
+#include "UpdateList.h"
 
 /*
  * Sprite with collision
@@ -34,7 +35,7 @@ Node *Node::getParent() {
 
 //Check if node is hidden
 bool Node::isHidden() {
-	return hidden || deleted || (parent != NULL && parent->isHidden());
+	return hidden || deleted || (parent != NULL && parent->isHidden()) || UpdateList::isLayerHidden(layer);
 }
 
 //Get scaled size of node

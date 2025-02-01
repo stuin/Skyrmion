@@ -1,5 +1,8 @@
 #include "InputHandler.h"
 
+#include "Settings.h"
+#include "../core/UpdateList.h"
+
 nlohmann::json Settings::data({});
 std::vector<std::pair<std::string, std::string>> Settings::edits;
 
@@ -159,7 +162,7 @@ void InputHandler::clearPressed(bool clearHeld) {
 	}
 }
 
-//Convert draw thread input events to key updates
+//Convert input events to key updates
 void InputHandler::recieveEvent(Event event) {
 	if(event.type == EVENT_KEYPRESS)
 		updateKey(event.code, event.down);
@@ -181,20 +184,45 @@ void InputHandler::update(double time) {
 	clearPressed(false);
 }
 
-DirectionHandler::DirectionHandler(std::vector<int> _controls, int layer, uint screenInput, Node *parent)
-: InputHandler(_controls, layer, parent), touchJoystick(screenInput, layer) {
+DirectionHandler::DirectionHandler(std::vector<int> _controls, int layer, Node *parent)
+: InputHandler(_controls, layer, parent) {
 	moving = addKey(-2);
+	UpdateList::addListener(this, EVENT_JOYSTICK);
 }
 
-DirectionHandler::DirectionHandler(std::vector<std::string> keys, int layer, uint screenInput, Node *parent)
-: InputHandler(keys, layer, parent), touchJoystick(screenInput, layer) {
+DirectionHandler::DirectionHandler(std::vector<std::string> keys, int layer, Node *parent)
+: InputHandler(keys, layer, parent) {
 	moving = addKey(-2);
+	UpdateList::addListener(this, EVENT_JOYSTICK);
 }
 
-DirectionHandler::DirectionHandler(std::string field, int layer, uint screenInput, Node *parent)
-: DirectionHandler(listKeys(field), layer, screenInput, parent) {
-	field += "/joystick";
-	//joystick = Settings::getInt(field);
+DirectionHandler::DirectionHandler(std::string field, int layer, Node *parent)
+: DirectionHandler(listKeys(field), layer, parent) {
+	std::string s = field + "/joystick";
+	joystick = Settings::getInt(s);
+}
+
+//Convert input events to key updates
+void DirectionHandler::recieveEvent(Event event) {
+	if(event.type == EVENT_KEYPRESS)
+		updateKey(event.code, event.down);
+	else if(event.type == EVENT_FOCUS && event.down)
+		clearPressed(true);
+	else if(event.type == EVENT_JOYSTICK && event.code == joystick-1) {
+		if(event.down) {
+			joystickMovement = true;
+			joystickSim = false;
+			joystickDirection = Vector2f(event.x, event.y);
+		} else if(!joystickSim)
+			joystickDirection = Vector2f(event.x, event.y);
+	} else if(event.type == EVENT_JOYSTICK+EVENT_MAX && event.code == joystick-1) {
+		if(event.down) {
+			joystickMovement = true;
+			joystickSim = true;
+			joystickDirection = Vector2f(event.x, event.y);
+		} else if(joystickSim)
+			joystickDirection = Vector2f(event.x, event.y);
+	}
 }
 
 //Calculate direction from joystick and keyboard
@@ -224,31 +252,8 @@ void DirectionHandler::update(double time) {
 	}
 
 	//Read from joystick
-	/*int jid = (joystick - 1) / 4;
-	if(direction == Vector2f(0, 0) && joystick > 0) {
-		int axes = ((joystick - 1) % 4) * 2;
-		sf::Joystick::Axis xAxis = Settings::JOYSTICKAXIS[axes];
-		sf::Joystick::Axis yAxis = Settings::JOYSTICKAXIS[axes + 1];
-		if(sf::Joystick::hasAxis(jid, yAxis)) {
-			float xPos = sf::Joystick::getAxisPosition(jid, xAxis);
-			float yPos = sf::Joystick::getAxisPosition(jid, yAxis);
-
-			//Update outside of dead zone
-			if(std::abs(xPos) > JOYSTICK_ZONE || std::abs(yPos) > JOYSTICK_ZONE) {
-				direction.x = xPos / 100;
-				direction.y = yPos / 100;
-				joystickMovement = true;
-			} else if(joystickMovement) {
-				direction.x = 0;
-				direction.y = 0;
-			}
-		}
-	}*/
-
-	//Read from touch joystick
-	Vector2f touchDirection = touchJoystick.getDirection();
-	if(direction == Vector2f(0,0) && touchDirection != Vector2f(0,0) && distance(touchDirection) > 4)
-		direction = touchDirection;
+	if(direction == Vector2f(0,0) && joystickDirection != Vector2f(0,0))
+		direction = joystickDirection;
 
 	//Update moving placeholder key
 	bool moved = direction != Vector2f(0, 0);

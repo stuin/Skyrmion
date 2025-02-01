@@ -1,5 +1,6 @@
 #include "../core/UpdateList.h"
 #include "../input/InputHandler.h"
+#include "../input/Settings.h"
 
 #include "DebugLayers.hpp"
 #include "DebugBreakpoints.hpp"
