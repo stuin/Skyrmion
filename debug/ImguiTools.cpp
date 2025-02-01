@@ -240,7 +240,7 @@ void setupNoise() {
 	debugCursor->setTexture(debugTextureStart+3);
 	UpdateList::addNode(debugCursor);
 
-	debugNoise = new TileMap(debugTextureStart+1, 1, 1, noiseIndexer, debugLayer);
+	debugNoise = new TileMap(debugTextureStart+1, 0, 1, 1, noiseIndexer, debugLayer);
 	debugNoise->setScale(0.6,0.6);
 	UpdateList::addNode(debugNoise);
 }

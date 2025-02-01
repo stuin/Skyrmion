@@ -48,8 +48,8 @@ Vector2i Node::getSize() {
 FloatRect Node::getRect() {
 	Vector2f pos = this->getGPosition();
 	FloatRect rec;
-	rec.left = pos.x - (origin.x * std::abs(getGScale().x));
-	rec.top = pos.y - (origin.y * std::abs(getGScale().y));
+	rec.left = pos.x - (origin.x * getGScale().x);
+	rec.top = pos.y - (origin.y * getGScale().y);
 	rec.width = this->getSize().x;
 	rec.height = this->getSize().y;
 	return rec;
@@ -110,13 +110,17 @@ int Node::getBlendMode() {
 }
 
 //Get texture number
-int Node::getTexture() {
+sint Node::getTexture() {
 	return texture;
 }
 
-//Get dirty flag
-bool Node::isDirty() {
-	return dirty;
+//Get buffer number
+sint Node::getBuffer() {
+	return targetBuffer;
+}
+
+skColor Node::getColor() {
+	return color;
 }
 
 //Get sections of texture to render
@@ -188,13 +192,17 @@ void Node::setBlendMode(int blendMode) {
 }
 
 //Set texture channel
-void Node::setTexture(int texture) {
+void Node::setTexture(sint texture) {
 	this->texture = texture;
 }
 
-//Set dirty flag
-void Node::setDirty(bool dirty) {
-	this->dirty = dirty;
+//Set target buffer channel
+void Node::setBuffer(sint texture) {
+	this->targetBuffer = texture;
+}
+
+void Node::setColor(skColor color) {
+	this->color = color;
 }
 
 //Set texture rect
@@ -207,10 +215,10 @@ void Node::setTextureRect(TextureRect rectangle, sint i) {
 //Create rectangle borders from one pixel of texture
 void Node::createPixelRect(FloatRect rect, Vector2i pixel, sint i) {
 	Vector2f offset = (Vector2f)rect.getSize()/2.0f;
-	setTextureRect({rect.left+offset.x,rect.top, 			(int)rect.width,1,  pixel.x,pixel.y, 1,1,0}, i+0);
-	setTextureRect({rect.left+offset.x,rect.top+rect.height,(int)rect.width,1,  pixel.x,pixel.y, 1,1,0}, i+1);
-	setTextureRect({rect.left,rect.top+offset.y, 			1,(int)rect.height, pixel.x,pixel.y, 1,1,0}, i+2);
-	setTextureRect({rect.left+rect.width,rect.top+offset.y, 1,(int)rect.height, pixel.x,pixel.y, 1,1,0}, i+3);
+	setTextureRect({rect.left+offset.x,rect.top, 			rect.width,1,  pixel.x,pixel.y, 1,1,0}, i+0);
+	setTextureRect({rect.left+offset.x,rect.top+rect.height,rect.width,1,  pixel.x,pixel.y, 1,1,0}, i+1);
+	setTextureRect({rect.left,rect.top+offset.y, 			1,rect.height, pixel.x,pixel.y, 1,1,0}, i+2);
+	setTextureRect({rect.left+rect.width,rect.top+offset.y, 1,rect.height, pixel.x,pixel.y, 1,1,0}, i+3);
 }
 
 //Get list of layers node collides with

@@ -1,17 +1,10 @@
 #pragma once
 
-#include <atomic>
-#include <bitset>
-#include <chrono>
-#include <deque>
-#include <exception>
 #include <string>
-#include <thread>
-#include <unordered_map>
 #include <vector>
 
 #include "Node.h"
-#include "Color.h"
+#include "IO.h"
 
 /*
  * Manages list of nodes through update cycle
@@ -98,7 +91,7 @@ public:
 	//Texture Handling
 	static int loadTexture(std::string filename);
 	static int createBuffer(sint texture, Vector2i size);
-	static void scheduleReload(sint buffer, Node *source, skColor clear);
+	static void scheduleReload(Node *source);
 	static Vector2i getTextureSize(sint index);
 	static TextureData &getTextureData(sint index);
 	static void drawImGuiTexture(sint texture, Vector2i size);
@@ -115,7 +108,7 @@ public:
 	static void update(double time);
 	static void drawNode(Node *source);
 	static void draw(FloatRect cameraRect);
-	static void drawBuffer(sint buffer, Node *source, skColor clear);
+	static void drawBuffer(Node *source);
 
 	//Sokol callback functions
 	static void frame(void);

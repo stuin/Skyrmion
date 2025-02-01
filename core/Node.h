@@ -1,12 +1,11 @@
 #pragma once
 
 #include <bitset>
-#include <functional>
-#include <stdexcept>
 #include <vector>
 
 #include "Vector.h"
 #include "Event.h"
+#include "Color.h"
 
 #define MAXLAYER 16
 #define LAYERERROR "Used collision layer > " + std::to_string(MAXLAYER)
@@ -30,14 +29,15 @@ private:
 	std::bitset<MAXLAYER> collisionLayers;
 
 	//Positioning
-	Vector2f position = Vector2f(0,0);
-	Vector2f scale = Vector2f(1,1);
-	Vector2f origin = Vector2f(0,0);
+	Vector2f position = Vector2f(0.0f,0.0f);
+	Vector2f scale = Vector2f(1.0f,1.0f);
+	Vector2f origin = Vector2f(0.0f,0.0f);
 
 	//Rendering
 	int blendMode = 1;
 	sint texture = 0;
-	bool dirty = false;
+	sint targetBuffer = 0;
+	skColor color = COLOR_WHITE;
 	std::vector<TextureRect> textureRects;
 
 	//Background system variables
@@ -72,8 +72,9 @@ public:
 	//Rendering
 	FloatRect getDrawRect();
 	int getBlendMode();
-	int getTexture();
-	bool isDirty();
+	sint getTexture();
+	sint getBuffer();
+	skColor getColor();
 	virtual std::vector<TextureRect> *getTextureRects();
 
 	//General setters
@@ -95,8 +96,9 @@ public:
 
 	//Rendering
 	void setBlendMode(int blendMode);
-	void setTexture(int textureChannel);
-	void setDirty(bool dirty=true);
+	void setTexture(sint textureChannel);
+	void setBuffer(sint textureChannel);
+	void setColor(skColor color);
 	void setTextureRect(TextureRect rectangle, sint i=0);
 	void createPixelRect(FloatRect rect, Vector2i pixel, sint i=0);
 

@@ -1,7 +1,9 @@
 #include <array>
+#include <deque>
+#include <map>
+#include <thread>
 
 #include "UpdateList.h"
-#include "IO.h"
 #include "../debug/TimingStats.hpp"
 
 #include "../include/imgui/imgui.h"//
@@ -45,14 +47,7 @@ std::vector<bool> watchedKeycodesPrevious;
 std::vector<TextureData> textureData;
 std::vector<Texture2D> textureSet;
 std::vector<RenderTexture2D> bufferSet;
-
-//Buffers
-struct BufferQueue {
-	sint buffer;
-	Node *source;
-	skColor clear;
-};
-std::vector<BufferQueue> reloadBuffer;
+std::vector<Node *> reloadBuffer;
 
 std::thread updates;
 
@@ -63,12 +58,6 @@ char *IO::openFile(std::string filename) {
 }
 void IO::closeFile(char *file) {
 	UnloadFileText(file);
-}
-
-//Logging passthrough
-template<typename... Args>
-static void log(int logLevel, const char *text, Args... args) {
-	TraceLog(logLevel, text, args...);
 }
 
 //Add node to update cycle
@@ -230,6 +219,8 @@ int UpdateList::loadTexture(std::string filename) {
 int UpdateList::createBuffer(sint texture, Vector2i size) {
 	if(texture >= textureData.size())
 		throw new std::invalid_argument(TEXTUREERROR);
+	if(texture < textureData.size() && textureData[texture].valid && textureData[texture].buffer != 0)
+		return textureData[texture].buffer;
 	if(texture < textureData.size() && textureData[texture].valid)
 		throw new std::invalid_argument(BUFFERERROR);
 
@@ -241,8 +232,8 @@ int UpdateList::createBuffer(sint texture, Vector2i size) {
 }
 
 //Schedule reload call before next draw
-void UpdateList::scheduleReload(sint buffer, Node *source, skColor clear) {
-	reloadBuffer.push_back(BufferQueue{buffer, source, clear});
+void UpdateList::scheduleReload(Node *source) {
+	reloadBuffer.push_back(source);
 }
 
 //Get size of texture
@@ -342,6 +333,7 @@ void UpdateList::drawNode(Node *source) {
 	sint texture = source->getTexture();
 	FloatRect rect = source->getDrawRect();
 	Vector2f scale = source->getGScale();
+	Color color = Color{source->getColor().r(), source->getColor().g(), source->getColor().b(), source->getColor().a()};
 	std::vector<TextureRect> *textureRects = source->getTextureRects();
 
 	if(textureRects->size() == 0) {
@@ -349,10 +341,10 @@ void UpdateList::drawNode(Node *source) {
 		if(textureData[texture].valid) {
 			Rectangle src = {0, 0, (float)rect.width, (float)rect.height};
 			Vector2 position = {rect.left, rect.top};
-			DrawTextureRec(textureSet[source->getTexture()], src, position, WHITE);
+			DrawTextureRec(textureSet[source->getTexture()], src, position, color);
 		} else {
 			Rectangle dst = {rect.left, rect.top, (float)rect.width, (float)rect.height};
-			DrawRectangleRec(dst, PURPLE);
+			DrawRectangleRec(dst, color);
 		}
 	} else {
 		//Tilemapped or partial texture
@@ -361,7 +353,7 @@ void UpdateList::drawNode(Node *source) {
 			if(tex.pwidth != 0 && tex.pheight != 0) {
 				Rectangle dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, tex.pwidth*scale.x, tex.pheight*scale.y};
 				Rectangle src = {(float)tex.tx, (float)tex.ty, (float)tex.twidth, (float)tex.theight};
-				Vector2 origin = Vector2{tex.pwidth*scale.x/2, tex.pheight*scale.y/2};
+				Vector2 origin = Vector2{tex.pwidth*std::abs(scale.x/2), tex.pheight*std::abs(scale.y/2)};
 				if(textureData[texture].valid)
 					DrawTexturePro(textureSet[source->getTexture()], src, dst, origin, (float)tex.rotation, WHITE);
 				else
@@ -375,7 +367,7 @@ void UpdateList::drawNode(Node *source) {
 //Thread safe draw nodes in list
 void UpdateList::draw(FloatRect cameraRect) {
 	skColor color = backgroundColor();
-	ClearBackground(Color{(Layer)(color.red*255), (Layer)(color.green*255), (Layer)(color.blue*255)});
+	ClearBackground(Color{color.r(), color.g(), color.b()});
 
 	raycamera.target = Vector2{cameraRect.left, cameraRect.top};
 	raycamera.zoom = screenRect.getSize().x / cameraRect.getSize().x;
@@ -400,16 +392,17 @@ void UpdateList::draw(FloatRect cameraRect) {
 	EndMode2D();
 }
 
-void UpdateList::drawBuffer(sint buffer, Node *source, skColor clear) {
-	BeginTextureMode(bufferSet[textureData[buffer].buffer]);
-	ClearBackground(Color{(Layer)(clear.red*255), (Layer)(clear.green*255), (Layer)(clear.blue*255)});
+void UpdateList::drawBuffer(Node *source) {
+	BeginTextureMode(bufferSet[textureData[source->getBuffer()].buffer]);
+	if(source->getColor() != COLOR_NONE)
+		ClearBackground(Color{source->getColor().r(), source->getColor().g(),
+			source->getColor().b(), source->getColor().a()});
 	drawNode(source);
 	EndTextureMode();
-	source->setDirty(false);
 }
 
 void UpdateList::startEngine() {
-	log(SKLOG_INFO, "SKYRMION: Update thread starting");
+	std::cout << "SKYRMION: Update thread starting\n";
 
     #ifdef _DEBUG
 	    setupDebugTools();
@@ -458,7 +451,7 @@ void UpdateList::startEngine() {
 		}
 	#endif
 
-	log(SKLOG_INFO, "SKYRMION: Update thread ending");
+	std::cout << "SKYRMION: Update thread ending\n";
 }
 
 //Process window events on update thread
@@ -491,7 +484,7 @@ void UpdateList::processEvents() {
 //Add events to queue on draw thread
 void UpdateList::queueEvents() {
 	//Keyboard
-	for(int i = 0; i < watchedKeycodes.size(); i++) {
+	for(sint i = 0; i < watchedKeycodes.size(); i++) {
 		bool down = watchedKeycodesPrevious[i];
 		int code = watchedKeycodes[i];
 
@@ -586,8 +579,8 @@ void UpdateList::frame(void) {
     rlImGuiBegin();
 
     //Reload buffer textures
-	for(BufferQueue queue : reloadBuffer)
-		drawBuffer(queue.buffer, queue.source, queue.clear);
+	for(Node *node : reloadBuffer)
+		drawBuffer(node);
 	reloadBuffer.clear();
 
     //Find camera position
@@ -656,15 +649,15 @@ void UpdateList::init() {
 	//Show loading screen
     BeginDrawing();
     skColor color = backgroundColor();
-    ClearBackground(Color{(Layer)(color.red*255), (Layer)(color.green*255), (Layer)(color.blue*255)});
+    ClearBackground(Color{color.r(), color.g(), color.b()});
     EndDrawing();
 
 	#ifdef PLATFORM_WEB
-		log(SKLOG_INFO, "SKYRMION: Initializing web");
+		std::cout << "SKYRMION: Initializing web\n";
 
 	    initialize();
 	#else
-	    log(SKLOG_INFO, "SKYRMION: Initializing desktop");
+	    std::cout << "SKYRMION: Initializing desktop\n";
 
 	    //Start update thread and initialize
 		updates = std::thread(initialize);
@@ -683,7 +676,7 @@ void UpdateList::init() {
 			}
 		}
 
-	    log(SKLOG_INFO, "SKYRMION: Starting Rendering");
+	    std::cout << "SKYRMION: Starting Rendering\n";
 	    while(!WindowShouldClose() && UpdateList::running) {
 			frame();
 		}
@@ -693,7 +686,7 @@ void UpdateList::init() {
 }
 
 void UpdateList::cleanup() {
-	log(SKLOG_INFO, "SKYRMION: Cleanup Rendering");
+	std::cout << "SKYRMION: Cleanup Rendering\n";
 	running = false;
 	updates.join();
 

@@ -73,3 +73,11 @@ bool operator==(const Event &first, const Event &second) {
 bool operator!=(const Event &first, const Event &second) {
 	return !(first == second);
 }
+
+//skColor operators
+bool operator==(const skColor &first, const skColor &second) {
+	return first.red == second.red && first.green == second.green && first.blue == second.blue && first.alpha == second.alpha;
+}
+bool operator!=(const skColor &first, const skColor &second) {
+	return !(first == second);
+}

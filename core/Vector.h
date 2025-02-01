@@ -11,7 +11,7 @@ using sint = long unsigned int;
 
 struct TextureRect {
 	float px, py;
-	int pwidth, pheight;
+	float pwidth, pheight;
 	int tx, ty;
 	int twidth, theight;
 	int rotation;

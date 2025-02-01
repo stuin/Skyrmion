@@ -18,7 +18,6 @@ private:
     const int tileY;
     Indexer *indexes;
     int offset = 0;
-    sint tileset = 0;
     uint gridUpdates = 0;
 
     uint fullWidth = 0;
@@ -30,8 +29,8 @@ private:
 
 public:
 
-    TileMap(sint _tileset, int _tileX, int _tileY, Indexer *_indexes, Layer layer=0, int _offset=0, Rect<uint> border=Rect<uint>())
-     : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes), offset(_offset), tileset(_tileset) {
+    TileMap(sint _tileset, sint _buffer, int _tileX, int _tileY, Indexer *_indexes, Layer layer=0, int _offset=0, Rect<uint> border=Rect<uint>())
+     : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes), offset(_offset) {
 
         //Set sizing
         fullWidth = width = indexes->getSize().x;
@@ -51,6 +50,12 @@ public:
         setOrigin(0, 0);
         setPosition(startX * tileX, startY * tileY);
         setTexture(_tileset);
+        setBuffer(_buffer);
+
+        if(_buffer != 0) {
+            UpdateList::createBuffer(_buffer, getSize());
+            setHidden();
+        }
 
         //std::cout << " " << startX << "," << startY << ", " << width << "," << height << "\n";
         //std::cout << toString(getGPosition()) << ":" << toString(getGScale()) <<  "\n";
@@ -69,7 +74,7 @@ public:
     }
 
     int countTextures() {
-        return (UpdateList::getTextureSize(tileset).x / tileX) * (UpdateList::getTextureSize(tileset).y / tileY);
+        return (UpdateList::getTextureSize(getTexture()).x / tileX) * (UpdateList::getTextureSize(getTexture()).y / tileY);
     }
 
     void reload() {
@@ -87,8 +92,8 @@ public:
                 int flipv = rotations / 8;
 
                 // find its position in the tileset texture
-                int tu = tileNumber % (UpdateList::getTextureSize(tileset).x / tileX);
-                int tv = tileNumber / (UpdateList::getTextureSize(tileset).x / tileX);
+                int tu = tileNumber % (UpdateList::getTextureSize(getTexture()).x / tileX);
+                int tv = tileNumber / (UpdateList::getTextureSize(getTexture()).x / tileX);
 
                 // get a pointer to the current tile's quad
                 TextureRect quad = (*getTextureRects())[usedRects];
@@ -110,7 +115,9 @@ public:
         }
         gridUpdates = indexes->getUpdateCount();
         getTextureRects()->resize(usedRects);
-        setDirty();
+
+        if(getBuffer() != 0)
+            UpdateList::scheduleReload(this);
     }
 
     void setIndexer(Indexer *indexes) {
@@ -151,7 +158,7 @@ public:
         //Build each frame
         for(int i = 0; i < frames; i++) {
             //Load new tilemap
-            TileMap *map = new TileMap(tileset, tileX, tileY, indexes, layer, i * numTiles);
+            TileMap *map = new TileMap(tileset, 0, tileX, tileY, indexes, layer, i * numTiles);
             map->setParent(this);
             tilemaps.push_back(map);
 
@@ -229,7 +236,6 @@ public:
     void reload() {
         for(int i = 0; i < maxFrames; i++)
             tilemaps[i]->reload();
-        setDirty();
     }
 
     std::vector<Node *> getNodes() {
@@ -274,7 +280,7 @@ public:
             for(uint y = 0; y < countY; y++) {
                 //Add new tilemap
                 Rect<uint> border(x * sectionWidth, y * sectionHeight, sectionWidth, sectionHeight);
-                TileMap *map = new TileMap(tileset, tileX, tileY, indexes, layer, 0, border);
+                TileMap *map = new TileMap(tileset, 0, tileX, tileY, indexes, layer, 0, border);
                 map->setParent(this);
                 tilemaps.push_back(map);
             }
@@ -285,7 +291,6 @@ public:
     void reload() {
         for(TileMap *map : tilemaps)
             map->reload();
-        setDirty();
     }
 
     std::vector<Node *> getNodes() {

@@ -61,9 +61,9 @@ public:
 
 				if(event.down && !ImGui::GetIO().WantCaptureMouse) {
 					pos = (pos + Vector2f(tileSize/2)) / tileSize;
-					if(event.code == MOUSE_OFFSET)
+					if(event.code == 0)
 						grid->setTileI(pos.x, pos.y, current);
-					else if(event.code == MOUSE_OFFSET+2)
+					else if(event.code == 2)
 						current = grid->getTileI(pos.x, pos.y);
 				}
 			}

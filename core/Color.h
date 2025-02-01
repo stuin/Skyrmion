@@ -1,3 +1,11 @@
+enum SK_BLENDMODE {
+	SK_BLEND_NONE,
+	SK_BLEND_ALPHA,
+	SK_BLEND_ALPHA_MULT,
+	SK_BLEND_ADD,
+	SK_BLEND_MULT
+};
+
 struct skColor {
 	float red, green, blue, alpha;
 
@@ -21,12 +29,26 @@ struct skColor {
 		blue = data[2] / 255.0;
 		alpha = data[3] / 255.0;
 	}
+
+	//Easier format conversion
+	unsigned char r() {
+		return red*255;
+	}
+	unsigned char g() {
+		return green*255;
+	}
+	unsigned char b() {
+		return blue*255;
+	}
+	unsigned char a() {
+		return alpha*255;
+	}
 };
 
-enum SK_BLENDMODE {
-	SK_BLEND_NONE,
-	SK_BLEND_ALPHA,
-	SK_BLEND_ALPHA_MULT,
-	SK_BLEND_ADD,
-	SK_BLEND_MULT
-};
+bool operator==(const skColor &first, const skColor &second);
+bool operator!=(const skColor &first, const skColor &second);
+
+const static skColor COLOR_NONE = skColor(1.0f,1.0f,1.0f,0.0f);
+const static skColor COLOR_WHITE = skColor(1.0f,1.0f,1.0f,1.0f);
+const static skColor COLOR_BLACK = skColor(0.0f,0.0f,0.0f,1.0f);
+const static skColor COLOR_PURPLE = skColor(200, 122, 255, 255);

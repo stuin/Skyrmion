@@ -1,6 +1,8 @@
-//#include "../include/backward-cpp/backward.hpp"
+#include "../include/backward-cpp/backward.hpp"
 
 #include "../core/UpdateList.h"
+
+#include <thread>
 
 /*
  * Debug tool to pause everything at a keypress or breakpoint
@@ -45,10 +47,10 @@ public:
 		std::cout << "Breakpoint hit\n";
 		stayPaused = true;
 
-		//backward::StackTrace st;
-		//st.load_here(32);
-		//backward::Printer p;
-		//p.print(st);
+		backward::StackTrace st;
+		st.load_here(32);
+		backward::Printer p;
+		p.print(st);
 
 		while(stayPaused && UpdateList::isRunning()) {
 			//Process input events

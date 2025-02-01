@@ -16,8 +16,4 @@ public:
 	//Engine compatible file read/write
 	static char *openFile(std::string filename);
 	static void closeFile(char *file);
-
-	//Logging passthrough
-	template<typename... Args>
-	static void log(int logLevel, const char *text, Args... args);
 };

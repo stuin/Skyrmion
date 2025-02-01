@@ -1,7 +1,5 @@
 #pragma once
 
-#include <map>
-
 #define MOUSE_OFFSET 350
 #define JOYSTICK_OFFSET 360
 #define JOYSTICK_DEADZONE 0.05f
