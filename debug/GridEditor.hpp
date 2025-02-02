@@ -56,11 +56,11 @@ public:
 		} else if(event.type == EVENT_MOUSE && open) {
 			Vector2f pos = screenToGlobal(event.x, event.y);
 			if(getRect().contains(pos)) {
-				pos = round(pos / tileSize) * tileSize - tileSize / 2;
+				pos = (Vector2i)(pos / tileSize) * tileSize;
 				createPixelRect({pos.x, pos.y, (float)tileSize.x, (float)tileSize.y}, Vector2i(0,0), 0);
 
 				if(event.down && !ImGui::GetIO().WantCaptureMouse) {
-					pos = (pos + Vector2f(tileSize/2)) / tileSize;
+					pos = pos / tileSize;
 					if(event.code == 0)
 						grid->setTileI(pos.x, pos.y, current);
 					else if(event.code == 2)

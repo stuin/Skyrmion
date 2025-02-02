@@ -3,11 +3,11 @@
 #include <map>
 #include <thread>
 
-#include "UpdateList.h"
-#include "../debug/TimingStats.hpp"
+#include "../UpdateList.h"
+#include "../../debug/TimingStats.hpp"
 
-#include "../include/imgui/imgui.h"//
-#include "../include/rlImGui/rlImGui.h"//
+#include "../../include/imgui/imgui.h"//
+#include "../../include/rlImGui/rlImGui.h"//
 
 #ifdef PLATFORM_WEB
     #include <emscripten/emscripten.h>
@@ -18,6 +18,7 @@
 
 #define TEXTUREERROR "Texture does not exist"
 #define BUFFERERROR "Cannot replace texture with render buffer"
+#define FILEERROR "Failed to read file"
 
 /*
  * Manages layers of nodes through update cycle
@@ -113,7 +114,7 @@ void UpdateList::watchKeycode(int keycode) {
 //Send custom event
 void UpdateList::queueEvent(Event event) {
 	event.type += EVENT_MAX;
-	if(event != event_previous[event.type])
+	if(event != event_previous[event.type % EVENT_MAX])
 		event_queue.push_back(event);
 }
 
@@ -338,7 +339,7 @@ void UpdateList::drawNode(Node *source) {
 
 	if(textureRects->size() == 0) {
 		//Default square texture
-		if(textureData[texture].valid) {
+		if(texture < textureData.size() && textureData[texture].valid) {
 			Rectangle src = {0, 0, (float)rect.width, (float)rect.height};
 			Vector2 position = {rect.left, rect.top};
 			DrawTextureRec(textureSet[source->getTexture()], src, position, color);
@@ -351,9 +352,9 @@ void UpdateList::drawNode(Node *source) {
 		for(sint i = 0; i < textureRects->size(); i++) {
 			TextureRect tex = (*textureRects)[i];
 			if(tex.pwidth != 0 && tex.pheight != 0) {
-				Rectangle dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, tex.pwidth*scale.x, tex.pheight*scale.y};
-				Rectangle src = {(float)tex.tx, (float)tex.ty, (float)tex.twidth, (float)tex.theight};
 				Vector2 origin = Vector2{tex.pwidth*std::abs(scale.x/2), tex.pheight*std::abs(scale.y/2)};
+				Rectangle dst = {tex.px*scale.x + rect.left+origin.x, tex.py*scale.y + rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
+				Rectangle src = {(float)tex.tx, (float)tex.ty, (float)tex.twidth, (float)tex.theight};
 				if(textureData[texture].valid)
 					DrawTexturePro(textureSet[source->getTexture()], src, dst, origin, (float)tex.rotation, WHITE);
 				else
@@ -442,7 +443,7 @@ void UpdateList::startEngine() {
 			DebugTimers::updateTimes.addDelta(delta);
 			lastTime = GetTime();
 
-			//Update nodes and sprites
+			//Update nodes
 			UpdateList::update(delta);
 			DebugTimers::updateLiteralTimes.addDelta(GetTime()-lastTime);
 
