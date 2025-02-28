@@ -153,7 +153,7 @@ void imguiNodeWindow(Node *source) {
 	    debugCursor->setOrigin(0,0);
 	    debugCursor->setTextureRect({source->getOrigin().x,source->getOrigin().y,1,1, 22,8,1,1,0}, 8);
 	    debugCursor->createPixelRect(FloatRect(0,0, source->getSize().x,source->getSize().y), Vector2i(18,8), 0);
-	    debugCursor->setPosition(source->getPosition()-source->getOrigin());
+	    debugCursor->setPosition(source->getPosition());
 	}
 	debugCursor->setHidden(false);
 
@@ -363,6 +363,7 @@ void imguiColorPickerWindow() {
 	ImGui::SliderFloat("Scale", &pickTextureScale, 0.0f, 10.0f, "%.3f");
 	TextureData &textureData = UpdateList::getTextureData(pickTexture);
 	ImGui::Text("%s", textureData.filename.c_str());
+    //ImGui::Text("Buffer ID: %ld", textureData.buffer);
     if(!textureData.valid) {
     	ImGui::End();
     	return;

@@ -2,9 +2,7 @@
 
 #include <string>
 
-#include "../core/IO.h"
-#include "../core/Vector.h"
-#include "../core/Event.h"
+#include "../core/UpdateList.h"
 
 #include "../include/json.hpp"
 
@@ -23,11 +21,11 @@ private:
 public:
 	//Load settings from file
 	static void loadSettings(std::string filename) {
-		char *text = IO::openFile(filename);
+		char *text = UpdateList::openFile(filename);
 		nlohmann::json input = nlohmann::json::parse(text);
 		for(auto& el : input.items())
 			data[el.key()] = el.value();
-		IO::closeFile(text);
+		UpdateList::closeFile(text);
 	}
 
 	//Get value functions

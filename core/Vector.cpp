@@ -65,15 +65,6 @@ Vector2f screenToGlobal(float x, float y) {
 	return pos;
 }
 
-//Event operators
-bool operator==(const Event &first, const Event &second) {
-	return first.type == second.type && first.down == second.down && first.code == second.code &&
-		first.x == second.x && first.y == second.y;
-}
-bool operator!=(const Event &first, const Event &second) {
-	return !(first == second);
-}
-
 //skColor operators
 bool operator==(const skColor &first, const skColor &second) {
 	return first.red == second.red && first.green == second.green && first.blue == second.blue && first.alpha == second.alpha;

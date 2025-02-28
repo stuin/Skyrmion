@@ -29,6 +29,18 @@ Vector2f topDownMovement(Node *node, Vector2f move, Indexer *collision, double d
 	return topDownMovement(node->getGPosition(), vectorLength(move, distance), node->getSize(), collision);
 }
 
+int topDownDirection(Vector2f movement) {
+	if(movement.x == 0)
+		return (movement.y < 0) ? UP : DOWN;
+	else if(movement.y > 0)
+		return (movement.x < 0) ? DOWN_LEFT : DOWN_RIGHT;
+	else if(movement.y == 0)
+		return (movement.x < 0) ? LEFT : RIGHT;
+	else if(movement.y < 0)
+		return (movement.x < 0) ? UP_LEFT : UP_RIGHT;
+	return DOWN;
+}
+
 Vector2f platformFrictionMovement(Vector2f start, Vector2f move, Vector2i size, double time,
 	Vector2f previous, Indexer *collision, Indexer *frictionMap, float frictionValue,
 	GlobalPhysicsStats *globalPhysics) {

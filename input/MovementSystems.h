@@ -12,6 +12,9 @@ Vector2f topDownMovement(Vector2f start, Vector2f move, Vector2i size, Indexer *
 Vector2f topDownMovement(Node *node, Vector2f move, Indexer *collision);
 Vector2f topDownMovement(Node *node, Vector2f move, Indexer *collision, double distance);
 
+//Convert vector to MovementDirection (default to down)
+int topDownDirection(Vector2f movement);
+
 struct GlobalPhysicsStats {
 	int jumpPower = 340;
 	int jumpBoost = 8;

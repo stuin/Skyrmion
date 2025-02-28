@@ -21,8 +21,12 @@ enum TileCollisionTypes {
 
 enum MovementDirections {
 	UP,
-	LEFT,
+	UP_RIGHT,
+	RIGHT,
+	DOWN_RIGHT,
 	DOWN,
-	RIGHT
+	DOWN_LEFT,
+	LEFT,
+	UP_LEFT
 };
 

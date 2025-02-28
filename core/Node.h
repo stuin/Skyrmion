@@ -100,6 +100,9 @@ public:
 	void setBuffer(sint textureChannel);
 	void setColor(skColor color);
 	void setTextureRect(TextureRect rectangle, sint i=0);
+	void setTextureIntRect(IntRect rect, sint i=0);
+	void setTextureVecRect(Vector2i corner, sint i=0);
+	void setTextureVecRect(int x, int y, sint i=0);
 	void createPixelRect(FloatRect rect, Vector2i pixel, sint i=0);
 
 	//Collision system

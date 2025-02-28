@@ -1,6 +1,6 @@
 #include "GridMaker.h"
 
-#include "../core/IO.h"
+#include "../core/UpdateList.h"
 
 /*
  * Generates and stores main tilemap
@@ -102,7 +102,7 @@ void Indexer::printGrid() {
 
 //Convert file to int[][]
 GridMaker::GridMaker(std::string file, int fallback) : Indexer(NULL, fallback, Vector2i(1, 1)) {
-	char *mapFile = IO::openFile(file);
+	char *mapFile = UpdateList::openFile(file);
 	char *line = mapFile;
 
 	//Get maximum file size
@@ -119,7 +119,7 @@ GridMaker::GridMaker(std::string file, int fallback) : Indexer(NULL, fallback, V
 		while(line[0] == '\n' || line[0] == '\r')
 			line++;
 	}
-	IO::closeFile(mapFile);
+	UpdateList::closeFile(mapFile);
 
 	//Build array
 	this->tiles = new int*[height];
@@ -159,7 +159,7 @@ void GridMaker::reload(std::string file, int offset, Rect<int> border) {
 
 	//Set reading variables
 	int i = border.top;
-	char *mapFile = IO::openFile(file);
+	char *mapFile = UpdateList::openFile(file);
 	char *line = mapFile;
 
 	//Read file by line
@@ -178,7 +178,7 @@ void GridMaker::reload(std::string file, int offset, Rect<int> border) {
 		while(line[0] == '\n' || line[0] == '\r')
 			line++;
 	}
-	IO::closeFile(mapFile);
+	UpdateList::closeFile(mapFile);
 	updates++;
 }
 

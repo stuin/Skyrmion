@@ -28,6 +28,7 @@ private:
     uint startY = 0;
 
 public:
+    static std::map<int, int> FONT_SPRITEMAP;
 
     TileMap(sint _tileset, sint _buffer, int _tileX, int _tileY, Indexer *_indexes, Layer layer=0, int _offset=0, Rect<uint> border=Rect<uint>())
      : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes), offset(_offset) {
@@ -80,16 +81,20 @@ public:
     void reload() {
         int numTextures = countTextures();
         int usedRects = 0;
+        bool hasBuffer = getBuffer() != 0;
 
         // populate the vertex array, with one quad per tile
         for(unsigned int i = 0; i < width; ++i) {
             for(unsigned int j = 0; j < height; ++j) {
                 // get the current tile number
-                int tileValue = indexes->getTile(Vector2f(i + startX, j + startY));
+                int tileValue = indexes->getTile(Vector2f(i + startX, hasBuffer ? fullHeight - (j + startY + 1) : j + startY));
                 int tileNumber = (tileValue % numTextures) + offset;
                 int rotations = (tileValue / numTextures) % 4;
                 int fliph = rotations / 4 % 2;
                 int flipv = rotations / 8;
+
+                if(hasBuffer)
+                    flipv = (flipv == 0) ? 1 : 0;
 
                 // find its position in the tileset texture
                 int tu = tileNumber % (UpdateList::getTextureSize(getTexture()).x / tileX);
@@ -116,7 +121,7 @@ public:
         gridUpdates = indexes->getUpdateCount();
         getTextureRects()->resize(usedRects);
 
-        if(getBuffer() != 0)
+        if(hasBuffer)
             UpdateList::scheduleReload(this);
     }
 

@@ -22,3 +22,6 @@
 [submodule "include/libnoise"]
 	path = include/libnoise
 	url = https://github.com/qknight/libnoise.git
+[submodule "include/nbnet"]
+	path = include/nbnet
+	url = https://github.com/nathhB/nbnet.git

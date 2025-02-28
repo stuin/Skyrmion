@@ -30,6 +30,8 @@
 #include "../../include/sokol/util/sokol_imgui.h"//
 #include "../../include/sokol/util/sokol_gfx_imgui.h"//
 
+#include <GLFW/glfw3.h>
+
 #define DTOR 0.0174532925199
 #define RTOD 57.2957795131
 
@@ -56,6 +58,7 @@ FloatRect UpdateList::screenRect;
 //Event handling
 std::deque<Event> event_queue;
 std::array<std::vector<Node *>, EVENT_MAX> listeners;
+std::vector<int> watchedKeycodes;
 
 //Textures stored in this file
 std::vector<TextureData> textureData;
@@ -141,12 +144,12 @@ void UpdateList::addListener(Node *item, int type) {
 }
 
 void UpdateList::watchKeycode(int keycode) {
-
+	if(keycode >= JOYSTICK_OFFSET)
+		watchedKeycodes.push_back(keycode);
 }
 
 //Send custom event
 void UpdateList::queueEvent(Event event) {
-	event.type += EVENT_MAX;
 	event_queue.push_back(event);
 }
 
@@ -534,10 +537,6 @@ void UpdateList::processEvents() {
 	}
 }
 
-void UpdateList::queueEvents() {
-
-}
-
 void event(const sapp_event* event) {
 	switch(event->type) {
 	case SAPP_EVENTTYPE_KEY_DOWN: case SAPP_EVENTTYPE_KEY_UP:
@@ -603,6 +602,42 @@ void event(const sapp_event* event) {
 	sapp_consume_event();
 }
 
+//Joystick input handled separately
+void UpdateList::queueEvents() {
+	//Joystick input
+	for(int joystickId = 0; joystickId < 4 && glfwJoystickPresent(GLFW_JOYSTICK_1 + joystickId); joystickId++) {
+		int axisCount = 0;
+		const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1 + joystickId, &axisCount);
+
+		for(int axisId = 0; axisId+1 < axisCount; axisId += 2) {
+			float x = axes[axisId];
+			float y = axes[axisId+1];
+			x = (std::abs(x) > JOYSTICK_DEADZONE) ? x : 0;
+			y = (std::abs(y) > JOYSTICK_DEADZONE) ? y : 0;
+			event_queue.emplace_back(EVENT_JOYSTICK, x != 0 || y != 0, axisId/2, x, y);
+		}
+
+		//Joystick buttons
+		for(sint i = 0; i < watchedKeycodes.size(); i++) {
+			int code = watchedKeycodes[i];
+			if(code >= JOYSTICK_OFFSET && joystickId == (code-JOYSTICK_OFFSET)/50) {
+				int buttonId = (code-JOYSTICK_OFFSET)%50;
+				int axisId = (buttonId-33)/2;
+				bool negative = (buttonId-33)%2 == 0;
+				int buttonCount = 0;
+				const unsigned char* buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1 + joystickId, &buttonCount);
+
+				if(buttonId<33 && buttonId < buttonCount)
+					event_queue.emplace_back(EVENT_KEYPRESS, buttons[buttonId] == GLFW_PRESS, code);
+				else if(buttonId>32 && axisId < axisCount && negative)
+					event_queue.emplace_back(EVENT_KEYPRESS, axes[axisId] < -JOYSTICK_DEADZONE, code);
+				else if(buttonId>32 && axisId < axisCount && !negative)
+					event_queue.emplace_back(EVENT_KEYPRESS, axes[axisId] > JOYSTICK_DEADZONE, code);
+			}
+		}
+	}
+}
+
 void UpdateList::frame(void) {
     DebugTimers::frameTimes.addDelta(sapp_frame_duration());
     uint64_t lastTime = stm_now();
@@ -618,6 +653,8 @@ void UpdateList::frame(void) {
 	// Begin recording draw commands for a frame buffer of size (width, height).
     sgp_begin(cameraRect.width, cameraRect.height);
     sgp_viewport(0,0,cameraRect.width, cameraRect.height);
+
+    UpdateList::queueEvents();
 
     //Start imgui frame
     simgui_frame_desc_t simguidesc = { };
@@ -713,6 +750,8 @@ void UpdateList::init(void) {
         exit(-1);
     }
 
+    glfwInit();
+
     //initialize imgui
     simgui_desc_t simguidesc = { };
     simgui_setup(&simguidesc);
@@ -785,6 +824,7 @@ void UpdateList::cleanup(void) {
 	updates.join();
 	sgimgui_discard(&sgimgui);
 	simgui_shutdown();
+	glfwTerminate();
     sgp_shutdown();
     sg_shutdown();
 }

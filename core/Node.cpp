@@ -212,6 +212,21 @@ void Node::setTextureRect(TextureRect rectangle, sint i) {
 	textureRects[i] = rectangle;
 }
 
+//Set basic texture rect
+void Node::setTextureIntRect(IntRect rect, sint i) {
+	while(i >= textureRects.size())
+		textureRects.push_back({0});
+	textureRects[i] = {0, 0, (float)rect.width,(float)rect.height, rect.left,rect.top, rect.width,rect.height, 0};
+}
+
+//Set texture rect based on corner and node size
+void Node::setTextureVecRect(Vector2i corner, sint i) {
+	setTextureVecRect(corner.x, corner.y, i);
+}
+void Node::setTextureVecRect(int x, int y, sint i) {
+	setTextureIntRect(IntRect(x, y, size.x, size.y));
+}
+
 //Create rectangle borders from one pixel of texture
 void Node::createPixelRect(FloatRect rect, Vector2i pixel, sint i) {
 	setTextureRect({rect.left,rect.top, 			rect.width,1,  pixel.x,pixel.y, 1,1,0}, i+0);

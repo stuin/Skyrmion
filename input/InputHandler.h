@@ -35,7 +35,7 @@ struct Keybind {
 
 class InputHandler : public Node {
 private:
-	void add_listeners();
+	void addListeners();
 
 public:
 	std::vector<Keybind> controls;
@@ -68,6 +68,7 @@ private:
 	Vector2f joystickDirection = Vector2f(0,0);
 
 	int joystick = 0;
+	int joystickLast = 0;
 	bool joystickSim = false;
 
 public:

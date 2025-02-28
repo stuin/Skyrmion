@@ -4,12 +4,12 @@
 #include <vector>
 
 #include "Node.h"
-#include "IO.h"
 
 /*
  * Manages list of nodes through update cycle
  */
 
+//Data for each layer
 struct LayerData {
 	std::string name = "";
 	bool paused = false;
@@ -19,6 +19,7 @@ struct LayerData {
 	int count = 0;
 };
 
+//Metadata surrounding each texture
 struct TextureData {
 	std::string filename = "";
 	Vector2i size;
@@ -51,10 +52,12 @@ private:
 	static FloatRect cameraRect;
 	static FloatRect screenRect;
 
-	//Window event system
-	//static std::atomic_int event_count;
-	//static std::deque<Event> event_queue;
-	//static std::array<std::vector<Node *>, EVENT_MAX> listeners;
+	//Networking
+	static bool networkInitialized;
+	static bool networkClient;
+	static bool networkConnected;
+	static int networkId;
+	static unsigned int networkTimer;
 
 public:
 
@@ -70,6 +73,10 @@ public:
 	static void queueEvent(Event event);
 	static void sendSignal(Layer layer, int id, Node *sender);
 	static void sendSignal(int id, Node *sender);
+
+	//Engine compatible file read/write
+	static char *openFile(std::string filename);
+	static void closeFile(char *file);
 
 	//Screen view
 	static Node *setCamera(Node *follow, Vector2f size, Vector2f position=Vector2f(0,0));
@@ -109,11 +116,20 @@ public:
 	static void drawNode(Node *source);
 	static void draw(FloatRect cameraRect);
 	static void drawBuffer(Node *source);
-
-	//Sokol callback functions
 	static void frame(void);
 	static void init(void);
 	static void cleanup(void);
+
+	//Networking client functions
+	static void connectServer(std::string ip, int port);
+	static void disconnectServer();
+	static bool isConnected();
+	static int getNetworkId();
+	static bool isNetworkTick();
+	static void processNetworking();
+	static void processNetworkMessage();
+	static void sendNetworkEvent(Event event, bool reliable=false);
+	static void sendNetworkString(std::string data, int code=0, bool reliable=true);
 };
 
 //Functions to be implemented by the game
@@ -122,6 +138,9 @@ skColor backgroundColor();
 std::string *windowTitle();
 std::vector<std::string> &textureFiles();
 std::vector<std::string> &layerNames();
+
+//Networking functions to be implemented by the game
+void recieveNetworkString(std::string data, int code);
 
 //Debug tool insertions
 void setupDebugTools();

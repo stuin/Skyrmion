@@ -14,7 +14,7 @@ InputHandler::InputHandler(std::vector<int> _controls, int layer, Node *parent)
 		controls.push_back(Keybind(key));
 	count = _controls.size();
 
-	add_listeners();
+	addListeners();
 }
 
 //Set controls through configurable settings
@@ -35,8 +35,15 @@ InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *paren
 				keys.push_back(keyname.substr(0, splitI));
 				keys.push_back(keyname.substr(splitI+1));
 			} else {
-				//Single key
-				controls.push_back(Keybind(Settings::getControl(keys[i]), keys[i]));
+				splitI = keyname.find('%');
+				if(splitI != std::string::npos) {
+					//Specific joystick/gamepad
+					int player = std::stoi(keyname.substr(splitI+1))*JOYSTICK_NEXT;
+					controls.push_back(Keybind(Settings::getControl(keyname.substr(0, splitI))+player, keys[i]));
+				} else {
+					//Single key
+					controls.push_back(Keybind(Settings::getControl(keys[i]), keys[i]));
+				}
 			}
 		}
 	}
@@ -66,11 +73,11 @@ InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *paren
 		}
 	}
 
-	add_listeners();
+	addListeners();
 }
 
 //Subscribe to all input types
-void InputHandler::add_listeners() {
+void InputHandler::addListeners() {
 	UpdateList::addNode(this);
 	UpdateList::addListener(this, EVENT_KEYPRESS);
 	UpdateList::addListener(this, EVENT_FOCUS);
@@ -95,9 +102,9 @@ int InputHandler::addKey(int code, int alt) {
 
 	//Correct stored indexes
 	for(sint i = 0; i < controls.size(); i++) {
-		if(controls[i].combo > -1 && controls[i].combo > count)
+		if(controls[i].combo > -1 && (sint)controls[i].combo > count)
 			controls[i].combo += controls[i].combo / count;
-		if(controls[i].duplicate > -1 && controls[i].duplicate > count)
+		if(controls[i].duplicate > -1 && (sint)controls[i].duplicate > count)
 			controls[i].duplicate += controls[i].duplicate / count;
 	}
 
@@ -106,7 +113,7 @@ int InputHandler::addKey(int code, int alt) {
 
 //Find if key is used and update pressed/held states
 void InputHandler::updateKey(int code, bool press) {
-	if(remap != -1 && remap < controls.size()) {
+	if(remap != -1 && remap < (long int)controls.size()) {
 		controls[remap].key = code;
 		remap = -1;
 		return;
@@ -123,7 +130,7 @@ void InputHandler::updateKey(int code, bool press) {
 		controls[i].held = press;
 
 		long int d = controls[i].duplicate;
-		while(d != -1 && d < controls.size()) {
+		while(d != -1 && d < (long int)controls.size()) {
 			controls[d].pressed = press;
 			controls[d].held = press;
 			if(controls[d].duplicate != d)
@@ -136,7 +143,7 @@ void InputHandler::updateKey(int code, bool press) {
 	//Check for combo key
 	if(controls[i].combo == -3) {
 		sint j = 0;
-		while(j < controls.size() && i/2 != controls[j].combo/2)
+		while(j < controls.size() && (long int)i/2 != controls[j].combo/2)
 			j++;
 
 		//Update press/held
@@ -153,7 +160,7 @@ void InputHandler::updateKey(int code, bool press) {
 
 //Clear pressed to separate newly pressed keys from held keys
 void InputHandler::clearPressed(bool clearHeld) {
-	for(long unsigned int i = 0; i < controls.size(); i++) {
+	for(sint i = 0; i < controls.size(); i++) {
 		controls[i].pressed = false;
 
 		//Mouse wheel special case
@@ -208,20 +215,21 @@ void DirectionHandler::recieveEvent(Event event) {
 		updateKey(event.code, event.down);
 	else if(event.type == EVENT_FOCUS && event.down)
 		clearPressed(true);
-	else if(event.type == EVENT_JOYSTICK && event.code == joystick-1) {
+	else if(event.type == EVENT_JOYSTICK && (event.code%4 == joystick-1 || event.code == joystick-1)) {
 		if(event.down) {
 			joystickMovement = true;
 			joystickSim = false;
-			joystickDirection = Vector2f(event.x, event.y);
-		} else if(!joystickSim)
-			joystickDirection = Vector2f(event.x, event.y);
-	} else if(event.type == EVENT_JOYSTICK+EVENT_MAX && event.code == joystick-1) {
+			joystickLast = event.code;
+			joystickDirection = event.vector();
+		} else if(!joystickSim && joystickLast == event.code)
+			joystickDirection = event.vector();
+	} else if(event.type == EVENT_JOYSTICK_SIM && event.code == joystick-1) {
 		if(event.down) {
 			joystickMovement = true;
 			joystickSim = true;
-			joystickDirection = Vector2f(event.x, event.y);
+			joystickDirection = event.vector();
 		} else if(joystickSim)
-			joystickDirection = Vector2f(event.x, event.y);
+			joystickDirection = event.vector();
 	}
 }
 
@@ -238,14 +246,14 @@ void DirectionHandler::update(double time) {
 				case 0: // up
 					direction.y--;
 					break;
-				case 1: // left
-					direction.x--;
+				case 1: // right
+					direction.x++;
 					break;
 				case 2: // down
 					direction.y++;
 					break;
-				case 3: // right
-					direction.x++;
+				case 3: // left
+					direction.x--;
 					break;
 			}
 		}
@@ -289,9 +297,9 @@ Vector2f DirectionHandler::getMovement(double distance) {
 std::vector<std::string> DirectionHandler::listKeys(std::string field) {
 	std::vector<std::string> keys = {
 		field + "/up",
-		field + "/left",
+		field + "/right",
 		field + "/down",
-		field + "/right"
+		field + "/left"
 	};
 	return keys;
 }

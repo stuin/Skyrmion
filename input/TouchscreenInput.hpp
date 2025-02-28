@@ -34,12 +34,12 @@ public:
 		if(event.down && event.code == 0 && dis < 32.0f && dis > 2.0f) {
 			dir = vectorLength(pos, std::min(16.0f, dis));
 			setTextureRect({dir.x+16,dir.y+16,32,32, 32,0,32,32, 0}, 1);
-			UpdateList::queueEvent({EVENT_JOYSTICK, true, joystick-1, dir.x/16.0f, dir.y/16.0f});
+			UpdateList::queueEvent({EVENT_JOYSTICK_SIM, true, joystick-1, dir.x/16.0f, dir.y/16.0f});
 			touch = event.type == EVENT_TOUCH;
 		} else if(event.type == (touch ? EVENT_TOUCH : EVENT_MOUSE)) {
 			dir = Vector2f(0,0);
 			setTextureRect({dir.x+16,dir.y+16,32,32, 32,0,32,32, 0}, 1);
-			UpdateList::queueEvent({EVENT_JOYSTICK, false, joystick-1, 0, 0});
+			UpdateList::queueEvent({EVENT_JOYSTICK_SIM, false, joystick-1, 0, 0});
 		}
 	}
 

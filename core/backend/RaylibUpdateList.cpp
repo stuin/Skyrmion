@@ -49,17 +49,9 @@ std::vector<TextureData> textureData;
 std::vector<Texture2D> textureSet;
 std::vector<RenderTexture2D> bufferSet;
 std::vector<Node *> reloadBuffer;
+sint requestedBuffers = 0;
 
 std::thread updates;
-
-
-//Engine compatible file read/write
-char *IO::openFile(std::string filename) {
-	return LoadFileText(filename.c_str());
-}
-void IO::closeFile(char *file) {
-	UnloadFileText(file);
-}
 
 //Add node to update cycle
 void UpdateList::addNode(Node *next) {
@@ -113,7 +105,6 @@ void UpdateList::watchKeycode(int keycode) {
 
 //Send custom event
 void UpdateList::queueEvent(Event event) {
-	event.type += EVENT_MAX;
 	if(event != event_previous[event.type % EVENT_MAX])
 		event_queue.push_back(event);
 }
@@ -131,6 +122,14 @@ void UpdateList::sendSignal(Layer layer, int id, Node *sender) {
 void UpdateList::sendSignal(int id, Node *sender) {
 	for(Layer layer = 0; layer <= maxLayer; layer++)
 		sendSignal(layer, id, sender);
+}
+
+//Engine compatible file read/write
+char *UpdateList::openFile(std::string filename) {
+	return LoadFileText(filename.c_str());
+}
+void UpdateList::closeFile(char *file) {
+	UnloadFileText(file);
 }
 
 //Set camera to follow node
@@ -226,10 +225,9 @@ int UpdateList::createBuffer(sint texture, Vector2i size) {
 		throw new std::invalid_argument(BUFFERERROR);
 
 	//Create and add buffer
-	sint i = bufferSet.size();
 	textureData[texture].size = size;
-	textureData[texture].buffer = i;
-	return i;
+	textureData[texture].buffer = requestedBuffers;
+	return requestedBuffers++;
 }
 
 //Schedule reload call before next draw
@@ -270,6 +268,7 @@ skColor UpdateList::pickColor(sint texture, Vector2i position) {
 //Update all nodes in list
 void UpdateList::update(double time) {
 	UpdateList::processEvents();
+	UpdateList::processNetworking();
 	deleted2.insert(deleted2.end(), deleted1.begin(), deleted1.end());
 	deleted1.clear();
 
@@ -501,8 +500,8 @@ void UpdateList::queueEvents() {
 		else if(code == MOUSE_OFFSET+9)
 			down = GetTouchPointCount()>0;
 		else if(code >= JOYSTICK_OFFSET) {
-			int joystickId = (code-JOYSTICK_OFFSET)/50;
-			int buttonId = (code-JOYSTICK_OFFSET)%50;
+			int joystickId = (code-JOYSTICK_OFFSET)/JOYSTICK_NEXT;
+			int buttonId = (code-JOYSTICK_OFFSET)%JOYSTICK_NEXT;
 			int axisId = (buttonId-33)/2;
 			bool negative = (buttonId-33)%2 == 0;
 			if(buttonId<33 && IsGamepadAvailable(joystickId))
@@ -547,7 +546,7 @@ void UpdateList::queueEvents() {
 			float y = GetGamepadAxisMovement(joystickId, axisId+1);
 			x = (std::abs(x) > JOYSTICK_DEADZONE) ? x : 0;
 			y = (std::abs(y) > JOYSTICK_DEADZONE) ? y : 0;
-			event_queue.emplace_back(EVENT_JOYSTICK, x != 0 || y != 0, axisId/2, x, y);
+			event_queue.emplace_back(EVENT_JOYSTICK, x != 0 || y != 0, axisId/2+(joystickId+1)*4, x, y);
 		}
 		joystickId++;
 	}
@@ -627,6 +626,10 @@ void UpdateList::frame(void) {
     EndDrawing();
 }
 
+void testThread() {
+	std::cout << "SKYRMION: Test Thread\n";
+}
+
 void UpdateList::init() {
 	SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
 	InitWindow(1920, 1080, windowTitle()->c_str());
@@ -639,7 +642,7 @@ void UpdateList::init() {
     	layers[layer].name = layerNames()[layer];
 
     #ifdef _DEBUG
-    addDebugTextures();
+    	addDebugTextures();
     #endif
 
     //Load textures
@@ -653,6 +656,9 @@ void UpdateList::init() {
     ClearBackground(Color{color.r(), color.g(), color.b()});
     EndDrawing();
 
+	//std::thread testing = std::thread(testThread);
+	//testing.join();
+
 	#ifdef PLATFORM_WEB
 		std::cout << "SKYRMION: Initializing web\n";
 
@@ -663,9 +669,8 @@ void UpdateList::init() {
 	    //Start update thread and initialize
 		updates = std::thread(initialize);
 
-		while(!UpdateList::running) {
+		while(!UpdateList::running)
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		}
 
 		//Prepare buffer textures
 		for(sint texture = 0; texture < textureData.size(); texture++) {
