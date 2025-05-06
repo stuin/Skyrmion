@@ -1,30 +1,9 @@
 #include <iostream>
 #include <ostream>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-void Log(const char *level, const char *fmt, ...) {
-	va_list args;
 
-	if(level[0] == 'T')
-		return;
-
-	va_start(args, fmt);
-
-	printf("[%s] ", level);
-	vprintf(fmt, args);
-	printf("\n");
-
-	va_end(args);
-}
-
-// nbnet logging, use printf logging
-#define NBN_LogInfo(...) Log("INFO", __VA_ARGS__)
-#define NBN_LogError(...) Log("ERROR", __VA_ARGS__)
-#define NBN_LogWarning(...) Log("WARNING", __VA_ARGS__)
-#define NBN_LogDebug(...) Log("DEBUG", __VA_ARGS__)
-#define NBN_LogTrace(...) Log("TRACE", __VA_ARGS__)
 
 #define NBNET_IMPL
 #include "nbnetShared.hpp"
@@ -186,10 +165,10 @@ static int BroadcastGameState(void) {
 					Event *msg = Event_Create();
 					*msg = sender->events[sender->sentEvents];
 
-					//if(msg->type <= EVENT_NETWORK_CONNECT_CLIENT)
-					NBN_GameServer_SendReliableMessageTo(clients[j]->client_handle, MESSAGE_EVENT, msg);
-					//else
-					//	NBN_GameServer_SendUnreliableMessageTo(clients[j]->client_handle, MESSAGE_EVENT, msg);
+					if(msg->type <= EVENT_NETWORK_CONNECT_CLIENT)
+						NBN_GameServer_SendReliableMessageTo(clients[j]->client_handle, MESSAGE_EVENT, msg);
+					else
+						NBN_GameServer_SendUnreliableMessageTo(clients[j]->client_handle, MESSAGE_EVENT, msg);
 				}
 			}
 			sender->sentEvents = (sender->sentEvents + 1) % EVENTS_PER_CLIENT;

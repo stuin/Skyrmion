@@ -1,5 +1,4 @@
 #include <array>
-#include <deque>
 #include <map>
 #include <thread>
 
@@ -39,9 +38,9 @@ Camera2D raycamera;
 
 //Event handling
 std::deque<Event> event_queue;
-std::array<Event, EVENT_MAX> event_previous;
 std::array<std::vector<Node *>, EVENT_MAX> listeners;
 std::vector<int> watchedKeycodes;
+std::array<Event, EVENT_MAX> event_previous;
 std::vector<bool> watchedKeycodesPrevious;
 
 //Textures stored in this file
@@ -52,6 +51,14 @@ std::vector<Node *> reloadBuffer;
 sint requestedBuffers = 0;
 
 std::thread updates;
+
+//Engine compatible file read/write
+char *UpdateList::openFile(std::string filename) {
+	return LoadFileText(filename.c_str());
+}
+void UpdateList::closeFile(char *file) {
+	UnloadFileText(file);
+}
 
 //Add node to update cycle
 void UpdateList::addNode(Node *next) {
@@ -122,14 +129,6 @@ void UpdateList::sendSignal(Layer layer, int id, Node *sender) {
 void UpdateList::sendSignal(int id, Node *sender) {
 	for(Layer layer = 0; layer <= maxLayer; layer++)
 		sendSignal(layer, id, sender);
-}
-
-//Engine compatible file read/write
-char *UpdateList::openFile(std::string filename) {
-	return LoadFileText(filename.c_str());
-}
-void UpdateList::closeFile(char *file) {
-	UnloadFileText(file);
 }
 
 //Set camera to follow node
@@ -404,10 +403,6 @@ void UpdateList::drawBuffer(Node *source) {
 void UpdateList::startEngine() {
 	std::cout << "SKYRMION: Update thread starting\n";
 
-    #ifdef _DEBUG
-	    setupDebugTools();
-	#endif
-
 	#ifdef PLATFORM_WEB
 		//Prepare buffer textures
 		for(sint texture = 0; texture < textureData.size(); texture++) {
@@ -593,20 +588,17 @@ void UpdateList::frame(void) {
     //Main draw function
     draw(cameraRect);
 
-    //imgui gfx debug
+    //Render imgui debug
     #if _DEBUG
     if(ImGui::BeginMainMenuBar()) {
-        skyrmionImguiMenu();
+    	//Render menu bar
         if(listeners[EVENT_IMGUI].size() > 0) {
-        	if(ImGui::BeginMenu("Game")) {
-	        	for(Node *node : listeners[EVENT_IMGUI])
-					node->recieveEvent(Event(EVENT_IMGUI, true, 0));
-				ImGui::EndMenu();
-			}
+        	for(Node *node : listeners[EVENT_IMGUI])
+				node->recieveEvent(Event(EVENT_IMGUI, true, 0));
         }
         ImGui::EndMainMenuBar();
     }
-    skyrmionImgui();
+    //Render individual windows
     for(Node *node : listeners[EVENT_IMGUI])
 		node->recieveEvent(Event(EVENT_IMGUI, false, 0));
     #endif

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Vector.h"
+
 #define MOUSE_OFFSET 350
 #define JOYSTICK_OFFSET 360
 #define JOYSTICK_NEXT 50

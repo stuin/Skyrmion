@@ -1,0 +1,10 @@
+files=core/backend/nbnetServer.cpp include/backward-cpp/backward.cpp
+
+caching=s/.cpp/.o/g ; s: [^ ]*/: ../../obj/:g
+
+buildargs1=-Wno-unused-function -DBACKWARD_HAS_BFD=1
+builder2=mv *.o ../../obj/
+buildargs3=-lpthread -lbfd -ldl
+
+output=/tmp/server.out
+testdir=../../

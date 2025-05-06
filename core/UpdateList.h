@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <deque>
 
 #include "Node.h"
 
@@ -132,7 +133,7 @@ public:
 	static void sendNetworkString(std::string data, int code=0, bool reliable=true);
 };
 
-//Functions to be implemented by the game
+//System functions to be implemented by the game
 void initialize();
 skColor backgroundColor();
 std::string *windowTitle();
@@ -145,8 +146,3 @@ void recieveNetworkString(std::string data, int code);
 //Debug tool insertions
 void setupDebugTools();
 void addDebugTextures();
-
-//Debug ImGui functions
-void imguiShowNode(sint id);
-void skyrmionImguiMenu();
-void skyrmionImgui();

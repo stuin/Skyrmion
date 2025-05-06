@@ -70,7 +70,7 @@ std::thread updates;
 sgimgui_t sgimgui;
 
 //Engine compatible file read/write
-char *IO::openFile(std::string filename) {
+char *UpdateList::openFile(std::string filename) {
 	char *source = NULL;
 	FILE *fp = fopen(filename.c_str(), "r");
 	if(fp != NULL) {
@@ -94,7 +94,7 @@ char *IO::openFile(std::string filename) {
 	}
 	return source;
 }
-void IO::closeFile(char *file) {
+void UpdateList::closeFile(char *file) {
 	free(file);
 }
 
@@ -330,6 +330,7 @@ skColor UpdateList::pickColor(sint texture, Vector2i position) {
 //Update all nodes in list
 void UpdateList::update(double time) {
 	UpdateList::processEvents();
+	UpdateList::processNetworking();
 	deleted2.insert(deleted2.end(), deleted1.begin(), deleted1.end());
 	deleted1.clear();
 
@@ -674,7 +675,7 @@ void UpdateList::frame(void) {
     //Main draw function
     draw(cameraRect);
 
-    //imgui gfx debug
+    //Render imgui debug
     #if _DEBUG
     sgimgui_draw(&sgimgui);
     if(ImGui::BeginMainMenuBar()) {
@@ -690,7 +691,7 @@ void UpdateList::frame(void) {
             ImGui::MenuItem("Calls", 0, &sgimgui.capture_window.open);
             ImGui::EndMenu();
         }
-        skyrmionImguiMenu();
+        //Render menu bar
         if(listeners[EVENT_IMGUI].size() > 0) {
         	if(ImGui::BeginMenu("Game")) {
 	        	for(Node *node : listeners[EVENT_IMGUI])
@@ -700,7 +701,7 @@ void UpdateList::frame(void) {
         }
         ImGui::EndMainMenuBar();
     }
-    skyrmionImgui();
+    //Render individual windows
     for(Node *node : listeners[EVENT_IMGUI])
 		node->recieveEvent(Event(EVENT_IMGUI, false, 0));
     #endif

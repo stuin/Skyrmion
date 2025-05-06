@@ -1,14 +1,5 @@
 #include "../UpdateList.h"
 
-#include "raylib.h"
-
-// nbnet logging, use raylib logging
-#define NBN_LogInfo(...) TraceLog(LOG_INFO, __VA_ARGS__)
-#define NBN_LogError(...) TraceLog(LOG_ERROR, __VA_ARGS__)
-#define NBN_LogWarning(...) TraceLog(LOG_WARNING, __VA_ARGS__)
-#define NBN_LogDebug(...) TraceLog(LOG_DEBUG, __VA_ARGS__)
-#define NBN_LogTrace(...) TraceLog(LOG_TRACE, __VA_ARGS__)
-
 #define NBNET_IMPL
 #include "nbnetShared.hpp"
 
@@ -71,7 +62,7 @@ void UpdateList::processNetworking() {
 	int ev;
 	while((ev = NBN_GameClient_Poll()) != NBN_NO_EVENT) {
 		if(ev < 0) {
-			TraceLog(LOG_ERROR, "NETWORK: An error occured while polling client events");
+			Log("ERROR", "NETWORK: An error occured while polling client events");
 			break;
 		}
 
@@ -93,7 +84,7 @@ void UpdateList::processNetworking() {
 	}
 
 	if(NBN_GameClient_SendPackets() < 0)
-		TraceLog(LOG_ERROR, "NETWORK: An occured while flushing the send queue");
+		Log("ERROR", "NETWORK: An occured while flushing the send queue");
 }
 
 void UpdateList::processNetworkMessage() {
@@ -135,10 +126,10 @@ void UpdateList::sendNetworkEvent(Event event, bool reliable) {
 	//Send it to the server
 	if(reliable) {
 		if(NBN_GameClient_SendReliableMessage(MESSAGE_EVENT, msg) < 0)
-			TraceLog(LOG_ERROR, "NETWORK: Error occured while sending event");
+			Log("ERROR", "NETWORK: Error occured while sending event");
 	} else {
 		if(NBN_GameClient_SendUnreliableMessage(MESSAGE_EVENT, msg) < 0)
-			TraceLog(LOG_ERROR, "NETWORK: Error occured while sending event");
+			Log("ERROR", "NETWORK: Error occured while sending event");
 	}
 }
 
@@ -166,9 +157,9 @@ void UpdateList::sendNetworkString(std::string data, int code, bool reliable) {
 	//Send it to the server
 	if(reliable) {
 		if(NBN_GameClient_SendReliableMessage(MESSAGE_STRING, msg) < 0)
-			TraceLog(LOG_ERROR, "NETWORK: Error occured while sending string");
+			Log("ERROR", "NETWORK: Error occured while sending string");
 	} else {
 		if(NBN_GameClient_SendUnreliableMessage(MESSAGE_STRING, msg) < 0)
-			TraceLog(LOG_ERROR, "NETWORK: Error occured while sending string");
+			Log("ERROR", "NETWORK: Error occured while sending string");
 	}
 }

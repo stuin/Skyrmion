@@ -1,3 +1,27 @@
+#include <stdarg.h>
+
+void Log(const char *level, const char *fmt, ...) {
+    va_list args;
+
+    if(level[0] == 'T')
+        return;
+
+    va_start(args, fmt);
+
+    printf("[%s] ", level);
+    vprintf(fmt, args);
+    printf("\n");
+
+    va_end(args);
+}
+
+// nbnet logging, use printf logging
+#define NBN_LogInfo(...) Log("INFO", __VA_ARGS__)
+#define NBN_LogError(...) Log("ERROR", __VA_ARGS__)
+#define NBN_LogWarning(...) Log("WARNING", __VA_ARGS__)
+#define NBN_LogDebug(...) Log("DEBUG", __VA_ARGS__)
+#define NBN_LogTrace(...) Log("TRACE", __VA_ARGS__)
+
 #include "../Event.h"
 
 #include "../../include/nbnet/nbnet.h"

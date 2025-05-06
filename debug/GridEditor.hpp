@@ -51,8 +51,10 @@ public:
 	void recieveEvent(Event event) {
 		if(event.type == EVENT_IMGUI && event.down) {
 			ImGui::MenuItem(name.c_str(), 0, &open);
-		} else if(event.type == EVENT_IMGUI && open) {
-			showWindow();
+		} else if(event.type == EVENT_IMGUI) {
+			if(open)
+				showWindow();
+			setHidden(!open);
 		} else if(event.type == EVENT_MOUSE && open) {
 			Vector2f pos = screenToGlobal(event.x, event.y);
 			if(getRect().contains(pos)) {
