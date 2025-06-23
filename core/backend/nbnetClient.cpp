@@ -65,6 +65,7 @@ void UpdateList::processNetworking() {
 			Log("ERROR", "NETWORK: An error occured while polling client events");
 			break;
 		}
+		//std::cout << "NETWORK: Event: ";
 
 		switch(ev) {
 			case NBN_CONNECTED:

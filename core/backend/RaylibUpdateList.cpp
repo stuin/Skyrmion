@@ -59,6 +59,9 @@ char *UpdateList::openFile(std::string filename) {
 void UpdateList::closeFile(char *file) {
 	UnloadFileText(file);
 }
+void UpdateList::writeFile(std::string filename, char *text) {
+	SaveFileText(filename.c_str(), text);
+}
 
 //Add node to update cycle
 void UpdateList::addNode(Node *next) {
@@ -267,7 +270,6 @@ skColor UpdateList::pickColor(sint texture, Vector2i position) {
 //Update all nodes in list
 void UpdateList::update(double time) {
 	UpdateList::processEvents();
-	UpdateList::processNetworking();
 	deleted2.insert(deleted2.end(), deleted1.begin(), deleted1.end());
 	deleted1.clear();
 
@@ -569,6 +571,7 @@ void UpdateList::frame(void) {
     BeginDrawing();
 
     UpdateList::queueEvents();
+    UpdateList::processNetworking();
 
     //Start imgui frame
     rlImGuiBegin();

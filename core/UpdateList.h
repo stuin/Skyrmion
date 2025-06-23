@@ -78,6 +78,7 @@ public:
 	//Engine compatible file read/write
 	static char *openFile(std::string filename);
 	static void closeFile(char *file);
+	static void writeFile(std::string filename, char *text);
 
 	//Screen view
 	static Node *setCamera(Node *follow, Vector2f size, Vector2f position=Vector2f(0,0));

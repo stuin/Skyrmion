@@ -11,12 +11,16 @@ private:
 	Vector2i tileSize;
 
 	std::string name;
+	std::string saveFile;
+	std::string loadFile;
 	GridMaker *grid;
 	std::map<int, std::string> tiles;
 
 public:
-	GridEditor(std::string _name, GridMaker *_grid, std::map<int, std::string> _tiles, Vector2i size, Layer layer) : Node(layer, size),
-	name(_name), grid(_grid), tiles(_tiles) {
+	GridEditor(std::string _name, std::string _saveFile, std::string _loadFile, GridMaker *_grid,
+		std::map<int, std::string> _tiles, Vector2i size, Layer layer) :
+		Node(layer, size), name(_name), saveFile(_saveFile), loadFile(_loadFile), grid(_grid), tiles(_tiles) {
+
 		UpdateList::addNode(this);
 		UpdateList::addListener(this, EVENT_IMGUI);
 		UpdateList::addListener(this, EVENT_MOUSE);
@@ -30,10 +34,23 @@ public:
 		ImGui::SetNextWindowSize(ImVec2(300, 500), ImGuiCond_FirstUseEver);
     	ImGui::Begin(name.c_str(), &open);
 
+    	if(saveFile == loadFile)
+    		ImGui::Text("Grid file = %s", loadFile.c_str());
+    	else {
+    		ImGui::Text("Save file = %s", saveFile.c_str());
+    		ImGui::Text("Load file = %s", loadFile.c_str());
+    	}
+
     	ImGui::Text("Tile Size = (%d,%d)", tileSize.x, tileSize.y);
     	ImGui::Text("Grid Size = (%d,%d)", getSize().x/tileSize.x, getSize().y/tileSize.y);
     	ImGui::Text("%lu Tile Types", tiles.size());
     	ImGui::Text("Selected = %c", (char)current);
+
+    	if(ImGui::Button("Save"))
+    		grid->save(saveFile);
+    	ImGui::SameLine();
+    	if(ImGui::Button("Load"))
+    		grid->reload(loadFile);
 
     	ImGui::SeparatorText("Tiles");
     	if(ImGui::BeginListBox("##")) {
@@ -73,8 +90,8 @@ public:
 	}
 };
 
-void addGridEditor(std::string name, GridMaker *grid, FloatRect bounds, std::map<int, std::string> tiles, sint texture, Layer layer) {
-	GridEditor *editor = new GridEditor(name, grid, tiles, bounds.getSize(), layer);
+void addGridEditor(std::string name, std::string saveFile, std::string loadFile, GridMaker *grid, FloatRect bounds, std::map<int, std::string> tiles, sint texture, Layer layer) {
+	GridEditor *editor = new GridEditor(name, saveFile, loadFile, grid, tiles, bounds.getSize(), layer);
 	editor->setPosition(bounds.getPosition());
 	editor->setOrigin(0,0);
 	//editor->setTexture(texture);

@@ -62,6 +62,7 @@ public:
 	GridMaker(int width, int height, int fallback=' ');
 	~GridMaker();
 	void reload(std::string file, int offset=0, Rect<int> border=Rect<int>());
+	void save(std::string file);
 
 	//Set or get tiles
 	int getTileI(int x, int y) override;

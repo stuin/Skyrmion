@@ -182,6 +182,24 @@ void GridMaker::reload(std::string file, int offset, Rect<int> border) {
 	updates++;
 }
 
+void GridMaker::save(std::string file) {
+	const int width = getSize().x+1;
+	const int height = getSize().y;
+
+	char text[height*width+height];
+
+	//Loop through tiles
+	for(int y = 0; y < height; y++) {
+		for(int x = 0; x < width; x++) {
+			text[y*width+x] = tiles[y][x];
+		}
+		text[y*width+width-1] = '\n';
+	}
+	text[(height-1)*width+width-1] = '\0';
+
+	UpdateList::writeFile(file, text);
+}
+
 //Get tile value
 int GridMaker::getTileI(int x, int y) {
 	if(inBounds(x, y))

@@ -94,7 +94,7 @@ static void HandleClientDisconnection() {
 			Event *msg = Event_Create();
 			msg->type = EVENT_NETWORK_CONNECT_CLIENT;
 			msg->down = true;
-			msg->code = i;
+			msg->code = i+1;
 			NBN_GameServer_SendReliableMessageTo(clients[j]->client_handle, MESSAGE_EVENT, msg);
 		}
 	}
@@ -120,14 +120,14 @@ static void HandleReceivedMessage(void) {
 	switch(msg_info.type) {
 		case MESSAGE_EVENT:
 			sender->events[sender->recievedEvents] = *(Event*)msg_info.data;
+			std::cout << "Recieved event " << sender->recievedEvents << " from client " << sender->client_handle << ": " << *(Event*)msg_info.data << "\n";
 			sender->recievedEvents = (sender->recievedEvents + 1) % EVENTS_PER_CLIENT;
-			std::cout << "From client " << sender->client_handle << ": Recieved event " << *(Event*)msg_info.data << "\n";
 			Event_Destroy((Event*)msg_info.data);
 			break;
 		case MESSAGE_STRING:
 			sender->strings[sender->recievedStrings] = *(NetworkString*)msg_info.data;
+			std::cout << "Recieved string "<< sender->recievedStrings << " from client " << sender->client_handle << ": " << *(NetworkString*)msg_info.data << "\n";
 			sender->recievedStrings = (sender->recievedStrings + 1) % STRINGS_PER_CLIENT;
-			std::cout << "From client " << sender->client_handle << ": Recieved string " << *(NetworkString*)msg_info.data << "\n";
 			NetworkString_Destroy((NetworkString*)msg_info.data);
 			break;
 	}
@@ -169,6 +169,7 @@ static int BroadcastGameState(void) {
 						NBN_GameServer_SendReliableMessageTo(clients[j]->client_handle, MESSAGE_EVENT, msg);
 					else
 						NBN_GameServer_SendUnreliableMessageTo(clients[j]->client_handle, MESSAGE_EVENT, msg);
+					//std::cout << "Sent event " << sender->sentEvents << " from " << i+1 << " to " << j+1 << ": " << sender->events[sender->sentEvents] << "\n";
 				}
 			}
 			sender->sentEvents = (sender->sentEvents + 1) % EVENTS_PER_CLIENT;
@@ -176,6 +177,7 @@ static int BroadcastGameState(void) {
 
 		//Sending Strings
 		while(sender->sentStrings != sender->recievedStrings) {
+			sender->sentStrings = (sender->sentStrings + 1) % EVENTS_PER_CLIENT;
 			for(int j = 0; j < MAX_CLIENTS; j++) {
 				if(clients[j] != NULL && i != j) {
 					NetworkString *msg = NetworkString_Create();
@@ -184,7 +186,6 @@ static int BroadcastGameState(void) {
 					NBN_GameServer_SendReliableMessageTo(clients[j]->client_handle, MESSAGE_STRING, msg);
 				}
 			}
-			sender->sentStrings = (sender->sentStrings + 1) % EVENTS_PER_CLIENT;
 		}
 	}
 	return 0;
