@@ -46,9 +46,8 @@ std::vector<bool> watchedKeycodesPrevious;
 //Textures stored in this file
 std::vector<TextureData> textureData;
 std::vector<Texture2D> textureSet;
+std::vector<BufferData> bufferData;
 std::vector<RenderTexture2D> bufferSet;
-std::vector<Node *> reloadBuffer;
-sint requestedBuffers = 0;
 
 std::thread updates;
 
@@ -218,7 +217,8 @@ int UpdateList::loadTexture(std::string filename) {
 }
 
 //Replace blank texture with render buffer
-int UpdateList::createBuffer(sint texture, Vector2i size) {
+int UpdateList::createBuffer(BufferData data) {
+	sint texture = data.texture;
 	if(texture >= textureData.size())
 		throw new std::invalid_argument(TEXTUREERROR);
 	if(texture < textureData.size() && textureData[texture].valid && textureData[texture].buffer != 0)
@@ -227,14 +227,19 @@ int UpdateList::createBuffer(sint texture, Vector2i size) {
 		throw new std::invalid_argument(BUFFERERROR);
 
 	//Create and add buffer
-	textureData[texture].size = size;
-	textureData[texture].buffer = requestedBuffers;
-	return requestedBuffers++;
+	textureData[texture].size = data.size;
+	textureData[texture].buffer = bufferData.size();
+	bufferData.push_back(data);
+	return textureData[texture].buffer;
+}
+
+int UpdateList::createBuffer(sint _texture, Vector2i _size, Layer _layer, skColor _color) {
+	return createBuffer(BufferData(_texture, _size, _layer, _color));
 }
 
 //Schedule reload call before next draw
-void UpdateList::scheduleReload(Node *source) {
-	reloadBuffer.push_back(source);
+void UpdateList::scheduleReload(sint buffer) {
+	bufferData[buffer].redraw = true;
 }
 
 //Get size of texture
@@ -393,12 +398,28 @@ void UpdateList::draw(FloatRect cameraRect) {
 	EndMode2D();
 }
 
-void UpdateList::drawBuffer(Node *source) {
-	BeginTextureMode(bufferSet[textureData[source->getBuffer()].buffer]);
-	if(source->getColor() != COLOR_NONE)
-		ClearBackground(Color{source->getColor().r(), source->getColor().g(),
-			source->getColor().b(), source->getColor().a()});
-	drawNode(source);
+void UpdateList::drawBuffer(BufferData data) {
+	BeginTextureMode(bufferSet[textureData[data.texture].buffer]);
+
+	//Clear buffer
+	if(data.color != COLOR_NONE)
+		ClearBackground(Color{data.color.r(), data.color.g(),
+			data.color.b(), data.color.a()});
+
+	//Render nodes in included layers
+    for(Layer layer = 0; layer <= maxLayer; layer++) {
+		Node *source = layers[layer].root;
+
+		if(data.layers[layer]) {
+			while(source != NULL) {
+				if(!source->isHidden()) {
+					drawNode(source);
+				}
+				source = source->getNext();
+			}
+		}
+	}
+
 	EndTextureMode();
 }
 
@@ -577,9 +598,12 @@ void UpdateList::frame(void) {
     rlImGuiBegin();
 
     //Reload buffer textures
-	for(Node *node : reloadBuffer)
-		drawBuffer(node);
-	reloadBuffer.clear();
+	for(BufferData data : bufferData) {
+		if(data.redraw) {
+			drawBuffer(data);
+			data.redraw = false;
+		}
+	}
 
     //Find camera position
 	screenRect = FloatRect(0,0,width,height);
@@ -642,6 +666,7 @@ void UpdateList::init() {
 
     //Load textures
     bufferSet.emplace_back();
+    bufferData.emplace_back();
 	for(std::string file : textureFiles())
 		UpdateList::loadTexture(file);
 

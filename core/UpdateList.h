@@ -20,6 +20,34 @@ struct LayerData {
 	int count = 0;
 };
 
+//Buffer draw data
+struct BufferData {
+	sint texture;
+	Vector2i size;
+	std::bitset<MAXLAYER> layers;
+	skColor color;
+	bool redraw = true;
+
+	BufferData() {
+		texture = 0;
+		redraw = false;
+	}
+
+	BufferData(sint _texture, Vector2i _size, std::bitset<MAXLAYER> _layers, skColor _color = COLOR_WHITE) {
+		texture = _texture;
+		size = _size;
+		layers = _layers;
+		color = _color;
+	}
+
+	BufferData(sint _texture, Vector2i _size, Layer _layer, skColor _color = COLOR_WHITE) {
+		texture = _texture;
+		size = _size;
+		layers[_layer] = true;
+		color = _color;
+	}
+};
+
 //Metadata surrounding each texture
 struct TextureData {
 	std::string filename = "";
@@ -99,8 +127,9 @@ public:
 
 	//Texture Handling
 	static int loadTexture(std::string filename);
-	static int createBuffer(sint texture, Vector2i size);
-	static void scheduleReload(Node *source);
+	static int createBuffer(BufferData data);
+	static int createBuffer(sint _texture, Vector2i _size, Layer _layer, skColor _color = COLOR_WHITE);
+	static void scheduleReload(sint buffer);
 	static Vector2i getTextureSize(sint index);
 	static TextureData &getTextureData(sint index);
 	static void drawImGuiTexture(sint texture, Vector2i size);
@@ -117,7 +146,7 @@ public:
 	static void update(double time);
 	static void drawNode(Node *source);
 	static void draw(FloatRect cameraRect);
-	static void drawBuffer(Node *source);
+	static void drawBuffer(BufferData data);
 	static void frame(void);
 	static void init(void);
 	static void cleanup(void);

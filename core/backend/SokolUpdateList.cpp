@@ -63,8 +63,8 @@ std::vector<int> watchedKeycodes;
 //Textures stored in this file
 std::vector<TextureData> textureData;
 std::vector<sg_image> textureSet;
+std::vector<BufferData> bufferData;
 std::vector<sg_attachments> bufferSet;
-std::vector<Node *> reloadBuffer;
 
 std::thread updates;
 sgimgui_t sgimgui;
@@ -96,6 +96,10 @@ char *UpdateList::openFile(std::string filename) {
 }
 void UpdateList::closeFile(char *file) {
 	free(file);
+}
+
+void UpdateList::writeFile(std::string filename, char *text) {
+	
 }
 
 //Add node to update cycle
@@ -272,7 +276,8 @@ int UpdateList::loadTexture(std::string filename) {
 }
 
 //Replace blank texture with render buffer
-int UpdateList::createBuffer(sint texture, Vector2i size) {
+int UpdateList::createBuffer(BufferData data) {
+	sint texture = data.texture;
 	if(texture >= textureData.size())
 		throw new std::invalid_argument(TEXTUREERROR);
 	if(texture < textureData.size() && textureData[texture].valid && textureData[texture].buffer != 0)
@@ -281,15 +286,19 @@ int UpdateList::createBuffer(sint texture, Vector2i size) {
 		throw new std::invalid_argument(BUFFERERROR);
 
 	//Create and add buffer
-	sint i = bufferSet.size();
-	textureData[texture].size = size;
-	textureData[texture].buffer = i;
-	return i;
+	textureData[texture].size = data.size;
+	textureData[texture].buffer = bufferData.size();
+	bufferData.push_back(data);
+	return textureData[texture].buffer;
+}
+
+int UpdateList::createBuffer(sint _texture, Vector2i _size, Layer _layer, skColor _color) {
+	return createBuffer(BufferData(_texture, _size, _layer, _color));
 }
 
 //Schedule reload call before next draw
-void UpdateList::scheduleReload(Node *source) {
-	reloadBuffer.push_back(source);
+void UpdateList::scheduleReload(sint buffer) {
+	bufferData[buffer].redraw = true;
 }
 
 //Get size of texture
@@ -322,6 +331,8 @@ skColor UpdateList::pickColor(sint texture, Vector2i position) {
 	sint index = (position.x+position.y*data.size.x)*4;
 	int width, height, channels;
 	uint8_t* image = stbi_load(data.filename.c_str(), &width, &height, &channels, 4);
+	if(image == NULL)
+		return skColor(0,0,0,0);
 	skColor color(image + index);
 	stbi_image_free(image);
 	return color;
@@ -457,17 +468,33 @@ void UpdateList::draw(FloatRect cameraRect) {
 	}
 }
 
-void UpdateList::drawBuffer(Node *source) {
+void UpdateList::drawBuffer(BufferData data) {
 	// Begin recording draw commands for a frame buffer of size (width, height).
-	TextureData buffer = textureData[source->getBuffer()];
+	TextureData buffer = textureData[data.texture];
     sgp_begin(buffer.size.x, buffer.size.y);
-    sgp_viewport(0,0, buffer.size.x, buffer.size.y);
+    //sgp_viewport(0,0, buffer.size.x, buffer.size.y);
+    sgp_project(0, buffer.size.x, 0, buffer.size.y);
 
-    if(source->getColor() != COLOR_NONE) {
-    	sgp_set_color(source->getColor().red, source->getColor().green, source->getColor().blue, source->getColor().alpha);
+    //Clear buffer
+    if(data.color != COLOR_NONE) {
+    	skColor color = data.color;
+    	sgp_set_color(color.red, color.green, color.blue, color.alpha);
     	sgp_clear();
     }
-    drawNode(source);
+
+    //Render nodes in included layers
+    for(Layer layer = 0; layer <= maxLayer; layer++) {
+		Node *source = layers[layer].root;
+
+		if(data.layers[layer]) {
+			while(source != NULL) {
+				if(!source->isHidden()) {
+					drawNode(source);
+				}
+				source = source->getNext();
+			}
+		}
+	}
 
     sg_pass pass = {0};
     pass.attachments = bufferSet[buffer.buffer];
@@ -480,10 +507,6 @@ void UpdateList::drawBuffer(Node *source) {
 
 void UpdateList::startEngine() {
 	std::cout << "SKYRMION: Update thread starting\n";
-
-    #ifdef _DEBUG
-		setupDebugTools();
-	#endif
 
 	//Initial node update
 	for(Layer layer = 0; layer <= maxLayer; layer++) {
@@ -644,9 +667,12 @@ void UpdateList::frame(void) {
     uint64_t lastTime = stm_now();
 
     //Reload buffer textures
-	for(Node *node : reloadBuffer)
-		drawBuffer(node);
-	reloadBuffer.clear();
+	for(sint i = 1; i < bufferData.size(); i++) {
+		if(bufferData[i].redraw) {
+			drawBuffer(bufferData[i]);
+			bufferData[i].redraw = false;
+		}
+	}
 
 	// Get current window size.
     int width = sapp_width(), height = sapp_height();
@@ -693,11 +719,8 @@ void UpdateList::frame(void) {
         }
         //Render menu bar
         if(listeners[EVENT_IMGUI].size() > 0) {
-        	if(ImGui::BeginMenu("Game")) {
-	        	for(Node *node : listeners[EVENT_IMGUI])
-					node->recieveEvent(Event(EVENT_IMGUI, true, 0));
-				ImGui::EndMenu();
-			}
+        	for(Node *node : listeners[EVENT_IMGUI])
+				node->recieveEvent(Event(EVENT_IMGUI, true, 0));
         }
         ImGui::EndMainMenuBar();
     }
@@ -766,11 +789,12 @@ void UpdateList::init(void) {
     	layers[layer].name = layerNames()[layer];
 
     #ifdef _DEBUG
-    addDebugTextures();
+    	addDebugTextures();
     #endif
 
     //Load textures
     bufferSet.emplace_back();
+    bufferData.emplace_back();
 	for(std::string file : textureFiles())
 		UpdateList::loadTexture(file);
 
@@ -784,17 +808,22 @@ void UpdateList::init(void) {
 	for(sint texture = 0; texture < textureData.size(); texture++) {
 		TextureData &data = textureData[texture];
 		if(data.buffer != 0) {
+			std::string *colorLabel = new std::string("color-buffer-");
+			*colorLabel += std::to_string(texture);
+			std::string *depthLabel = new std::string("depth-buffer-");
+			*depthLabel += std::to_string(texture);
+
 			sg_image_desc color_img_desc = {0};
 		    color_img_desc.render_target = true;
 		    color_img_desc.width = data.size.x;
 		    color_img_desc.height = data.size.y;
-		    color_img_desc.pixel_format = SG_PIXELFORMAT_RGBA8;
-		    color_img_desc.label = "color-image";
+		    color_img_desc.pixel_format = (sg_pixel_format)sapp_color_format();
+		    color_img_desc.label = colorLabel->c_str();
 		    sg_image color_img = sg_make_image(&color_img_desc);
 
 		    sg_image_desc depth_img_desc = color_img_desc;
-		    depth_img_desc.pixel_format = SG_PIXELFORMAT_DEPTH;
-		    depth_img_desc.label = "depth-image";
+		    depth_img_desc.pixel_format = (sg_pixel_format)sapp_depth_format();
+		    depth_img_desc.label = depthLabel->c_str();
 		    sg_image depth_img = sg_make_image(&depth_img_desc);
 
 			sg_attachments_desc a_desc = {0};

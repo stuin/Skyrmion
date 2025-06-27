@@ -1,4 +1,5 @@
-#include "UpdateList.h"
+#include "Vector.h"
+#include "Color.h"
 
 Vector2f operator*(const Vector2f &first, const Vector2i &second) {
 	return Vector2f(first.x * second.x, first.y * second.y);
@@ -51,18 +52,6 @@ float distance(Vector2f start, Vector2f end) {
 
 Vector2i round(Vector2f pos) {
 	return Vector2i(round(pos.x), round(pos.y));
-}
-
-//Convert screen space coordinates to global
-Vector2f screenToGlobal(float x, float y) {
-	Vector2f pos = Vector2f(x,y);
-	if(pos.x < 0)
-		pos.x += UpdateList::getScreenRect().getSize().x;
-	if(pos.y < 0)
-		pos.y += UpdateList::getScreenRect().getSize().y;
-	pos *= UpdateList::getScaleFactor();
-	pos += UpdateList::getCameraRect().getPosition();
-	return pos;
 }
 
 //skColor operators

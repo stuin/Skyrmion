@@ -35,7 +35,7 @@ Node *Node::getParent() {
 
 //Check if node is hidden
 bool Node::isHidden() {
-	return hidden || deleted || (parent != NULL && parent->isHidden()) || UpdateList::isLayerHidden(layer);
+	return hidden || deleted || (parent != NULL && parent->isHidden());
 }
 
 //Get scaled size of node
@@ -112,11 +112,6 @@ int Node::getBlendMode() {
 //Get texture number
 sint Node::getTexture() {
 	return texture;
-}
-
-//Get buffer number
-sint Node::getBuffer() {
-	return targetBuffer;
 }
 
 skColor Node::getColor() {
@@ -196,11 +191,6 @@ void Node::setTexture(sint texture) {
 	this->texture = texture;
 }
 
-//Set target buffer channel
-void Node::setBuffer(sint texture) {
-	this->targetBuffer = texture;
-}
-
 void Node::setColor(skColor color) {
 	this->color = color;
 }
@@ -271,4 +261,16 @@ void Node::addNode(Node *node) {
 void Node::deleteNext() {
 	if(next != NULL && next->isDeleted())
 		next = next->getNext();
+}
+
+//Convert screen space coordinates to global
+Vector2f screenToGlobal(float x, float y) {
+	Vector2f pos = Vector2f(x,y);
+	if(pos.x < 0)
+		pos.x += UpdateList::getScreenRect().getSize().x;
+	if(pos.y < 0)
+		pos.y += UpdateList::getScreenRect().getSize().y;
+	pos *= UpdateList::getScaleFactor();
+	pos += UpdateList::getCameraRect().getPosition();
+	return pos;
 }

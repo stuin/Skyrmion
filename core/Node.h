@@ -36,7 +36,6 @@ private:
 	//Rendering
 	int blendMode = 1;
 	sint texture = 0;
-	sint targetBuffer = 0;
 	skColor color = COLOR_WHITE;
 	std::vector<TextureRect> textureRects;
 
@@ -73,7 +72,6 @@ public:
 	FloatRect getDrawRect();
 	int getBlendMode();
 	sint getTexture();
-	sint getBuffer();
 	skColor getColor();
 	virtual std::vector<TextureRect> *getTextureRects();
 
@@ -97,7 +95,6 @@ public:
 	//Rendering
 	void setBlendMode(int blendMode);
 	void setTexture(sint textureChannel);
-	void setBuffer(sint textureChannel);
 	void setColor(skColor color);
 	void setTextureRect(TextureRect rectangle, sint i=0);
 	void setTextureIntRect(IntRect rect, sint i=0);

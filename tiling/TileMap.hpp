@@ -20,6 +20,8 @@ private:
     int offset = 0;
     uint gridUpdates = 0;
 
+    uint buffer = 0;
+
     uint fullWidth = 0;
     uint fullHeight = 0;
     uint width = 0;
@@ -51,12 +53,7 @@ public:
         setOrigin(0, 0);
         setPosition(startX * tileX, startY * tileY);
         setTexture(_tileset);
-        setBuffer(_buffer);
-
-        if(_buffer != 0) {
-            UpdateList::createBuffer(_buffer, getSize());
-            setHidden();
-        }
+        buffer = _buffer;
 
         //std::cout << " " << startX << "," << startY << ", " << width << "," << height << "\n";
         //std::cout << toString(getGPosition()) << ":" << toString(getGScale()) <<  "\n";
@@ -81,7 +78,7 @@ public:
     void reload() {
         int numTextures = countTextures();
         int usedRects = 0;
-        bool hasBuffer = getBuffer() != 0;
+        bool hasBuffer = buffer != 0;
 
         // populate the vertex array, with one quad per tile
         for(unsigned int i = 0; i < width; ++i) {
@@ -122,7 +119,7 @@ public:
         getTextureRects()->resize(usedRects);
 
         if(hasBuffer)
-            UpdateList::scheduleReload(this);
+            UpdateList::scheduleReload(buffer);
     }
 
     void setIndexer(Indexer *indexes) {
