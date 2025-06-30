@@ -210,6 +210,7 @@ public:
 
     void addFrame(TileMap *map) {
         map->setOffset(tilemaps.size() * numTiles);
+        setTexture(map->getTexture());
         tilemaps.push_back(map);
         maxFrames++;
     }

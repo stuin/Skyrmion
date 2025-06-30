@@ -345,9 +345,9 @@ void UpdateList::drawNode(Node *source) {
 	if(textureRects->size() == 0) {
 		//Default square texture
 		if(texture < textureData.size() && textureData[texture].valid) {
-			Rectangle src = {0, 0, (float)rect.width, (float)rect.height};
+			//Rectangle src = {0, 0, (float)rect.width/scale.x, (float)rect.height/scale.y};
 			Vector2 position = {rect.left, rect.top};
-			DrawTextureRec(textureSet[source->getTexture()], src, position, color);
+			DrawTextureEx(textureSet[source->getTexture()], position, 0, scale.x, color);
 		} else {
 			Rectangle dst = {rect.left, rect.top, (float)rect.width, (float)rect.height};
 			DrawRectangleRec(dst, color);

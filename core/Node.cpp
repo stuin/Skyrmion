@@ -150,11 +150,21 @@ void Node::setPosition(float x, float y) {
 //Set position in global coordinates
 void Node::setGPosition(Vector2f pos) {
 	if(parent != NULL)
-		pos -= parent->getGPosition();
+		pos = (pos - parent->getGPosition()) / parent->getScale();
 	setPosition(pos);
 }
 void Node::setGPosition(float x, float y) {
 	setGPosition(Vector2f(x, y));
+}
+
+//Set position in unscaled coordinates
+void Node::setUPosition(Vector2f pos) {
+	if(parent != NULL)
+		pos /= parent->getScale();
+	setPosition(pos);
+}
+void Node::setUPosition(float x, float y) {
+	setUPosition(Vector2f(x, y));
 }
 
 //Set position in screen coordinates

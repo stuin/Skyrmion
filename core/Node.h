@@ -85,6 +85,8 @@ public:
 	void setPosition(float x, float y);
 	void setGPosition(Vector2f pos);
 	void setGPosition(float x, float y);
+	void setUPosition(Vector2f pos);
+	void setUPosition(float x, float y);
 	void setSPosition(Vector2f pos);
 	void setSPosition(float x, float y);
 	void setScale(Vector2f scale);

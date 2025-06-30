@@ -4,7 +4,7 @@
 Vector2f operator*(const Vector2f &first, const Vector2i &second) {
 	return Vector2f(first.x * second.x, first.y * second.y);
 }
-Vector2f operator*(const Vector2f &first, const float second) {
+Vector2f operator*(const Vector2i &first, const float second) {
 	return Vector2f(first.x * second, first.y * second);
 }
 
