@@ -62,26 +62,12 @@ bool operator==(const Event &first, const Event &second);
 bool operator!=(const Event &first, const Event &second);
 std::ostream& operator<<(std::ostream& os, const Event &event);
 
-struct FrameTimer {
-	int maxFrames = 0;
-    int frame = 0;
-    double maxTime = 0;
-    double time = 0;
+class IO {
+public:
+	//Engine compatible file read/write
+	static char *openFile(std::string filename);
+	static void closeFile(char *file);
+	static void writeFile(std::string filename, char *text);
 
-    FrameTimer(int _maxFrames, double _maxTime) {
-    	maxFrames = _maxFrames;
-    	maxTime = _maxTime;
-    }
-
-    int next(double delta) {
-        if((time -= delta) <= 0) {
-            time = maxTime;
-            frame++;
-
-            //Reset to start frame
-            if(frame == maxFrames)
-                frame = 0;
-        }
-        return frame;
-    }
+	static Vector2i getTextureSize(sint index);
 };

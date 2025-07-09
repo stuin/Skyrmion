@@ -93,7 +93,7 @@ public:
 		bool window = nodeWindows[id];
 
 		ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowPos(ImVec2(ImGui::GetCursorScreenPos().x+510, ImGui::GetCursorScreenPos().y+id*50), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(ImGui::GetCursorScreenPos().x+510, ImGui::GetCursorScreenPos().y), ImGuiCond_FirstUseEver);
 		ImGui::Begin(nodeName.c_str(), &window);
 		nodeWindows[id] = window;
 
@@ -112,7 +112,7 @@ public:
 		Text("Position", source->getPosition());
 		Text("Origin", source->getOrigin());
 		Text("Size", source->getSize());
-		Text("Scale", source->getScale());
+		Text("Scale", source->getGScale());
 
 		ImGui::Text("BlendMode = %d", source->getBlendMode());
 
@@ -145,7 +145,7 @@ public:
 						rect.px, rect.py, rect.tx, rect.ty, rect.tx+rect.twidth, rect.ty+rect.theight, rect.rotation);
 
 					if(rectBorderBox && focused) {
-						debugCursor->createPixelRect(FloatRect(rect.px,rect.py, rect.pwidth,rect.pheight), Vector2i(18,13), 5);
+						debugCursor->createPixelRect(FloatRect(rect.p().pos()*source->getGScale().abs(), rect.p().size()*source->getGScale().abs()), Vector2i(18,13), 5);
 						currentRect = rectId;
 						currentRectNode = source;
 					} else if(rectBorderBox) {
@@ -169,10 +169,10 @@ public:
 		//Display node borders
 		if(focused) {
 			debugCursor->setSize((Vector2f)source->getSize());
-			debugCursor->setOrigin(source->getOrigin().x, source->getOrigin().y);
-			debugCursor->setTextureRect({source->getOrigin().x,source->getOrigin().y,1,1, 22,8,1,1,0}, 4);
+			debugCursor->setOrigin(source->getSOrigin());
+			debugCursor->setTextureRect({source->getSOrigin().x,source->getSOrigin().y,1,1, 22,8,1,1,0}, 4);
 			debugCursor->createPixelRect(FloatRect(0,0, source->getSize().x,source->getSize().y), Vector2i(18,8), 0);
-			debugCursor->setPosition(source->getPosition());
+			debugCursor->setPosition(source->getGPosition());
 		}
 		debugCursor->setHidden(false);
 

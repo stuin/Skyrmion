@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "../core/UpdateList.h"
+#include "../core/Event.h"
 
 #include "../include/json.hpp"
 
@@ -17,15 +17,16 @@ private:
 	static nlohmann::json data;
 	static std::vector<std::pair<std::string, std::string>> edits;
 	static std::map<std::string, int> EVENT_KEYMAP;
+	static std::map<int, int> FONT_SPRITEMAP;
 
 public:
 	//Load settings from file
 	static void loadSettings(std::string filename) {
-		char *text = UpdateList::openFile(filename);
+		char *text = IO::openFile(filename);
 		nlohmann::json input = nlohmann::json::parse(text);
 		for(auto& el : input.items())
 			data[el.key()] = el.value();
-		UpdateList::closeFile(text);
+		IO::closeFile(text);
 	}
 
 	//Get value functions
@@ -33,8 +34,8 @@ public:
 		return data.value(json_pointer(field), false);
 	}
 
-	static int getInt(const std::string &field) {
-		return data.value(json_pointer(field), 0);
+	static int getInt(const std::string &field, int def=0) {
+		return data.value(json_pointer(field), def);
 	}
 
 	static std::string getString(const std::string &field) {

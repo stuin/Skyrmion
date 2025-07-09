@@ -3,7 +3,7 @@
 #include <thread>
 
 #include "../UpdateList.h"
-#include "../../debug/TimingStats.hpp"
+#include "../../util/TimingStats.hpp"
 
 #include "../../include/imgui/imgui.h"//
 #include "../../include/rlImGui/rlImGui.h"//
@@ -43,6 +43,12 @@ std::vector<int> watchedKeycodes;
 std::array<Event, EVENT_MAX> event_previous;
 std::vector<bool> watchedKeycodesPrevious;
 
+//System timers
+TimingStats DebugTimers::frameTimes;
+TimingStats DebugTimers::frameLiteralTimes;
+TimingStats DebugTimers::updateTimes;
+TimingStats DebugTimers::updateLiteralTimes;
+
 //Textures stored in this file
 std::vector<TextureData> textureData;
 std::vector<Texture2D> textureSet;
@@ -52,13 +58,13 @@ std::vector<RenderTexture2D> bufferSet;
 std::thread updates;
 
 //Engine compatible file read/write
-char *UpdateList::openFile(std::string filename) {
+char *IO::openFile(std::string filename) {
 	return LoadFileText(filename.c_str());
 }
-void UpdateList::closeFile(char *file) {
+void IO::closeFile(char *file) {
 	UnloadFileText(file);
 }
-void UpdateList::writeFile(std::string filename, char *text) {
+void IO::writeFile(std::string filename, char *text) {
 	SaveFileText(filename.c_str(), text);
 }
 
@@ -136,11 +142,11 @@ void UpdateList::sendSignal(int id, Node *sender) {
 //Set camera to follow node
 Node *UpdateList::setCamera(Node *follow, Vector2f size, Vector2f position) {
 	if(camera != NULL) {
-		camera->setSize(Vector2i(size.x,size.y));
+		camera->setSize(size);
 		camera->setParent(follow);
 	} else
-		camera = new Node(0, Vector2i(size.x,size.y), true, follow);
-	cameraRect = FloatRect(position.x, position.y, size.x, size.y);
+		camera = new Node(0, size, true, follow);
+	cameraRect = FloatRect(position, size);
 	camera->setPosition(position);
 	return camera;
 }
@@ -153,7 +159,7 @@ FloatRect UpdateList::getScreenRect() {
 	return screenRect;
 }
 Vector2f UpdateList::getScaleFactor() {
-	return cameraRect.getSize() / screenRect.getSize();
+	return cameraRect.size() / screenRect.size();
 }
 
 //Do not update nodes
@@ -248,6 +254,9 @@ Vector2i UpdateList::getTextureSize(sint texture) {
 		throw new std::invalid_argument(TEXTUREERROR);
 	return textureData[texture].size;
 }
+Vector2i IO::getTextureSize(sint texture) {
+	return UpdateList::getTextureSize(texture);
+}
 
 //Get all texture data
 TextureData &UpdateList::getTextureData(sint texture) {
@@ -272,58 +281,9 @@ skColor UpdateList::pickColor(sint texture, Vector2i position) {
 	return skColor(color.r, color.g, color.b, color.a);
 }
 
-//Update all nodes in list
-void UpdateList::update(double time) {
-	UpdateList::processEvents();
-	deleted2.insert(deleted2.end(), deleted1.begin(), deleted1.end());
-	deleted1.clear();
-
-	//Check collisions and updates
-	for(Layer layer = 0; layer <= maxLayer; layer++) {
-		Node *source = layers[layer].root;
-
-		if(!layers[layer].paused) {
-			//Check first node for deletion
-			if(source != NULL && source->isDeleted()) {
-				deleted1.push_back(source);
-				source = source->getNext();
-				layers[layer].root = source;
-			}
-
-			//For each node in layer order
-			while(source != NULL) {
-				if(layers[layer].global || camera == NULL || source->getRect().intersects(camera->getRect())) {
-					//Check each selected collision layer
-					int collisionLayer = 0;
-					for(int i = 0; i < (int)source->getCollisionLayers().count(); i++) {
-						while(!source->getCollisionLayer(collisionLayer))
-							collisionLayer++;
-
-						//Check collision box of each node
-						Node *other = layers[collisionLayer].root;
-						while(other != NULL && !other->isDeleted()) {
-							if(other != source && source->getRect().intersects(other->getRect()))
-								source->collide(other, time);
-							other = other->getNext();
-						}
-						collisionLayer++;
-					}
-
-					//Update each object
-					source->update(time);
-				}
-
-				//Check next node for removing from list
-				while(source->getNext() != NULL && source->getNext()->isDeleted()) {
-					deleted1.push_back(source->getNext());
-					source->deleteNext();
-					layers[source->getLayer()].count--;
-				}
-
-				source = source->getNext();
-			}
-		}
-	}
+Font font = GetFontDefault();
+void UpdateList::setFont(std::string filename) {
+	font = LoadFont(filename.c_str());
 }
 
 static const std::map<int, int> blendModeMap = {
@@ -348,7 +308,7 @@ void UpdateList::drawNode(Node *source) {
 			//Rectangle src = {0, 0, (float)rect.width/scale.x, (float)rect.height/scale.y};
 			Vector2 position = {rect.left, rect.top};
 			DrawTextureEx(textureSet[source->getTexture()], position, 0, scale.x, color);
-		} else {
+		} else if(texture != 0) {
 			Rectangle dst = {rect.left, rect.top, (float)rect.width, (float)rect.height};
 			DrawRectangleRec(dst, color);
 		}
@@ -356,16 +316,23 @@ void UpdateList::drawNode(Node *source) {
 		//Tilemapped or partial texture
 		for(sint i = 0; i < textureRects->size(); i++) {
 			TextureRect tex = (*textureRects)[i];
-			if(tex.pwidth != 0 && tex.pheight != 0) {
-				Vector2 origin = Vector2{tex.pwidth*std::abs(scale.x/2), tex.pheight*std::abs(scale.y/2)};
-				Rectangle dst = {tex.px*scale.x + rect.left+origin.x, tex.py*scale.y + rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
-				Rectangle src = {(float)tex.tx, (float)tex.ty, (float)tex.twidth, (float)tex.theight};
+			if(tex.pwidth != 0 && tex.pheight != 0 && texture != 0) {
+				Vector2f flip1 = Vector2f(scale.x < 0 ? tex.twidth : 0, scale.y < 0 ? tex.theight : 0);
+				Vector2f flip2 = Vector2f(scale.x < 0 ? -1 : 1, scale.y < 0 ? -1 : 1) * tex.t().size();
+				Vector2 origin = Vector2{tex.pwidth*scale.abs().x/2, tex.pheight*scale.abs().y/2};
+				Rectangle dst = {(tex.px+flip1.x)*scale.x + rect.left+origin.x, (tex.py+flip1.y)*scale.y + rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
+				Rectangle src = {(float)tex.tx+flip1.x, (float)tex.ty+flip1.y, flip2.x, flip2.y};
 				if(textureData[texture].valid)
 					DrawTexturePro(textureSet[source->getTexture()], src, dst, origin, (float)tex.rotation, WHITE);
 				else
 					DrawRectanglePro(dst, origin, (float)tex.rotation, PURPLE);
 			}
 		}
+	}
+
+	if(source->getString() != NULL) {
+		//std::cout << rect.pos() << "\n";
+		DrawTextEx(font, source->getString(), Vector2{rect.left, rect.top}, source->getSize().y, 1, color);
 	}
 	EndBlendMode();
 }
@@ -376,7 +343,7 @@ void UpdateList::draw(FloatRect cameraRect) {
 	ClearBackground(Color{color.r(), color.g(), color.b()});
 
 	raycamera.target = Vector2{cameraRect.left, cameraRect.top};
-	raycamera.zoom = screenRect.getSize().x / cameraRect.getSize().x;
+	raycamera.zoom = screenRect.width / cameraRect.width;
 
     BeginMode2D(raycamera);
 
@@ -423,53 +390,23 @@ void UpdateList::drawBuffer(BufferData data) {
 	EndTextureMode();
 }
 
-void UpdateList::startEngine() {
-	std::cout << "SKYRMION: Update thread starting\n";
+//Audio systems
+void UpdateList::setVolume(int volume) {
+	if(!IsAudioDeviceReady())
+		InitAudioDevice();
 
-	#ifdef PLATFORM_WEB
-		//Prepare buffer textures
-		for(sint texture = 0; texture < textureData.size(); texture++) {
-			TextureData &data = textureData[texture];
-			if(data.buffer != 0) {
-				bufferSet.push_back(LoadRenderTexture(data.size.x, data.size.y));
-				textureSet[texture] = bufferSet[data.buffer].texture;
-				data.valid = true;
-			}
-		}
-	#endif
+	SetMasterVolume(volume/100.0);
+}
 
-	//Initial node update
-	for(Layer layer = 0; layer <= maxLayer; layer++) {
-		Node *source = layers[layer].root;
+//Background music
+Music backgroundMusic;
+void UpdateList::musicStream(std::string filename, int volume) {
+	if(!IsAudioDeviceReady())
+		InitAudioDevice();
 
-		while(source != NULL) {
-			source->update(-1);
-			source = source->getNext();
-		}
-	}
-	UpdateList::running = true;
-
-	#ifdef PLATFORM_WEB
-	    emscripten_set_main_loop(UpdateList::frame, 0, 1);
-	#else
-		double lastTime = GetTime();
-		while(UpdateList::running) {
-
-			//Calculate delta times
-			double delta = GetTime()-lastTime;
-			DebugTimers::updateTimes.addDelta(delta);
-			lastTime = GetTime();
-
-			//Update nodes
-			UpdateList::update(delta);
-			DebugTimers::updateLiteralTimes.addDelta(GetTime()-lastTime);
-
-			std::this_thread::sleep_for(
-				std::chrono::milliseconds(10-(int)((GetTime()-lastTime)/1000)));
-		}
-	#endif
-
-	std::cout << "SKYRMION: Update thread ending\n";
+	backgroundMusic = LoadMusicStream(filename.c_str());
+	SetMusicVolume(backgroundMusic, volume/100.0);
+	PlayMusicStream(backgroundMusic);
 }
 
 //Process window events on update thread
@@ -576,6 +513,60 @@ void UpdateList::queueEvents() {
 	event_queue.emplace_back(EVENT_SUSPEND, IsWindowHidden() || IsWindowMinimized(), 0);
 }
 
+//Update all nodes in list
+void UpdateList::update(double time) {
+	UpdateList::processEvents();
+	deleted2.insert(deleted2.end(), deleted1.begin(), deleted1.end());
+	deleted1.clear();
+
+	//Check collisions and updates
+	for(Layer layer = 0; layer <= maxLayer; layer++) {
+		Node *source = layers[layer].root;
+
+		if(!layers[layer].paused) {
+			//Check first node for deletion
+			if(source != NULL && source->isDeleted()) {
+				deleted1.push_back(source);
+				source = source->getNext();
+				layers[layer].root = source;
+			}
+
+			//For each node in layer order
+			while(source != NULL) {
+				if(layers[layer].global || camera == NULL || source->getRect().intersects(camera->getRect())) {
+					//Check each selected collision layer
+					int collisionLayer = 0;
+					for(int i = 0; i < (int)source->getCollisionLayers().count(); i++) {
+						while(!source->getCollisionLayer(collisionLayer))
+							collisionLayer++;
+
+						//Check collision box of each node
+						Node *other = layers[collisionLayer].root;
+						while(other != NULL && !other->isDeleted()) {
+							if(other != source && source->getRect().intersects(other->getRect()))
+								source->collide(other, time);
+							other = other->getNext();
+						}
+						collisionLayer++;
+					}
+
+					//Update each object
+					source->update(time);
+				}
+
+				//Check next node for removing from list
+				while(source->getNext() != NULL && source->getNext()->isDeleted()) {
+					deleted1.push_back(source->getNext());
+					source->deleteNext();
+					layers[source->getLayer()].count--;
+				}
+
+				source = source->getNext();
+			}
+		}
+	}
+}
+
 void UpdateList::frame(void) {
 	double delta = GetFrameTime();
     DebugTimers::frameTimes.addDelta(delta);
@@ -593,6 +584,10 @@ void UpdateList::frame(void) {
 
     UpdateList::queueEvents();
     UpdateList::processNetworking();
+
+    //Play audio
+    if(IsAudioDeviceReady() && IsMusicStreamPlaying(backgroundMusic))
+    	UpdateMusicStream(backgroundMusic);
 
     //Start imgui frame
     rlImGuiBegin();
@@ -652,6 +647,7 @@ void testThread() {
 void UpdateList::init() {
 	SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
 	InitWindow(1920, 1080, windowTitle()->c_str());
+	SetExitKey(0);
 
     //initialize imgui
     rlImGuiSetup(true);
@@ -675,6 +671,10 @@ void UpdateList::init() {
     skColor color = backgroundColor();
     ClearBackground(Color{color.r(), color.g(), color.b()});
     EndDrawing();
+
+    #ifdef _DEBUG
+	    setupDebugTools();
+	#endif
 
 	//std::thread testing = std::thread(testThread);
 	//testing.join();
@@ -709,6 +709,55 @@ void UpdateList::init() {
 	#endif
 
 	cleanup();
+}
+
+void UpdateList::startEngine() {
+	std::cout << "SKYRMION: Update thread starting\n";
+
+	#ifdef PLATFORM_WEB
+		//Prepare buffer textures
+		for(sint texture = 0; texture < textureData.size(); texture++) {
+			TextureData &data = textureData[texture];
+			if(data.buffer != 0) {
+				bufferSet.push_back(LoadRenderTexture(data.size.x, data.size.y));
+				textureSet[texture] = bufferSet[data.buffer].texture;
+				data.valid = true;
+			}
+		}
+	#endif
+
+	//Initial node update
+	for(Layer layer = 0; layer <= maxLayer; layer++) {
+		Node *source = layers[layer].root;
+
+		while(source != NULL) {
+			source->update(-1);
+			source = source->getNext();
+		}
+	}
+	UpdateList::running = true;
+
+	#ifdef PLATFORM_WEB
+	    emscripten_set_main_loop(UpdateList::frame, 0, 1);
+	#else
+		double lastTime = GetTime();
+		while(UpdateList::running) {
+
+			//Calculate delta times
+			double delta = GetTime()-lastTime;
+			DebugTimers::updateTimes.addDelta(delta);
+			lastTime = GetTime();
+
+			//Update nodes
+			UpdateList::update(delta);
+			DebugTimers::updateLiteralTimes.addDelta(GetTime()-lastTime);
+
+			std::this_thread::sleep_for(
+				std::chrono::milliseconds(10-(int)((GetTime()-lastTime)/1000)));
+		}
+	#endif
+
+	std::cout << "SKYRMION: Update thread ending\n";
 }
 
 void UpdateList::cleanup() {

@@ -30,8 +30,6 @@ private:
     uint startY = 0;
 
 public:
-    static std::map<int, int> FONT_SPRITEMAP;
-
     TileMap(sint _tileset, sint _buffer, int _tileX, int _tileY, Indexer *_indexes, Layer layer=0, int _offset=0, Rect<uint> border=Rect<uint>())
      : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes), offset(_offset) {
 
@@ -72,7 +70,7 @@ public:
     }
 
     int countTextures() {
-        return (UpdateList::getTextureSize(getTexture()).x / tileX) * (UpdateList::getTextureSize(getTexture()).y / tileY);
+        return (IO::getTextureSize(getTexture()).x / tileX) * (IO::getTextureSize(getTexture()).y / tileY);
     }
 
     void reload() {
@@ -81,8 +79,8 @@ public:
         bool hasBuffer = buffer != 0;
 
         // populate the vertex array, with one quad per tile
-        for(unsigned int i = 0; i < width; ++i) {
-            for(unsigned int j = 0; j < height; ++j) {
+        for(unsigned int j = 0; j < height; ++j) {
+            for(unsigned int i = 0; i < width; ++i) {
                 // get the current tile number
                 int tileValue = indexes->getTile(Vector2f(i + startX, hasBuffer ? fullHeight - (j + startY + 1) : j + startY));
                 int tileNumber = (tileValue % numTextures) + offset;
@@ -94,8 +92,8 @@ public:
                     flipv = (flipv == 0) ? 1 : 0;
 
                 // find its position in the tileset texture
-                int tu = tileNumber % (UpdateList::getTextureSize(getTexture()).x / tileX);
-                int tv = tileNumber / (UpdateList::getTextureSize(getTexture()).x / tileX);
+                int tu = tileNumber % (IO::getTextureSize(getTexture()).x / tileX);
+                int tv = tileNumber / (IO::getTextureSize(getTexture()).x / tileX);
 
                 // get a pointer to the current tile's quad
                 TextureRect quad = (*getTextureRects())[usedRects];
@@ -243,6 +241,7 @@ public:
 
     std::vector<Node *> getNodes() {
         std::vector<Node *> nodes;
+        nodes.push_back(this);
         for(TileMap *map : tilemaps)
             nodes.push_back(map);
         return nodes;
@@ -267,8 +266,6 @@ public:
         fullHeight = indexes->getSize().y;
         setSize(Vector2i(tileX * fullWidth, tileY * fullHeight));
         setOrigin(0, 0);
-        setHidden(true);
-        setTexture(tileset);
 
         countX = std::ceil(fullWidth / (16000.0 / tileX));
         countY = std::ceil(fullHeight / (16000.0 / tileY));
@@ -298,6 +295,7 @@ public:
 
     std::vector<Node *> getNodes() {
         std::vector<Node *> nodes;
+        //nodes.push_back(this);
         for(TileMap *map : tilemaps)
             nodes.push_back(map);
         return nodes;

@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 #include "../UpdateList.h"
-#include "../../debug/TimingStats.hpp"
+#include "../../core/TimingStats.hpp"
 
 #define SOKOL_IMPL
 #define SOKOL_GLCORE
@@ -60,6 +60,12 @@ std::deque<Event> event_queue;
 std::array<std::vector<Node *>, EVENT_MAX> listeners;
 std::vector<int> watchedKeycodes;
 
+//System timers
+TimingStats DebugTimers::frameTimes;
+TimingStats DebugTimers::frameLiteralTimes;
+TimingStats DebugTimers::updateTimes;
+TimingStats DebugTimers::updateLiteralTimes;
+
 //Textures stored in this file
 std::vector<TextureData> textureData;
 std::vector<sg_image> textureSet;
@@ -70,7 +76,7 @@ std::thread updates;
 sgimgui_t sgimgui;
 
 //Engine compatible file read/write
-char *UpdateList::openFile(std::string filename) {
+char *IO::openFile(std::string filename) {
 	char *source = NULL;
 	FILE *fp = fopen(filename.c_str(), "r");
 	if(fp != NULL) {
@@ -94,11 +100,11 @@ char *UpdateList::openFile(std::string filename) {
 	}
 	return source;
 }
-void UpdateList::closeFile(char *file) {
+void IO::closeFile(char *file) {
 	free(file);
 }
 
-void UpdateList::writeFile(std::string filename, char *text) {
+void IO::writeFile(std::string filename, char *text) {
 	
 }
 
@@ -306,6 +312,9 @@ Vector2i UpdateList::getTextureSize(sint texture) {
 	if(texture >= textureData.size())
 		throw new std::invalid_argument(TEXTUREERROR);
 	return textureData[texture].size;
+}
+Vector2i IO::getTextureSize(sint texture) {
+	return UpdateList::getTextureSize(texture);
 }
 
 //Get all texture data
@@ -797,6 +806,10 @@ void UpdateList::init(void) {
     bufferData.emplace_back();
 	for(std::string file : textureFiles())
 		UpdateList::loadTexture(file);
+
+	#ifdef _DEBUG
+	    setupDebugTools();
+	#endif
 
     //Start update thread and initialize
 	updates = std::thread(initialize);

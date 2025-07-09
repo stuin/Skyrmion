@@ -1,12 +1,7 @@
 #include "../core/UpdateList.h"
-#include "TimingStats.hpp"
+#include "../util/TimingStats.hpp"
 
 #include "../include/imgui/imgui.h"//
-
-TimingStats DebugTimers::frameTimes;
-TimingStats DebugTimers::frameLiteralTimes;
-TimingStats DebugTimers::updateTimes;
-TimingStats DebugTimers::updateLiteralTimes;
 
 class ImguiFPS : public Node {
 private:

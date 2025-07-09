@@ -21,7 +21,7 @@ void addDebugTextures() {
 void setupDebugTools() {
 	Settings::loadSettings("res/debug/debug_settings.json");
 
-	int debugLayer = UpdateList::getLayerCount();
+	int debugLayer = layerNames().size();
 	LayerData &data = UpdateList::getLayerData(debugLayer);
 	data.name = "DEBUG";
 	data.global = true;

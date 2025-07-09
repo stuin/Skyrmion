@@ -1,5 +1,4 @@
 #include "Settings.h"
-#include "../tiling/TileMap.hpp"
 
 std::map<std::string, int> Settings::EVENT_KEYMAP = {
 	{"COMBO", 		-3},
@@ -212,7 +211,7 @@ std::map<std::string, int> Settings::EVENT_KEYMAP = {
 	{"JOYSTICK4DOWN",		JOYSTICK_OFFSET+48},
 };
 
-std::map<int, int> TileMap::FONT_SPRITEMAP = {
+std::map<int, int> Settings::FONT_SPRITEMAP = {
 	{' ', -1},
 	{'A', 0},
 	{'B', 1},

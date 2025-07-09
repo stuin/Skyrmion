@@ -141,7 +141,7 @@ void InputHandler::updateKey(int code, bool press) {
 	}
 
 	//Check for combo key
-	if(controls[i].combo == -3) {
+	if(i < controls.size() && controls[i].combo == -3) {
 		sint j = 0;
 		while(j < controls.size() && (long int)i/2 != controls[j].combo/2)
 			j++;

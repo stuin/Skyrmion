@@ -22,6 +22,7 @@ private:
 	sint id;
 	Layer layer;
 	Node *parent = NULL;
+	bool relativeScale = true;
 	bool hidden = false;
 
 	//Collision
@@ -38,6 +39,7 @@ private:
 	sint texture = 0;
 	skColor color = COLOR_WHITE;
 	std::vector<TextureRect> textureRects;
+	const char *text = NULL;
 
 	//Background system variables
 	bool deleted = false;
@@ -58,6 +60,7 @@ public:
 	bool isHidden();
 	Vector2i getSize();
 	FloatRect getRect();
+	const char *getString();
 
 	//Positioning
 	Vector2f getPosition();
@@ -67,6 +70,7 @@ public:
 	Vector2f getInverseScale();
 	Vector2f getInverseGScale();
 	Vector2f getOrigin();
+	Vector2f getSOrigin();
 
 	//Rendering
 	FloatRect getDrawRect();
@@ -89,8 +93,8 @@ public:
 	void setUPosition(float x, float y);
 	void setSPosition(Vector2f pos);
 	void setSPosition(float x, float y);
-	void setScale(Vector2f scale);
-	void setScale(float x, float y);
+	void setScale(Vector2f scale, bool relative=true);
+	void setScale(float x, float y, bool relative=true);
 	void setOrigin(Vector2f origin);
 	void setOrigin(float x, float y);
 
@@ -103,6 +107,7 @@ public:
 	void setTextureVecRect(Vector2i corner, sint i=0);
 	void setTextureVecRect(int x, int y, sint i=0);
 	void createPixelRect(FloatRect rect, Vector2i pixel, sint i=0);
+	void setString(const char *text);
 
 	//Collision system
 	std::bitset<MAXLAYER> getCollisionLayers();

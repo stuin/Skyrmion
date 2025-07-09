@@ -1,6 +1,6 @@
 #include "GridMaker.h"
 
-#include "../core/UpdateList.h"
+#include "../core/Event.h"
 
 /*
  * Generates and stores main tilemap
@@ -102,7 +102,7 @@ void Indexer::printGrid() {
 
 //Convert file to int[][]
 GridMaker::GridMaker(std::string file, int fallback) : Indexer(NULL, fallback, Vector2i(1, 1)) {
-	char *mapFile = UpdateList::openFile(file);
+	char *mapFile = IO::openFile(file);
 	char *line = mapFile;
 
 	//Get maximum file size
@@ -119,7 +119,7 @@ GridMaker::GridMaker(std::string file, int fallback) : Indexer(NULL, fallback, V
 		while(line[0] == '\n' || line[0] == '\r')
 			line++;
 	}
-	UpdateList::closeFile(mapFile);
+	IO::closeFile(mapFile);
 
 	//Build array
 	this->tiles = new int*[height];
@@ -159,26 +159,28 @@ void GridMaker::reload(std::string file, int offset, Rect<int> border) {
 
 	//Set reading variables
 	int i = border.top;
-	char *mapFile = UpdateList::openFile(file);
+	char *mapFile = IO::openFile(file);
 	char *line = mapFile;
 
 	//Read file by line
 	while(line[0] != '\0' && i < border.top + border.height) {
 		//Copy string
-		int j = border.left;
-		while(line[j-border.left] != '\0' && line[j-border.left] != '\n' &&
-			line[j-border.left] != '\r' && j < border.left + border.width) {
+		int j = 0;
+		while(line[j] != '\0' && line[j] != '\n' &&
+			line[j] != '\r' && j < border.width) {
 
-			tiles[i][j] = line[j-border.left] + offset;
+			tiles[i][j+border.left] = line[j] + offset;
 			++j;
 		}
 		i++;
 
+		if(line[j] != '\0') {
+			while(line[j] == '\n' || line[j] == '\r')
+				j++;
+		}
 		line += j;
-		while(line[0] == '\n' || line[0] == '\r')
-			line++;
 	}
-	UpdateList::closeFile(mapFile);
+	IO::closeFile(mapFile);
 	updates++;
 }
 
@@ -197,7 +199,7 @@ void GridMaker::save(std::string file) {
 	}
 	text[(height-1)*width+width-1] = '\0';
 
-	UpdateList::writeFile(file, text);
+	IO::writeFile(file, text);
 }
 
 //Get tile value

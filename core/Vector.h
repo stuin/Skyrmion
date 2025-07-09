@@ -9,14 +9,6 @@
 using uint = unsigned int;
 using sint = long unsigned int;
 
-struct TextureRect {
-	float px, py;
-	float pwidth, pheight;
-	int tx, ty;
-	int twidth, theight;
-	int rotation;
-};
-
 template <typename T>
 class skVector2 {
 public:
@@ -34,6 +26,10 @@ public:
 	skVector2(skVector2<T2> _v) {
 		x = (T)_v.x;
 		y = (T)_v.y;
+	}
+
+	skVector2 abs() {
+		return skVector2<T>(std::abs(x), std::abs(y));
 	}
 };
 typedef skVector2<int> Vector2i;
@@ -56,11 +52,18 @@ public:
 		height = _height;
 	}
 
-	skVector2<T> getPosition() {
+	Rect(skVector2<T> pos, skVector2<T> size) {
+		left = pos.x;
+		top = pos.y;
+		width = size.x;
+		height = size.y;
+	}
+
+	skVector2<T> pos() {
 		return skVector2<T>(left, top);
 	}
 
-	skVector2<T> getSize() {
+	skVector2<T> size() {
 		return skVector2<T>(width, height);
 	}
 
@@ -76,6 +79,22 @@ public:
 };
 typedef Rect<int> IntRect;
 typedef Rect<float> FloatRect;
+
+struct TextureRect {
+	float px, py;
+	float pwidth, pheight;
+	int tx, ty;
+	int twidth, theight;
+	int rotation;
+
+	FloatRect p() {
+		return FloatRect(px, py, pwidth, pheight);
+	}
+
+	IntRect t() {
+		return IntRect(tx, ty, twidth, theight);
+	}
+};
 
 //Vector with Vector operators
 template <typename T>

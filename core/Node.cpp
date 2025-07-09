@@ -41,18 +41,23 @@ bool Node::isHidden() {
 //Get scaled size of node
 Vector2i Node::getSize() {
 	Vector2f scale = getGScale();
-	return Vector2i(size.x * std::abs(scale.x), size.y * std::abs(scale.y));
+	return (size * scale).abs();
 }
 
 //Create full collision box
 FloatRect Node::getRect() {
-	Vector2f pos = this->getGPosition();
+	Vector2f start = this->getGPosition() - origin * getGScale().abs();
+	Vector2f end = this->getSize();
 	FloatRect rec;
-	rec.left = pos.x - (origin.x * getGScale().x);
-	rec.top = pos.y - (origin.y * getGScale().y);
-	rec.width = this->getSize().x;
-	rec.height = this->getSize().y;
+	rec.left = start.x;
+	rec.top = start.y;
+	rec.width = end.x;
+	rec.height = end.y;
 	return rec;
+}
+
+const char *Node::getString() {
+	return text;
 }
 
 //Get local position
@@ -62,8 +67,10 @@ Vector2f Node::getPosition() {
 
 //Get global position
 Vector2f Node::getGPosition() {
-	if(parent != NULL)
+	if(relativeScale && parent != NULL)
 		return position * parent->getScale() + parent->getGPosition();
+	if(parent != NULL)
+		return position + parent->getGPosition();
 	return position;
 }
 
@@ -74,7 +81,7 @@ Vector2f Node::getScale() {
 
 //Get global scale
 Vector2f Node::getGScale() {
-	if(parent != NULL)
+	if(relativeScale && parent != NULL)
 		return parent->getGScale() * getScale();
 	return getScale();
 }
@@ -92,15 +99,19 @@ Vector2f Node::getInverseGScale() {
 Vector2f Node::getOrigin() {
 	return origin;
 }
+Vector2f Node::getSOrigin() {
+	return origin*getGScale().abs();
+}
 
 //Scaled draw rectangle
 FloatRect Node::getDrawRect() {
-	Vector2f pos = this->getGPosition();
+	Vector2f start = this->getGPosition() - origin * getGScale();
+	Vector2f end = this->getSize();
 	FloatRect rec;
-	rec.left = pos.x - (origin.x * getGScale().x);
-	rec.top = pos.y - (origin.y * getGScale().y);
-	rec.width = size.x * getGScale().x;
-	rec.height = size.y * getGScale().y;
+	rec.left = start.x;
+	rec.top = start.y;
+	rec.width = end.x;
+	rec.height = end.y;
 	return rec;
 }
 
@@ -176,11 +187,13 @@ void Node::setSPosition(float x, float y) {
 }
 
 //Set scale
-void Node::setScale(Vector2f scale) {
+void Node::setScale(Vector2f scale, bool relative) {
 	this->scale = scale;
+	this->relativeScale = relative;
 }
-void Node::setScale(float x, float y) {
+void Node::setScale(float x, float y, bool relative) {
 	this->scale = Vector2f(x, y);
+	this->relativeScale = relative;
 }
 
 //Set origin
@@ -235,6 +248,10 @@ void Node::createPixelRect(FloatRect rect, Vector2i pixel, sint i) {
 	setTextureRect({rect.left+rect.width,rect.top, 	1,rect.height, pixel.x,pixel.y, 1,1,0}, i+3);
 }
 
+void Node::setString(const char *text) {
+	this->text = text;
+}
+
 //Get list of layers node collides with
 std::bitset<MAXLAYER> Node::getCollisionLayers() {
 	return collisionLayers;
@@ -277,10 +294,10 @@ void Node::deleteNext() {
 Vector2f screenToGlobal(float x, float y) {
 	Vector2f pos = Vector2f(x,y);
 	if(pos.x < 0)
-		pos.x += UpdateList::getScreenRect().getSize().x;
+		pos.x += UpdateList::getScreenRect().left;
 	if(pos.y < 0)
-		pos.y += UpdateList::getScreenRect().getSize().y;
+		pos.y += UpdateList::getScreenRect().top;
 	pos *= UpdateList::getScaleFactor();
-	pos += UpdateList::getCameraRect().getPosition();
+	pos += UpdateList::getCameraRect().pos();
 	return pos;
 }

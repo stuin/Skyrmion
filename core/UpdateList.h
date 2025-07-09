@@ -103,11 +103,6 @@ public:
 	static void sendSignal(Layer layer, int id, Node *sender);
 	static void sendSignal(int id, Node *sender);
 
-	//Engine compatible file read/write
-	static char *openFile(std::string filename);
-	static void closeFile(char *file);
-	static void writeFile(std::string filename, char *text);
-
 	//Screen view
 	static Node *setCamera(Node *follow, Vector2f size, Vector2f position=Vector2f(0,0));
 	static FloatRect getCameraRect();
@@ -134,6 +129,7 @@ public:
 	static TextureData &getTextureData(sint index);
 	static void drawImGuiTexture(sint texture, Vector2i size);
 	static skColor pickColor(sint texture, Vector2i position);
+	static void setFont(std::string filename);
 
 	//Start engine
 	static void startEngine();
@@ -150,6 +146,10 @@ public:
 	static void frame(void);
 	static void init(void);
 	static void cleanup(void);
+
+	//Audio controls
+	static void setVolume(int volume);
+	static void musicStream(std::string filename, int volume=100);
 
 	//Networking client functions
 	static void connectServer(std::string ip, int port);
