@@ -172,7 +172,7 @@ Vector2f platformGravityMovement(Vector2f start, Vector2f move, Vector2i size, d
 	physics->pushWeight = 0;
 	for(PersonalPhysicsStats *other : colliding) {
 		if(isAbove(start, size, other->nodePosition, other->nodeSize)) {
-			if(jumpInput && physics->jumpTime == time) {
+			if(jumpInput && physics->jumpTime <= time) {
 				physics->jumpTime = 0;
 				physics->previous.y = -globalPhysics->jumpPower;
 				velocity.y += physics->previous.y * time;

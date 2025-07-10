@@ -42,7 +42,7 @@ public:
 	    ImGui::Text("Total frames = %d", DebugTimers::frameTimes.totalCount);
 	    ImGui::Text("Total time = %f", DebugTimers::frameTimes.totalTime);
 
-	    ImGui::SeparatorText("Literal Draw Time");
+	    ImGui::SeparatorText("Draw Only Nodes");
 	    ImGui::Text("Theoretical Per Second = %d", DebugTimers::frameLiteralTimes.getFPS());
 	    ImGui::Text("Last delta = %f", DebugTimers::frameLiteralTimes.last());
 	    ImGui::Text("Average delta = %f", DebugTimers::frameLiteralTimes.totalTime/DebugTimers::frameLiteralTimes.totalCount);

@@ -84,7 +84,7 @@ public:
                 // get the current tile number
                 int tileValue = indexes->getTile(Vector2f(i + startX, hasBuffer ? fullHeight - (j + startY + 1) : j + startY));
                 int tileNumber = (tileValue % numTextures) + offset;
-                int rotations = (tileValue / numTextures) % 4;
+                int rotations = (tileValue / numTextures);
                 int fliph = rotations / 4 % 2;
                 int flipv = rotations / 8;
 
@@ -102,13 +102,13 @@ public:
                 if(tileNumber - offset != -1) {
                     quad.px = i * tileX;
                     quad.py = j * tileY;
-                    quad.pwidth = tileX;
-                    quad.pheight = tileY;
-                    quad.tx = (tu+fliph) * tileX;
-                    quad.ty = (tv+flipv) * tileY;
+                    quad.pwidth = fliph ? -tileX : tileX;
+                    quad.pheight = flipv ? -tileY : tileY;
+                    quad.tx = tu * tileX;
+                    quad.ty = tv * tileY;
                     quad.twidth = fliph ? -tileX : tileX;
                     quad.theight = flipv ? -tileY : tileY;
-                    quad.rotation = 90*rotations;
+                    quad.rotation = 90*(rotations % 4);
                     setTextureRect(quad, usedRects++);
                 }
             }

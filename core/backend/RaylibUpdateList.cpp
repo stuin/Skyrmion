@@ -9,7 +9,7 @@
 #include "../../include/rlImGui/rlImGui.h"//
 
 #ifdef PLATFORM_WEB
-    #include <emscripten/emscripten.h>
+	#include <emscripten/emscripten.h>
 #endif
 
 #define DTOR 0.0174532925199
@@ -66,6 +66,13 @@ void IO::closeFile(char *file) {
 }
 void IO::writeFile(std::string filename, char *text) {
 	SaveFileText(filename.c_str(), text);
+}
+void IO::writeFile(std::string filename, std::string text) {
+	char *out = (char*)malloc(text.length());
+	strcpy(out, text.c_str());
+
+	IO::writeFile(filename, out);
+	free(out);
 }
 
 //Add node to update cycle
@@ -297,31 +304,34 @@ void UpdateList::drawNode(Node *source) {
 	BeginBlendMode(blendModeMap.at(source->getBlendMode()));
 
 	sint texture = source->getTexture();
-	FloatRect rect = source->getDrawRect();
+	FloatRect rect = source->getRect();
 	Vector2f scale = source->getGScale();
 	Color color = Color{source->getColor().r(), source->getColor().g(), source->getColor().b(), source->getColor().a()};
 	std::vector<TextureRect> *textureRects = source->getTextureRects();
 
-	if(textureRects->size() == 0) {
+	if(source->getString() != NULL) {
+		//std::cout << rect.pos() << "\n";
+		DrawTextEx(font, source->getString(), Vector2{rect.left, rect.top}, source->getSize().y, 1, color);
+	} else if(textureRects->size() == 0) {
 		//Default square texture
 		if(texture < textureData.size() && textureData[texture].valid) {
 			//Rectangle src = {0, 0, (float)rect.width/scale.x, (float)rect.height/scale.y};
 			Vector2 position = {rect.left, rect.top};
 			DrawTextureEx(textureSet[source->getTexture()], position, 0, scale.x, color);
-		} else if(texture != 0) {
+		} else {
 			Rectangle dst = {rect.left, rect.top, (float)rect.width, (float)rect.height};
 			DrawRectangleRec(dst, color);
 		}
 	} else {
 		//Tilemapped or partial texture
+		Vector2f flip = Vector2f(scale.x < 0 ? -1 : 1, scale.y < 0 ? -1 : 1);
+		Vector2f scaleA = scale.abs();
 		for(sint i = 0; i < textureRects->size(); i++) {
 			TextureRect tex = (*textureRects)[i];
-			if(tex.pwidth != 0 && tex.pheight != 0 && texture != 0) {
-				Vector2f flip1 = Vector2f(scale.x < 0 ? tex.twidth : 0, scale.y < 0 ? tex.theight : 0);
-				Vector2f flip2 = Vector2f(scale.x < 0 ? -1 : 1, scale.y < 0 ? -1 : 1) * tex.t().size();
-				Vector2 origin = Vector2{tex.pwidth*scale.abs().x/2, tex.pheight*scale.abs().y/2};
-				Rectangle dst = {(tex.px+flip1.x)*scale.x + rect.left+origin.x, (tex.py+flip1.y)*scale.y + rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
-				Rectangle src = {(float)tex.tx+flip1.x, (float)tex.ty+flip1.y, flip2.x, flip2.y};
+			if(tex.pwidth != 0 && tex.pheight != 0) {
+				Vector2 origin = Vector2{tex.pwidth*scaleA.x/2, tex.pheight*scaleA.y/2};
+				Rectangle dst = {tex.px*scaleA.x+rect.left+origin.x, tex.py*scaleA.y+rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
+				Rectangle src = {(float)tex.tx, (float)tex.ty, flip.x*tex.twidth, flip.y*tex.theight};
 				if(textureData[texture].valid)
 					DrawTexturePro(textureSet[source->getTexture()], src, dst, origin, (float)tex.rotation, WHITE);
 				else
@@ -330,10 +340,6 @@ void UpdateList::drawNode(Node *source) {
 		}
 	}
 
-	if(source->getString() != NULL) {
-		//std::cout << rect.pos() << "\n";
-		DrawTextEx(font, source->getString(), Vector2{rect.left, rect.top}, source->getSize().y, 1, color);
-	}
 	EndBlendMode();
 }
 
@@ -345,7 +351,9 @@ void UpdateList::draw(FloatRect cameraRect) {
 	raycamera.target = Vector2{cameraRect.left, cameraRect.top};
 	raycamera.zoom = screenRect.width / cameraRect.width;
 
-    BeginMode2D(raycamera);
+	BeginMode2D(raycamera);
+
+	double lastTime = GetTime();
 
 	//Render each node in order
 	for(Layer layer = 0; layer <= maxLayer; layer++) {
@@ -362,6 +370,8 @@ void UpdateList::draw(FloatRect cameraRect) {
 			}
 		}
 	}
+
+	DebugTimers::frameLiteralTimes.addDelta(GetTime()-lastTime);
 	EndMode2D();
 }
 
@@ -374,7 +384,7 @@ void UpdateList::drawBuffer(BufferData data) {
 			data.color.b(), data.color.a()});
 
 	//Render nodes in included layers
-    for(Layer layer = 0; layer <= maxLayer; layer++) {
+	for(Layer layer = 0; layer <= maxLayer; layer++) {
 		Node *source = layers[layer].root;
 
 		if(data.layers[layer]) {
@@ -519,6 +529,10 @@ void UpdateList::update(double time) {
 	deleted2.insert(deleted2.end(), deleted1.begin(), deleted1.end());
 	deleted1.clear();
 
+	//Play audio
+	if(IsAudioDeviceReady() && IsMusicStreamPlaying(backgroundMusic))
+		UpdateMusicStream(backgroundMusic);
+
 	//Check collisions and updates
 	for(Layer layer = 0; layer <= maxLayer; layer++) {
 		Node *source = layers[layer].root;
@@ -569,30 +583,24 @@ void UpdateList::update(double time) {
 
 void UpdateList::frame(void) {
 	double delta = GetFrameTime();
-    DebugTimers::frameTimes.addDelta(delta);
+	DebugTimers::frameTimes.addDelta(delta);
 
-    #ifdef PLATFORM_WEB
-    	UpdateList::update(delta);
-    #endif
-
-    double lastTime = GetTime();
+	#ifdef PLATFORM_WEB
+		UpdateList::update(delta);
+	#endif
 
 	// Get current window size.
-    int width = GetRenderWidth();
-    int height = GetRenderHeight();
-    BeginDrawing();
+	int width = GetRenderWidth();
+	int height = GetRenderHeight();
+	BeginDrawing();
 
-    UpdateList::queueEvents();
-    UpdateList::processNetworking();
+	UpdateList::queueEvents();
+	UpdateList::processNetworking();
 
-    //Play audio
-    if(IsAudioDeviceReady() && IsMusicStreamPlaying(backgroundMusic))
-    	UpdateMusicStream(backgroundMusic);
+	//Start imgui frame
+	rlImGuiBegin();
 
-    //Start imgui frame
-    rlImGuiBegin();
-
-    //Reload buffer textures
+	//Reload buffer textures
 	for(BufferData data : bufferData) {
 		if(data.redraw) {
 			drawBuffer(data);
@@ -600,44 +608,43 @@ void UpdateList::frame(void) {
 		}
 	}
 
-    //Find camera position
+	//Find camera position
 	screenRect = FloatRect(0,0,width,height);
 	if(camera != NULL)
 		cameraRect = camera->getRect();
 	else
 		cameraRect = screenRect;
 
-    //Main draw function
-    draw(cameraRect);
+	//Main draw function
+	draw(cameraRect);
 
-    //Render imgui debug
-    #if _DEBUG
-    if(ImGui::BeginMainMenuBar()) {
-    	//Render menu bar
-        if(listeners[EVENT_IMGUI].size() > 0) {
-        	for(Node *node : listeners[EVENT_IMGUI])
+	//Render imgui debug
+	#if _DEBUG
+	if(ImGui::BeginMainMenuBar()) {
+		//Render menu bar
+		if(listeners[EVENT_IMGUI].size() > 0) {
+			for(Node *node : listeners[EVENT_IMGUI])
 				node->recieveEvent(Event(EVENT_IMGUI, true, 0));
-        }
-        ImGui::EndMainMenuBar();
-    }
-    //Render individual windows
-    for(Node *node : listeners[EVENT_IMGUI])
+		}
+		ImGui::EndMainMenuBar();
+	}
+	//Render individual windows
+	for(Node *node : listeners[EVENT_IMGUI])
 		node->recieveEvent(Event(EVENT_IMGUI, false, 0));
-    #endif
+	#endif
 
-    rlImGuiEnd();
+	rlImGuiEnd();
 
-    //Loop through list to delete nodes from memory
+	//Loop through list to delete nodes from memory
 	std::vector<Node *>::iterator dit = deleted2.begin();
 	while(dit != deleted2.end()) {
 		Node *node = *dit;
 		dit = deleted2.erase(dit);
 		delete node;
 	}
+	//DebugTimers::frameLiteralTimes.addDelta(GetTime()-lastTime);
 
-	DebugTimers::frameLiteralTimes.addDelta(GetTime()-lastTime);
-
-    EndDrawing();
+	EndDrawing();
 }
 
 void testThread() {
@@ -649,31 +656,31 @@ void UpdateList::init() {
 	InitWindow(1920, 1080, windowTitle()->c_str());
 	SetExitKey(0);
 
-    //initialize imgui
-    rlImGuiSetup(true);
+	//initialize imgui
+	rlImGuiSetup(true);
 
-    //Set layer names
-    for(Layer layer = 0; layer < layerNames().size(); layer++)
-    	layers[layer].name = layerNames()[layer];
+	//Set layer names
+	for(Layer layer = 0; layer < layerNames().size(); layer++)
+		layers[layer].name = layerNames()[layer];
 
-    #ifdef _DEBUG
-    	addDebugTextures();
-    #endif
+	#ifdef _DEBUG
+		addDebugTextures();
+	#endif
 
-    //Load textures
-    bufferSet.emplace_back();
-    bufferData.emplace_back();
+	//Load textures
+	bufferSet.emplace_back();
+	bufferData.emplace_back();
 	for(std::string file : textureFiles())
 		UpdateList::loadTexture(file);
 
 	//Show loading screen
-    BeginDrawing();
-    skColor color = backgroundColor();
-    ClearBackground(Color{color.r(), color.g(), color.b()});
-    EndDrawing();
+	BeginDrawing();
+	skColor color = backgroundColor();
+	ClearBackground(Color{color.r(), color.g(), color.b()});
+	EndDrawing();
 
-    #ifdef _DEBUG
-	    setupDebugTools();
+	#ifdef _DEBUG
+		setupDebugTools();
 	#endif
 
 	//std::thread testing = std::thread(testThread);
@@ -682,11 +689,11 @@ void UpdateList::init() {
 	#ifdef PLATFORM_WEB
 		std::cout << "SKYRMION: Initializing web\n";
 
-	    initialize();
+		initialize();
 	#else
-	    std::cout << "SKYRMION: Initializing desktop\n";
+		std::cout << "SKYRMION: Initializing desktop\n";
 
-	    //Start update thread and initialize
+		//Start update thread and initialize
 		updates = std::thread(initialize);
 
 		while(!UpdateList::running)
@@ -702,8 +709,8 @@ void UpdateList::init() {
 			}
 		}
 
-	    std::cout << "SKYRMION: Starting Rendering\n";
-	    while(!WindowShouldClose() && UpdateList::running) {
+		std::cout << "SKYRMION: Starting Rendering\n";
+		while(!WindowShouldClose() && UpdateList::running) {
 			frame();
 		}
 	#endif
@@ -738,7 +745,7 @@ void UpdateList::startEngine() {
 	UpdateList::running = true;
 
 	#ifdef PLATFORM_WEB
-	    emscripten_set_main_loop(UpdateList::frame, 0, 1);
+		emscripten_set_main_loop(UpdateList::frame, 0, 1);
 	#else
 		double lastTime = GetTime();
 		while(UpdateList::running) {

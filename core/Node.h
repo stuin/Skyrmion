@@ -73,7 +73,6 @@ public:
 	Vector2f getSOrigin();
 
 	//Rendering
-	FloatRect getDrawRect();
 	int getBlendMode();
 	sint getTexture();
 	skColor getColor();

@@ -84,32 +84,17 @@ public:
 
 	//Save edited values back to file
 	static void save(std::string filename) {
-		/*std::string tempname = filename + ".replace";
-		std::ifstream in(filename);
-		std::ofstream out(tempname);
-		std::string line;
+		char *inFile = IO::openFile(filename);
+		std::string outFile(inFile);
 		size_t i = 0;
 
-		while(std::getline(in, line)) {
-			for(std::pair<std::string, std::string> edit : edits) {
-				i = line.find(edit.first);
-			    if(i != std::string::npos)
-			    	line.replace(i, edit.first.length(), edit.second);
-			}
-
-			//Write edited line to output
-			for(char c : line)
-				out.put(c);
-			out.put('\n');
+		for(std::pair<std::string, std::string> edit : edits) {
+			i = outFile.find(edit.first);
+			if(i != std::string::npos)
+				outFile.replace(i, edit.first.length(), edit.second);
 		}
 
-		//Close files
-		in.close();
-		out.close();
-		edits.clear();
-
-		//Replace original file with new
-		std::remove(filename.c_str());
-		std::rename(tempname.c_str(), filename.c_str());*/
+		IO::closeFile(inFile);
+		IO::writeFile(filename, outFile);
 	}
 };

@@ -103,18 +103,6 @@ Vector2f Node::getSOrigin() {
 	return origin*getGScale().abs();
 }
 
-//Scaled draw rectangle
-FloatRect Node::getDrawRect() {
-	Vector2f start = this->getGPosition() - origin * getGScale();
-	Vector2f end = this->getSize();
-	FloatRect rec;
-	rec.left = start.x;
-	rec.top = start.y;
-	rec.width = end.x;
-	rec.height = end.y;
-	return rec;
-}
-
 //Get blend mode for rendering
 int Node::getBlendMode() {
 	return blendMode;
