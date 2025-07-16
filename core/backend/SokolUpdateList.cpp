@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 #include "../UpdateList.h"
-#include "../../core/TimingStats.hpp"
+#include "../../util/TimingStats.hpp"
 
 #define SOKOL_IMPL
 #define SOKOL_GLCORE
@@ -15,6 +15,7 @@
 #include "../../include/sokol/sokol_gfx.h"//
 #include "../../include/sokol_gp/sokol_gp.h"//
 #include "../../include/sokol/sokol_app.h"//
+#include "../../include/sokol/sokol_audio.h"//
 #include "../../include/sokol/sokol_glue.h"//
 #include "../../include/sokol/sokol_time.h"//
 #include "../../include/sokol/sokol_log.h"//
@@ -105,7 +106,14 @@ void IO::closeFile(char *file) {
 }
 
 void IO::writeFile(std::string filename, char *text) {
-	
+
+}
+void IO::writeFile(std::string filename, std::string text) {
+	char *out = (char*)malloc(text.length());
+	strcpy(out, text.c_str());
+
+	IO::writeFile(filename, out);
+	free(out);
 }
 
 //Add node to update cycle
@@ -198,7 +206,7 @@ FloatRect UpdateList::getScreenRect() {
 	return screenRect;
 }
 Vector2f UpdateList::getScaleFactor() {
-	return cameraRect.getSize() / screenRect.getSize();
+	return cameraRect.size() / screenRect.size();
 }
 
 //Do not update nodes
@@ -347,59 +355,8 @@ skColor UpdateList::pickColor(sint texture, Vector2i position) {
 	return color;
 }
 
-//Update all nodes in list
-void UpdateList::update(double time) {
-	UpdateList::processEvents();
-	UpdateList::processNetworking();
-	deleted2.insert(deleted2.end(), deleted1.begin(), deleted1.end());
-	deleted1.clear();
+void UpdateList::setFont(std::string filename) {
 
-	//Check collisions and updates
-	for(Layer layer = 0; layer <= maxLayer; layer++) {
-		Node *source = layers[layer].root;
-
-		if(!layers[layer].paused) {
-			//Check first node for deletion
-			if(source != NULL && source->isDeleted()) {
-				deleted1.push_back(source);
-				source = source->getNext();
-				layers[layer].root = source;
-			}
-
-			//For each node in layer order
-			while(source != NULL) {
-				if(layers[layer].global || camera == NULL || source->getRect().intersects(camera->getRect())) {
-					//Check each selected collision layer
-					int collisionLayer = 0;
-					for(int i = 0; i < (int)source->getCollisionLayers().count(); i++) {
-						while(!source->getCollisionLayer(collisionLayer))
-							collisionLayer++;
-
-						//Check collision box of each node
-						Node *other = layers[collisionLayer].root;
-						while(other != NULL && !other->isDeleted()) {
-							if(other != source && source->getRect().intersects(other->getRect()))
-								source->collide(other, time);
-							other = other->getNext();
-						}
-						collisionLayer++;
-					}
-
-					//Update each object
-					source->update(time);
-				}
-
-				//Check next node for removing from list
-				while(source->getNext() != NULL && source->getNext()->isDeleted()) {
-					deleted1.push_back(source->getNext());
-					source->deleteNext();
-					layers[source->getLayer()].count--;
-				}
-
-				source = source->getNext();
-			}
-		}
-	}
 }
 
 static const std::map<int, int> blendModeMap = {
@@ -410,11 +367,12 @@ static const std::map<int, int> blendModeMap = {
 };
 
 void UpdateList::drawNode(Node *source) {
-	sgp_set_color(source->getColor().red, source->getColor().green, source->getColor().blue, source->getColor().alpha);
 	sgp_set_blend_mode((sgp_blend_mode)blendModeMap.at(source->getBlendMode()));
+	sgp_set_color(source->getColor().red, source->getColor().green, source->getColor().blue, source->getColor().alpha);
 
 	sint texture = source->getTexture();
-	FloatRect rect = source->getDrawRect();
+	FloatRect rect = source->getRect();
+	Vector2f scale = source->getGScale();
 	std::vector<TextureRect> *textureRects = source->getTextureRects();
 
 	if(textureRects->size() == 0) {
@@ -428,14 +386,16 @@ void UpdateList::drawNode(Node *source) {
 		}
 	} else {
 		//Tilemapped or partial texture
+		Vector2f flip1 = Vector2f(scale.x < 0 ? -1 : 1, scale.y < 0 ? -1 : 1);
+		Vector2f scaleA = scale.abs();
 		if(texture < textureData.size() && textureData[texture].valid)
 			sgp_set_image(0, textureSet[texture]);
 		for(sint i = 0; i < textureRects->size(); i++) {
 			TextureRect tex = (*textureRects)[i];
-			Vector2f scale = source->getScale();
 			if(tex.pwidth != 0 && tex.pheight != 0) {
-				sgp_rect dst = {tex.px*scale.x + rect.left, tex.py*scale.y + rect.top, tex.pwidth*scale.x, tex.pheight*scale.y};
-				sgp_rect src = {(float)tex.tx, (float)tex.ty, (float)tex.twidth, (float)tex.theight};
+				Vector2f flip2 = Vector2f(tex.twidth < 0 ? -tex.twidth : 0, tex.theight < 0 ? -tex.theight : 0);
+				sgp_rect dst = {tex.px*scaleA.x+rect.left, tex.py*scaleA.y+rect.top, std::abs(tex.pwidth)*scaleA.x, std::abs(tex.pheight)*scaleA.y};
+				sgp_rect src = {(float)tex.tx+flip2.x, (float)tex.ty+flip2.y, flip1.x*tex.twidth, flip1.y*tex.theight};
 				if(tex.rotation != 0) {
 					sgp_push_transform();
 					sgp_rotate_at(DTOR*tex.rotation, dst.x + dst.w/2.0, dst.y + dst.h/2.0);
@@ -460,6 +420,8 @@ void UpdateList::draw(FloatRect cameraRect) {
 
     sgp_project(cameraRect.left, cameraRect.left+cameraRect.width, cameraRect.top, cameraRect.top+cameraRect.height);
 
+    uint64_t lastTime = stm_now();
+
 	//Render each node in order
 	for(Layer layer = 0; layer <= maxLayer; layer++) {
 		Node *source = layers[layer].root;
@@ -475,6 +437,8 @@ void UpdateList::draw(FloatRect cameraRect) {
 			}
 		}
 	}
+
+	DebugTimers::frameLiteralTimes.addDelta(stm_sec(stm_since(lastTime)));
 }
 
 void UpdateList::drawBuffer(BufferData data) {
@@ -512,62 +476,6 @@ void UpdateList::drawBuffer(BufferData data) {
     sgp_end();
     sg_end_pass();
     sg_commit();
-}
-
-void UpdateList::startEngine() {
-	std::cout << "SKYRMION: Update thread starting\n";
-
-	//Initial node update
-	for(Layer layer = 0; layer <= maxLayer; layer++) {
-		Node *source = layers[layer].root;
-
-		while(source != NULL) {
-			source->update(-1);
-			source = source->getNext();
-		}
-	}
-	UpdateList::running = true;
-
-	stm_setup();
-	uint64_t lastTime = stm_now();
-	while(UpdateList::running) {
-
-		//Calculate delta times
-		double delta = stm_sec(stm_laptime(&lastTime));
-		DebugTimers::updateTimes.addDelta(delta);
-
-		//Update nodes
-		UpdateList::update(delta);
-		DebugTimers::updateLiteralTimes.addDelta(stm_sec(stm_since(lastTime)));
-
-		std::this_thread::sleep_for(
-			std::chrono::milliseconds(10-(int)stm_ms(stm_since(lastTime))));
-	}
-
-	std::cout << "SKYRMION: Update thread ending\n";
-}
-
-//Process window events on update thread
-void UpdateList::processEvents() {
-	//Remove deleted nodes
-	for(int type = 0; type < EVENT_MAX; type++) {
-		for(auto it = listeners[type].begin(); it != listeners[type].end();) {
-			if((*it)->isDeleted())
-				it = listeners[type].erase(it);
-			else
-				++it;
-		}
-	}
-
-	//Send event to marked listeners
-	int count = event_queue.size();
-	for(int i = 0; i < count; i++) {
-		Event event = event_queue.front();
-		event_queue.pop_front();
-
-		for(Node *node : listeners[event.type % EVENT_MAX])
-			node->recieveEvent(event);
-	}
 }
 
 void event(const sapp_event* event) {
@@ -671,9 +579,86 @@ void UpdateList::queueEvents() {
 	}
 }
 
+//Process window events on update thread
+void UpdateList::processEvents() {
+	//Remove deleted nodes
+	for(int type = 0; type < EVENT_MAX; type++) {
+		for(auto it = listeners[type].begin(); it != listeners[type].end();) {
+			if((*it)->isDeleted())
+				it = listeners[type].erase(it);
+			else
+				++it;
+		}
+	}
+
+	//Send event to marked listeners
+	int count = event_queue.size();
+	for(int i = 0; i < count; i++) {
+		Event event = event_queue.front();
+		event_queue.pop_front();
+
+		for(Node *node : listeners[event.type % EVENT_MAX])
+			node->recieveEvent(event);
+	}
+}
+
+//Update all nodes in list
+void UpdateList::update(double time) {
+	UpdateList::processEvents();
+	UpdateList::processNetworking();
+	deleted2.insert(deleted2.end(), deleted1.begin(), deleted1.end());
+	deleted1.clear();
+
+	//Check collisions and updates
+	for(Layer layer = 0; layer <= maxLayer; layer++) {
+		Node *source = layers[layer].root;
+
+		if(!layers[layer].paused) {
+			//Check first node for deletion
+			if(source != NULL && source->isDeleted()) {
+				deleted1.push_back(source);
+				source = source->getNext();
+				layers[layer].root = source;
+			}
+
+			//For each node in layer order
+			while(source != NULL) {
+				if(layers[layer].global || camera == NULL || source->getRect().intersects(camera->getRect())) {
+					//Check each selected collision layer
+					int collisionLayer = 0;
+					for(int i = 0; i < (int)source->getCollisionLayers().count(); i++) {
+						while(!source->getCollisionLayer(collisionLayer))
+							collisionLayer++;
+
+						//Check collision box of each node
+						Node *other = layers[collisionLayer].root;
+						while(other != NULL && !other->isDeleted()) {
+							if(other != source && source->getRect().intersects(other->getRect()))
+								source->collide(other, time);
+							other = other->getNext();
+						}
+						collisionLayer++;
+					}
+
+					//Update each object
+					source->update(time);
+				}
+
+				//Check next node for removing from list
+				while(source->getNext() != NULL && source->getNext()->isDeleted()) {
+					deleted1.push_back(source->getNext());
+					source->deleteNext();
+					layers[source->getLayer()].count--;
+				}
+
+				source = source->getNext();
+			}
+		}
+	}
+}
+
 void UpdateList::frame(void) {
     DebugTimers::frameTimes.addDelta(sapp_frame_duration());
-    uint64_t lastTime = stm_now();
 
     //Reload buffer textures
 	for(sint i = 1; i < bufferData.size(); i++) {
@@ -760,8 +745,6 @@ void UpdateList::frame(void) {
 		dit = deleted2.erase(dit);
 		delete node;
 	}
-
-	DebugTimers::frameLiteralTimes.addDelta(stm_sec(stm_since(lastTime)));
 }
 
 void UpdateList::init(void) {
@@ -784,6 +767,13 @@ void UpdateList::init(void) {
     }
 
     glfwInit();
+
+    // init sokol-audio
+    saudio_desc saudiodesc = { };
+    saudiodesc.stream_cb = stream_cb;
+    saudiodesc.logger.func = slog_func;
+    saudiodesc.num_channels = 2;
+    saudio_setup(saudiodesc);
 
     //initialize imgui
     simgui_desc_t simguidesc = { };
@@ -861,12 +851,46 @@ void UpdateList::init(void) {
     }*/
 }
 
+void UpdateList::startEngine() {
+	std::cout << "SKYRMION: Update thread starting\n";
+
+	//Initial node update
+	for(Layer layer = 0; layer <= maxLayer; layer++) {
+		Node *source = layers[layer].root;
+
+		while(source != NULL) {
+			source->update(-1);
+			source = source->getNext();
+		}
+	}
+	UpdateList::running = true;
+
+	stm_setup();
+	uint64_t lastTime = stm_now();
+	while(UpdateList::running) {
+
+		//Calculate delta times
+		double delta = stm_sec(stm_laptime(&lastTime));
+		DebugTimers::updateTimes.addDelta(delta);
+
+		//Update nodes
+		UpdateList::update(delta);
+		DebugTimers::updateLiteralTimes.addDelta(stm_sec(stm_since(lastTime)));
+
+		std::this_thread::sleep_for(
+			std::chrono::milliseconds(10-(int)stm_ms(stm_since(lastTime))));
+	}
+
+	std::cout << "SKYRMION: Update thread ending\n";
+}
+
 void UpdateList::cleanup(void) {
 	std::cout << "Cleanup Rendering\n";
 	running = false;
 	updates.join();
 	sgimgui_discard(&sgimgui);
 	simgui_shutdown();
+	saudio_shutdown();
 	glfwTerminate();
     sgp_shutdown();
     sg_shutdown();
@@ -886,6 +910,8 @@ sapp_desc sokol_main(int argc, char* argv[]) {
     (void)argv;
 
    	sapp_desc desc = {0};
+   	desc.width = 1920;
+   	desc.height = 1080;
    	desc.init_cb = UpdateList::init;
    	desc.frame_cb = UpdateList::frame;
    	desc.event_cb = event;

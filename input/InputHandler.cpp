@@ -50,13 +50,13 @@ InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *paren
 	count = keys.size();
 
 	//Alternate keys
-	for(int i = 1; i < MAXALTS; i++) {
+	for(int i = 1; i <= MAXALTS; i++) {
 		for(sint j = 0; j < keys.size(); j++) {
 			std::string s = controls[j].configName + "&" + std::to_string(i);
 			if(j >= startSize)
 				controls.push_back(Keybind(0, s));
 			else
-				controls.push_back(Keybind(0, s));// Settings::getControl(s), s));
+				controls.push_back(Keybind(Settings::getControl(s), s));
 		}
 	}
 
@@ -260,8 +260,10 @@ void DirectionHandler::update(double time) {
 	}
 
 	//Read from joystick
-	if(direction == Vector2f(0,0) && joystickDirection != Vector2f(0,0))
-		direction = joystickDirection;
+	if(joystickDirection != Vector2f(0,0))
+		direction += joystickDirection;
+	if(distance(direction) > 1)
+		direction = vectorLength(direction, 1);
 
 	//Update moving placeholder key
 	bool moved = direction != Vector2f(0, 0);
@@ -278,7 +280,7 @@ void DirectionHandler::update(double time) {
 		}
 	}
 
-	clearPressed();
+	clearPressed(false);
 }
 
 //Get direct 2d direction based on inputs

@@ -16,10 +16,11 @@ class Settings {
 private:
 	static nlohmann::json data;
 	static std::vector<std::pair<std::string, std::string>> edits;
+
+public:
 	static std::map<std::string, int> EVENT_KEYMAP;
 	static std::map<int, int> FONT_SPRITEMAP;
 
-public:
 	//Load settings from file
 	static void loadSettings(std::string filename) {
 		char *text = IO::openFile(filename);

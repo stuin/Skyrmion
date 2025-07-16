@@ -302,11 +302,11 @@ static const std::map<int, int> blendModeMap = {
 
 void UpdateList::drawNode(Node *source) {
 	BeginBlendMode(blendModeMap.at(source->getBlendMode()));
+	Color color = Color{source->getColor().r(), source->getColor().g(), source->getColor().b(), source->getColor().a()};
 
 	sint texture = source->getTexture();
 	FloatRect rect = source->getRect();
 	Vector2f scale = source->getGScale();
-	Color color = Color{source->getColor().r(), source->getColor().g(), source->getColor().b(), source->getColor().a()};
 	std::vector<TextureRect> *textureRects = source->getTextureRects();
 
 	if(source->getString() != NULL) {
@@ -419,33 +419,6 @@ void UpdateList::musicStream(std::string filename, int volume) {
 	PlayMusicStream(backgroundMusic);
 }
 
-//Process window events on update thread
-void UpdateList::processEvents() {
-	//Remove deleted nodes
-	for(int type = 0; type < EVENT_MAX; type++) {
-		for(auto it = listeners[type].begin(); it != listeners[type].end();) {
-			if((*it)->isDeleted())
-				it = listeners[type].erase(it);
-			else
-				++it;
-		}
-	}
-
-	//Send event to marked listeners
-	int count = event_queue.size();
-	for(int i = 0; i < count; i++) {
-		Event event = event_queue.front();
-		event_queue.pop_front();
-
-		//Skip duplicates
-		if(event != event_previous[event.type % EVENT_MAX]) {
-			for(Node *node : listeners[event.type % EVENT_MAX])
-				node->recieveEvent(event);
-			event_previous[event.type % EVENT_MAX] = event;
-		}
-	}
-}
-
 //Add events to queue on draw thread
 void UpdateList::queueEvents() {
 	//Keyboard
@@ -521,6 +494,33 @@ void UpdateList::queueEvents() {
 		event_queue.emplace_back(EVENT_RESIZE, IsWindowResized(), GetRenderWidth()/GetScreenWidth(), GetScreenWidth(), GetScreenHeight());
 	event_queue.emplace_back(EVENT_FOCUS, !IsWindowFocused(), 0);
 	event_queue.emplace_back(EVENT_SUSPEND, IsWindowHidden() || IsWindowMinimized(), 0);
+}
+
+//Process window events on update thread
+void UpdateList::processEvents() {
+	//Remove deleted nodes
+	for(int type = 0; type < EVENT_MAX; type++) {
+		for(auto it = listeners[type].begin(); it != listeners[type].end();) {
+			if((*it)->isDeleted())
+				it = listeners[type].erase(it);
+			else
+				++it;
+		}
+	}
+
+	//Send event to marked listeners
+	int count = event_queue.size();
+	for(int i = 0; i < count; i++) {
+		Event event = event_queue.front();
+		event_queue.pop_front();
+
+		//Skip duplicates
+		if(event != event_previous[event.type % EVENT_MAX]) {
+			for(Node *node : listeners[event.type % EVENT_MAX])
+				node->recieveEvent(event);
+			event_previous[event.type % EVENT_MAX] = event;
+		}
+	}
 }
 
 //Update all nodes in list

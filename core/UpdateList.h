@@ -176,3 +176,5 @@ void recieveNetworkString(std::string data, int code);
 //Debug tool insertions
 void setupDebugTools();
 void addDebugTextures();
+
+void stream_cb(float* buffer, int num_frames, int num_channels);
