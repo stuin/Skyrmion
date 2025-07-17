@@ -1,5 +1,6 @@
 #include <array>
 #include <deque>
+#include <fstream>
 #include <map>
 #include <thread>
 
@@ -106,14 +107,16 @@ void IO::closeFile(char *file) {
 }
 
 void IO::writeFile(std::string filename, char *text) {
-
+	std::ofstream file;
+	file.open(filename);
+	file << text;
+	file.close();
 }
 void IO::writeFile(std::string filename, std::string text) {
-	char *out = (char*)malloc(text.length());
-	strcpy(out, text.c_str());
-
-	IO::writeFile(filename, out);
-	free(out);
+	std::ofstream file;
+	file.open(filename);
+	file << text;
+	file.close();
 }
 
 //Add node to update cycle
