@@ -24,7 +24,7 @@
  */
 
 //Static variables
-LayerData UpdateList::layers[MAXLAYER];
+LayerData UpdateList::layers[MAXLAYER] = {NULL};
 std::vector<Node *> UpdateList::deleted1;
 std::vector<Node *> UpdateList::deleted2;
 Layer UpdateList::maxLayer = 0;

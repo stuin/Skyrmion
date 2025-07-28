@@ -272,7 +272,7 @@ void DirectionHandler::update(double time) {
 
 	//Run lambda functions
 	for(sint i = 0; i < controls.size(); i++) {
-		if(controls[i].held) {
+		if(controls[i].held && i != moving) {
 			if(heldFunc != NULL)
 				heldFunc(i % count);
 			if(controls[i].pressed && pressedFunc != NULL)
