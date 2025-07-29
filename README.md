@@ -65,27 +65,25 @@ Updates are run at ~100 per second, with a time delta variable provided for cons
 - Most functionality should be identical between them
 - Originally built using SFML
 
-## Other tools:
-- Automatic window/render resizing
-- Static/global quit game function
-- Json settings file static/global reading and writing  
-- Json customizable controls supporting keyboard/mouse/gamepad buttons, joystick movement, and up to 3 binds for every action
-- Extra vector functions for finding+setting length and easy multiplication
-- N dimensional directed edge-vertex graph
-- Basic networking with a server to pass events between clients
-
-## Dear ImGui Debug Tools:
-- FPS counters for draw thread and update thread, with both real limited times and theoretical unlimited times
+## DearImGui debug windows:
+- FPS counters for draw thread and update thread, with both real times and theoretical unlimited times
 - List of layers with names and flags
 - Debug information and collision box for individual nodes
 - Stream of latest events and inputs
 - Modifyable perlin noise generator
 - Color picker with list of loaded textures
 
+## Other tools:
+- Json settings file with static/global reading and writing  
+- Json customizable controls supporting keyboard/mouse/gamepad buttons, joystick movement, and up to 3 binds for every action
+- N dimensional directed edge-vertex graph
+- Basic networking with a server to pass events between clients
+
 #### Sources
 - [Settings.h](https://github.com/stuin/Skyrmion/blob/main/input/Settings.h)
 - [Keylist.cpp](https://github.com/stuin/Skyrmion/blob/main/input/Keylist.cpp)
 - [VertexGraph.hpp](https://github.com/stuin/Skyrmion/blob/main/util/VertexGraph.hpp)
+- [nbnetServer.cpp](https://github.com/stuin/Skyrmion/blob/main/core/backend/nbnetServer.cpp)
 
 ## Example games:
 - The engine was originally built with a group as the core systems of [Temple-of-Pele](https://github.com/skyrmiongames/Temple-of-Pele), and later extracted into it's own project. As more game jam type projects were created with it I added more features
