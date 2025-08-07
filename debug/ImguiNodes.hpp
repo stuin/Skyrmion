@@ -122,6 +122,11 @@ public:
 		else
 			ImGui::Text("Texture = %ld", texture);
 
+		if(source->getString() == NULL)
+			ImGui::Text("String = NULL");
+		else
+			ImGui::Text("String = \"%s\"", source->getString());
+
 		bool nodeHidden = source->isHidden();
 		ImGui::Text("Hidden = ");
 		ImGui::SameLine();

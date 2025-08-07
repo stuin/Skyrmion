@@ -81,11 +81,11 @@ typedef Rect<int> IntRect;
 typedef Rect<float> FloatRect;
 
 struct TextureRect {
-	float px, py;
-	float pwidth, pheight;
-	int tx, ty;
-	int twidth, theight;
-	int rotation;
+	float px, py = 0;
+	float pwidth, pheight = 0;
+	int tx, ty = 0;
+	int twidth, theight = 0;
+	int rotation = 0;
 
 	FloatRect p() {
 		return FloatRect(px, py, pwidth, pheight);

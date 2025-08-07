@@ -24,6 +24,12 @@ public:
 	//Load settings from file
 	static void loadSettings(std::string filename) {
 		char *text = IO::openFile(filename);
+		if(text == NULL) {
+			std::cout << "Missing settings file " << filename << "\n";
+			IO::closeFile(text);
+			return;
+		}
+
 		nlohmann::json input = nlohmann::json::parse(text);
 		for(auto& el : input.items())
 			data[el.key()] = el.value();

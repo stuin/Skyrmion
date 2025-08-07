@@ -139,10 +139,11 @@ public:
 	//Main loop functions
 	static void processEvents();
 	static void queueEvents();
-	static void update(double time);
+	static void processAudio();
 	static void drawNode(Node *source);
 	static void draw(FloatRect cameraRect);
 	static void drawBuffer(BufferData data);
+	static void update(double time);
 	static void frame(void);
 	static void init(void);
 	static void cleanup(void);
