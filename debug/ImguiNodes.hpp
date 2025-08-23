@@ -112,7 +112,7 @@ public:
 		Text("Position", source->getPosition());
 		Text("Origin", source->getOrigin());
 		Text("Size", source->getSize());
-		Text("Scale", source->getGScale());
+		Text("Scale", source->getScale());
 
 		ImGui::Text("BlendMode = %d", source->getBlendMode());
 
@@ -150,7 +150,7 @@ public:
 						rect.px, rect.py, rect.tx, rect.ty, rect.tx+rect.twidth, rect.ty+rect.theight, rect.rotation);
 
 					if(rectBorderBox && focused) {
-						debugCursor->createPixelRect(FloatRect(rect.p().pos()*source->getGScale().abs(), rect.p().size()*source->getGScale().abs()), Vector2i(18,13), 5);
+						debugCursor->createPixelRect(FloatRect(rect.p().pos()*source->getScale().abs(), rect.p().size()*source->getScale().abs()), Vector2i(18,13), 5);
 						currentRect = rectId;
 						currentRectNode = source;
 					} else if(rectBorderBox) {

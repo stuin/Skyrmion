@@ -22,11 +22,10 @@ private:
 	sint id;
 	Layer layer;
 	Node *parent = NULL;
-	bool relativeScale = true;
 	bool hidden = false;
 
 	//Collision
-	Vector2i size;
+	Vector2i size = Vector2i(1,1);
 	std::bitset<MAXLAYER> collisionLayers;
 
 	//Positioning
@@ -58,7 +57,7 @@ public:
 	int getLayer();
 	Node *getParent();
 	bool isHidden();
-	Vector2i getSize();
+	Vector2f getSize();
 	FloatRect getRect();
 	const char *getString();
 
@@ -66,9 +65,6 @@ public:
 	Vector2f getPosition();
 	Vector2f getGPosition();
 	Vector2f getScale();
-	Vector2f getGScale();
-	Vector2f getInverseScale();
-	Vector2f getInverseGScale();
 	Vector2f getOrigin();
 	Vector2f getSOrigin();
 
@@ -82,18 +78,17 @@ public:
 	void setParent(Node *parent);
 	void setHidden(bool hidden=true);
 	void setSize(Vector2i size);
+	void setSize(int x, int y);
 
 	//Positioning
 	void setPosition(Vector2f pos);
 	void setPosition(float x, float y);
 	void setGPosition(Vector2f pos);
 	void setGPosition(float x, float y);
-	void setUPosition(Vector2f pos);
-	void setUPosition(float x, float y);
 	void setSPosition(Vector2f pos);
 	void setSPosition(float x, float y);
-	void setScale(Vector2f scale, bool relative=true);
-	void setScale(float x, float y, bool relative=true);
+	void setScale(Vector2f scale);
+	void setScale(float x, float y);
 	void setOrigin(Vector2f origin);
 	void setOrigin(float x, float y);
 

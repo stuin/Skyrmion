@@ -55,6 +55,7 @@ std::vector<TextureData> textureData;
 std::vector<Texture2D> textureSet;
 std::vector<BufferData> bufferData;
 std::vector<RenderTexture2D> bufferSet;
+std::vector<Font> fontSet;
 
 std::thread updates;
 
@@ -98,6 +99,16 @@ int UpdateList::loadTexture(std::string filename) {
 		Texture2D texture = LoadTexture(filename.c_str());
 		textureSet.push_back(texture);
 		textureData.emplace_back(filename, Vector2i(texture.width, texture.height));
+		if(texture.id == 0 && texture.width == 0) {
+			int i = textureSet.size() - 1;
+			textureData[i].valid = false;
+
+			//Load font instead
+			if(filename.substr(filename.length()-4) == ".ttf") {
+				fontSet.push_back(LoadFontEx(filename.c_str(), 200, NULL, 0));
+				textureData[i].buffer = -fontSet.size();
+			}
+		}
 	} else {
 		textureSet.emplace_back();
 		textureData.emplace_back(filename);
@@ -164,11 +175,6 @@ skColor UpdateList::pickColor(sint texture, Vector2i position) {
 	return skColor(color.r, color.g, color.b, color.a);
 }
 
-Font font = GetFontDefault();
-void UpdateList::setFont(std::string filename) {
-	font = LoadFont(filename.c_str());
-}
-
 static const std::map<int, int> blendModeMap = {
 	{SK_BLEND_ALPHA, BLEND_ALPHA},
 	{SK_BLEND_ALPHA_MULT, BLEND_ALPHA_PREMULTIPLY},
@@ -182,12 +188,14 @@ void UpdateList::drawNode(Node *source) {
 
 	sint texture = source->getTexture();
 	FloatRect rect = source->getRect();
-	Vector2f scale = source->getGScale();
+	Vector2f scale = source->getScale();
 	std::vector<TextureRect> *textureRects = source->getTextureRects();
 
-	if(source->getString() != NULL) {
+	if(source->getString() != NULL && texture < 0) {
 		//std::cout << rect.pos() << "\n";
-		DrawTextEx(font, source->getString(), Vector2{rect.left, rect.top}, source->getSize().y, 1, color);
+		DrawTextEx(fontSet[-texture-1], source->getString(), Vector2{rect.left, rect.top}, source->getSize().y, 1, color);
+	} else if(source->getString() != NULL) {
+		DrawTextEx(GetFontDefault(), source->getString(), Vector2{rect.left, rect.top}, source->getSize().y, 1, color);
 	} else if(textureRects->size() == 0) {
 		//Default square texture
 		if(texture < textureData.size() && textureData[texture].valid) {
@@ -556,6 +564,8 @@ void UpdateList::startEngine() {
 			}
 		}
 	#endif
+
+	event_queue.emplace_back(EVENT_RESIZE, IsWindowResized(), GetRenderWidth()/GetScreenWidth(), GetScreenWidth(), GetScreenHeight());
 
 	//Initial node update
 	for(Layer layer = 0; layer <= maxLayer; layer++) {

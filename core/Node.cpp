@@ -15,6 +15,7 @@ Node::Node(Layer layer, Vector2i size, bool hidden, Node *parent) {
 	this->id = currentId++;
 
 	setSize(size);
+	setOrigin(size.x / 2, size.y / 2);
 	setHidden(hidden);
 	setParent(parent);
 }
@@ -39,14 +40,13 @@ bool Node::isHidden() {
 }
 
 //Get scaled size of node
-Vector2i Node::getSize() {
-	Vector2f scale = getGScale();
-	return (size * scale).abs();
+Vector2f Node::getSize() {
+	return (scale * size).abs();
 }
 
 //Create full collision box
 FloatRect Node::getRect() {
-	Vector2f start = this->getGPosition() - origin * getGScale().abs();
+	Vector2f start = this->getGPosition() - origin * getScale().abs();
 	Vector2f end = this->getSize();
 	FloatRect rec;
 	rec.left = start.x;
@@ -67,32 +67,14 @@ Vector2f Node::getPosition() {
 
 //Get global position
 Vector2f Node::getGPosition() {
-	if(relativeScale && parent != NULL)
-		return position * parent->getScale() + parent->getGPosition();
 	if(parent != NULL)
 		return position + parent->getGPosition();
 	return position;
 }
 
-//Get local scale
+//Get scale
 Vector2f Node::getScale() {
 	return scale;
-}
-
-//Get global scale
-Vector2f Node::getGScale() {
-	if(relativeScale && parent != NULL)
-		return parent->getGScale() * getScale();
-	return getScale();
-}
-
-//Get inverted scale for children
-Vector2f Node::getInverseScale() {
-	return Vector2f(1 / getScale().x, 1 / getScale().y);
-}
-
-Vector2f Node::getInverseGScale() {
-	return Vector2f(1 / getGScale().x, 1 / getGScale().y);
 }
 
 //Get texture origin
@@ -100,7 +82,7 @@ Vector2f Node::getOrigin() {
 	return origin;
 }
 Vector2f Node::getSOrigin() {
-	return origin*getGScale().abs();
+	return origin*getScale().abs();
 }
 
 //Get blend mode for rendering
@@ -123,19 +105,23 @@ std::vector<TextureRect> *Node::getTextureRects() {
 }
 
 //Set parent node
-void Node::setParent(Node *parent) {
-	this->parent = parent;
+void Node::setParent(Node *_parent) {
+	this->parent = _parent;
 }
 
 //Set whether node is hidden
-void Node::setHidden(bool hidden) {
-	this->hidden = hidden;
+void Node::setHidden(bool _hidden) {
+	this->hidden = _hidden;
 }
 
 //Set collision box size
-void Node::setSize(Vector2i size) {
-	this->size = size;
-	setOrigin(size.x / 2, size.y / 2);
+void Node::setSize(Vector2i _size) {
+	Vector2f o = this->origin / this->size;
+	this->size = _size;
+	setOrigin(size * o);
+}
+void Node::setSize(int x, int y) {
+	setSize(Vector2i(x, y));
 }
 
 //Set position in local coordinates
@@ -149,21 +135,11 @@ void Node::setPosition(float x, float y) {
 //Set position in global coordinates
 void Node::setGPosition(Vector2f pos) {
 	if(parent != NULL)
-		pos = (pos - parent->getGPosition()) / parent->getScale();
+		pos = (pos - parent->getGPosition());
 	setPosition(pos);
 }
 void Node::setGPosition(float x, float y) {
 	setGPosition(Vector2f(x, y));
-}
-
-//Set position in unscaled coordinates
-void Node::setUPosition(Vector2f pos) {
-	if(parent != NULL)
-		pos /= parent->getScale();
-	setPosition(pos);
-}
-void Node::setUPosition(float x, float y) {
-	setUPosition(Vector2f(x, y));
 }
 
 //Set position in screen coordinates
@@ -175,48 +151,46 @@ void Node::setSPosition(float x, float y) {
 }
 
 //Set scale
-void Node::setScale(Vector2f scale, bool relative) {
-	this->scale = scale;
-	this->relativeScale = relative;
+void Node::setScale(Vector2f _scale) {
+	this->scale = _scale;
 }
-void Node::setScale(float x, float y, bool relative) {
+void Node::setScale(float x, float y) {
 	this->scale = Vector2f(x, y);
-	this->relativeScale = relative;
 }
 
 //Set origin
-void Node::setOrigin(Vector2f origin) {
-	this->origin = origin;
+void Node::setOrigin(Vector2f _origin) {
+	this->origin = _origin;
 }
 void Node::setOrigin(float x, float y) {
 	this->origin = Vector2f(x, y);
 }
 
 //Set blend mode to use in rendering
-void Node::setBlendMode(int blendMode) {
-	this->blendMode = blendMode;
+void Node::setBlendMode(int _blendMode) {
+	this->blendMode = _blendMode;
 }
 
 //Set texture channel
-void Node::setTexture(sint texture) {
-	this->texture = texture;
+void Node::setTexture(sint _texture) {
+	this->texture = _texture;
 }
 
-void Node::setColor(skColor color) {
-	this->color = color;
+void Node::setColor(skColor _color) {
+	this->color = _color;
 }
 
 //Set texture rect
 void Node::setTextureRect(TextureRect rectangle, sint i) {
 	while(i >= textureRects.size())
-		textureRects.push_back({0});
+		textureRects.emplace_back();
 	textureRects[i] = rectangle;
 }
 
 //Set basic texture rect
 void Node::setTextureIntRect(IntRect rect, sint i) {
 	while(i >= textureRects.size())
-		textureRects.push_back({0});
+		textureRects.emplace_back();
 	textureRects[i] = {0, 0, (float)rect.width,(float)rect.height, rect.left,rect.top, rect.width,rect.height, 0};
 }
 
@@ -236,8 +210,8 @@ void Node::createPixelRect(FloatRect rect, Vector2i pixel, sint i) {
 	setTextureRect({rect.left+rect.width,rect.top, 	1,rect.height, pixel.x,pixel.y, 1,1,0}, i+3);
 }
 
-void Node::setString(const char *text) {
-	this->text = text;
+void Node::setString(const char *_text) {
+	this->text = _text;
 }
 
 //Get list of layers node collides with

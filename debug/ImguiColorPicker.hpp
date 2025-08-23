@@ -55,7 +55,7 @@ public:
 	    int index = pickPosition.x + pickPosition.y*size.x;
 	    ImGui::SliderInt("Index", &index, 0, size.x*size.y-1);
 
-	    if(pickIndex != index || texture != pickTexture) {
+	    if((pickIndex != index || texture != pickTexture) && size.x > 0) {
 	    	pickPosition.x = index % size.x;
 	    	pickPosition.y = index / size.x;
 

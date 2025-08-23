@@ -95,11 +95,8 @@ public:
                 int tu = tileNumber % (IO::getTextureSize(getTexture()).x / tileX);
                 int tv = tileNumber / (IO::getTextureSize(getTexture()).x / tileX);
 
-                // get a pointer to the current tile's quad
-                TextureRect quad = (*getTextureRects())[usedRects];
-                //sf::Vertex* quad = &vertices[(i + j * width) * 4];
-
                 if(tileNumber - offset != -1) {
+                    TextureRect quad;
                     quad.px = i * tileX;
                     quad.py = j * tileY;
                     quad.pwidth = fliph ? -tileX : tileX;

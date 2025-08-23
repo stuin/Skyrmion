@@ -129,7 +129,6 @@ public:
 	static TextureData &getTextureData(sint index);
 	static void drawImGuiTexture(sint texture, Vector2i size);
 	static skColor pickColor(sint texture, Vector2i position);
-	static void setFont(std::string filename);
 
 	//Start engine
 	static void startEngine();
