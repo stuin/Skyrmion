@@ -114,8 +114,8 @@ int UpdateList::loadResource(std::string filename) {
 
 			//Load font instead
 			if(filename.substr(filename.length()-4) == ".ttf") {
-				fontSet.push_back(LoadFontEx(filename.c_str(), 200, NULL, 0));
-				resourceData[i].index = fontSet.size();
+				fontSet.push_back(LoadFont(filename.c_str()));
+				resourceData[i].index = fontSet.size()-1;
 				resourceData[i].type = SK_FONT;
 			}
 		}
@@ -203,9 +203,9 @@ void UpdateList::drawNode(Node *source) {
 
 	if(source->getString() != NULL && resourceData[texture].type == SK_FONT) {
 		//std::cout << rect.pos() << "\n";
-		DrawTextEx(fontSet[resourceData[texture].index], source->getString(), Vector2{rect.left, rect.top}, source->getSize().y, 1, color);
+		DrawTextEx(fontSet[resourceData[texture].index], source->getString(), Vector2{rect.left, rect.top}, resourceData[texture].size.y, 1, color);
 	} else if(source->getString() != NULL) {
-		DrawTextEx(GetFontDefault(), source->getString(), Vector2{rect.left, rect.top}, source->getSize().y, 1, color);
+		DrawTextEx(GetFontDefault(), source->getString(), Vector2{rect.left, rect.top}, 20, 1, color);
 	} else if(textureRects->size() == 0) {
 		//Default square texture
 		if(texture < resourceData.size() && resourceData[texture].type == SK_TEXTURE) {
