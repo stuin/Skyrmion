@@ -48,22 +48,22 @@ struct BufferData {
 	}
 };
 
-//Metadata surrounding each texture
-struct TextureData {
+//Metadata surrounding each resource
+struct ResourceData {
 	std::string filename = "";
 	Vector2i size;
-	bool valid = false;
-	sint buffer = 0;
+	sint index = 0;
+	SK_RESOURCE_TYPE type = SK_INVALID;
 
-	TextureData(std::string _filename) {
+	ResourceData(std::string _filename, SK_RESOURCE_TYPE _type) {
 		filename = _filename;
+		type = _type;
 	}
 
-	TextureData(std::string _filename, Vector2i _size) {
+	ResourceData(std::string _filename, SK_RESOURCE_TYPE _type, Vector2i _size) {
 		filename = _filename;
+		type = _type;
 		size = _size;
-		buffer = 0;
-		valid = true;
 	}
 };
 
@@ -121,12 +121,12 @@ public:
 	static int getLayerCount();
 
 	//Texture Handling
-	static int loadTexture(std::string filename);
+	static int loadResource(std::string filename);
 	static int createBuffer(BufferData data);
 	static int createBuffer(sint _texture, Vector2i _size, Layer _layer, skColor _color = COLOR_WHITE);
 	static void scheduleReload(sint buffer);
 	static Vector2i getTextureSize(sint index);
-	static TextureData &getTextureData(sint index);
+	static ResourceData &getResourceData(sint index);
 	static void drawImGuiTexture(sint texture, Vector2i size);
 	static skColor pickColor(sint texture, Vector2i position);
 

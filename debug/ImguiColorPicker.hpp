@@ -30,10 +30,10 @@ public:
 	    int texture = pickTexture;
 	    ImGui::SliderInt("Texture", &pickTexture, 0, textureFiles().size()-1);
 		ImGui::SliderFloat("Scale", &pickTextureScale, 0.0f, 10.0f, "%.3f");
-		TextureData &textureData = UpdateList::getTextureData(pickTexture);
+		ResourceData &textureData = UpdateList::getResourceData(pickTexture);
 		ImGui::Text("%s", textureData.filename.c_str());
 	    //ImGui::Text("Buffer ID: %ld", textureData.buffer);
-	    if(!textureData.valid) {
+	    if(textureData.type != SK_TEXTURE) {
 	    	ImGui::End();
 	    	return;
 	    }

@@ -6,6 +6,15 @@ enum SK_BLENDMODE {
 	SK_BLEND_MULT
 };
 
+enum SK_RESOURCE_TYPE {
+	SK_INVALID,
+	SK_TEXTURE,
+	SK_SHADER,
+	SK_FONT,
+	SK_AUDIO,
+	SK_TEXT
+};
+
 struct skColor {
 	float red, green, blue, alpha;
 

@@ -42,7 +42,7 @@ public:
     	}
 
     	ImGui::Text("Tile Size = (%d,%d)", tileSize.x, tileSize.y);
-    	ImGui::Text("Grid Size = (%d,%d)", getSize().x/tileSize.x, getSize().y/tileSize.y);
+    	ImGui::Text("Grid Size = (%.3f,%.3f)", getSize().x/tileSize.x, getSize().y/tileSize.y);
     	ImGui::Text("%lu Tile Types", tiles.size());
     	ImGui::Text("Selected = %c", (char)current);
 
@@ -91,8 +91,8 @@ public:
 };
 
 void addGridEditor(std::string name, std::string saveFile, std::string loadFile, GridMaker *grid, FloatRect bounds, std::map<int, std::string> tiles, sint texture, Layer layer) {
-	GridEditor *editor = new GridEditor(name, saveFile, loadFile, grid, tiles, bounds.getSize(), layer);
-	editor->setPosition(bounds.getPosition());
+	GridEditor *editor = new GridEditor(name, saveFile, loadFile, grid, tiles, bounds.size(), layer);
+	editor->setPosition(bounds.pos());
 	editor->setOrigin(0,0);
 	//editor->setTexture(texture);
 }

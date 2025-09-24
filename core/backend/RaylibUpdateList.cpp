@@ -13,6 +13,12 @@
 	#include <emscripten/emscripten.h>
 #endif
 
+#if defined(PLATFORM_DESKTOP)
+    #define GLSL_VERSION            330
+#else   // PLATFORM_ANDROID, PLATFORM_WEB
+    #define GLSL_VERSION            100
+#endif
+
 #define DTOR 0.0174532925199
 #define RTOD 57.2957795131
 
@@ -50,12 +56,15 @@ TimingStats DebugTimers::frameLiteralTimes;
 TimingStats DebugTimers::updateTimes;
 TimingStats DebugTimers::updateLiteralTimes;
 
-//Textures stored in this file
-std::vector<TextureData> textureData;
+//Textures
 std::vector<Texture2D> textureSet;
 std::vector<BufferData> bufferData;
 std::vector<RenderTexture2D> bufferSet;
+
+//Other resources
+std::vector<ResourceData> resourceData;
 std::vector<Font> fontSet;
+std::vector<Shader> shaderSet;
 
 std::thread updates;
 
@@ -94,24 +103,25 @@ void UpdateList::queueEvent(Event event) {
 }
 
 //Load texture from file and add to set
-int UpdateList::loadTexture(std::string filename) {
+int UpdateList::loadResource(std::string filename) {
 	if(filename.length() > 0 && filename[0] != '#') {
 		Texture2D texture = LoadTexture(filename.c_str());
 		textureSet.push_back(texture);
-		textureData.emplace_back(filename, Vector2i(texture.width, texture.height));
+		resourceData.emplace_back(filename, SK_TEXTURE, Vector2i(texture.width, texture.height));
 		if(texture.id == 0 && texture.width == 0) {
 			int i = textureSet.size() - 1;
-			textureData[i].valid = false;
+			resourceData[i].type = SK_INVALID;
 
 			//Load font instead
 			if(filename.substr(filename.length()-4) == ".ttf") {
 				fontSet.push_back(LoadFontEx(filename.c_str(), 200, NULL, 0));
-				textureData[i].buffer = -fontSet.size();
+				resourceData[i].index = fontSet.size();
+				resourceData[i].type = SK_FONT;
 			}
 		}
 	} else {
 		textureSet.emplace_back();
-		textureData.emplace_back(filename);
+		resourceData.emplace_back(filename, SK_INVALID);
 	}
 	return textureSet.size() - 1;
 }
@@ -119,18 +129,18 @@ int UpdateList::loadTexture(std::string filename) {
 //Replace blank texture with render buffer
 int UpdateList::createBuffer(BufferData data) {
 	sint texture = data.texture;
-	if(texture >= textureData.size())
+	if(texture >= resourceData.size())
 		throw new std::invalid_argument(TEXTUREERROR);
-	if(texture < textureData.size() && textureData[texture].valid && textureData[texture].buffer != 0)
-		return textureData[texture].buffer;
-	if(texture < textureData.size() && textureData[texture].valid)
+	if(resourceData[texture].type == SK_TEXTURE && resourceData[texture].index != 0)
+		return resourceData[texture].index;
+	if(resourceData[texture].type != SK_INVALID)
 		throw new std::invalid_argument(BUFFERERROR);
 
 	//Create and add buffer
-	textureData[texture].size = data.size;
-	textureData[texture].buffer = bufferData.size();
+	resourceData[texture].size = data.size;
+	resourceData[texture].index = bufferData.size();
 	bufferData.push_back(data);
-	return textureData[texture].buffer;
+	return resourceData[texture].index;
 }
 
 int UpdateList::createBuffer(sint _texture, Vector2i _size, Layer _layer, skColor _color) {
@@ -144,31 +154,31 @@ void UpdateList::scheduleReload(sint buffer) {
 
 //Get size of texture
 Vector2i UpdateList::getTextureSize(sint texture) {
-	if(texture >= textureData.size())
+	if(texture >= resourceData.size())
 		throw new std::invalid_argument(TEXTUREERROR);
-	return textureData[texture].size;
+	return resourceData[texture].size;
 }
 Vector2i IO::getTextureSize(sint texture) {
 	return UpdateList::getTextureSize(texture);
 }
 
-//Get all texture data
-TextureData &UpdateList::getTextureData(sint texture) {
-	if(texture >= textureData.size())
+//Get all resource data
+ResourceData &UpdateList::getResourceData(sint index) {
+	if(index >= resourceData.size())
 		throw new std::invalid_argument(TEXTUREERROR);
-	return textureData[texture];
+	return resourceData[index];
 }
 
 //Draw ImGui texture
 void UpdateList::drawImGuiTexture(sint texture, Vector2i size) {
-	if(texture >= textureData.size())
+	if(texture >= resourceData.size() && resourceData[texture].type == SK_TEXTURE)
 		throw new std::invalid_argument(TEXTUREERROR);
 	rlImGuiImageSize(&(textureSet[texture]), size.x, size.y);
 }
 
 //Pick color from texture
 skColor UpdateList::pickColor(sint texture, Vector2i position) {
-	if(texture >= textureData.size() || !textureData[texture].valid)
+	if(texture >= resourceData.size() || resourceData[texture].type != SK_TEXTURE)
 		return skColor(0,0,0,0);
 
 	Color color = GetImageColor(LoadImageFromTexture(textureSet[texture]), position.x, position.y);
@@ -191,14 +201,14 @@ void UpdateList::drawNode(Node *source) {
 	Vector2f scale = source->getScale();
 	std::vector<TextureRect> *textureRects = source->getTextureRects();
 
-	if(source->getString() != NULL && texture < 0) {
+	if(source->getString() != NULL && resourceData[texture].type == SK_FONT) {
 		//std::cout << rect.pos() << "\n";
-		DrawTextEx(fontSet[-texture-1], source->getString(), Vector2{rect.left, rect.top}, source->getSize().y, 1, color);
+		DrawTextEx(fontSet[resourceData[texture].index], source->getString(), Vector2{rect.left, rect.top}, source->getSize().y, 1, color);
 	} else if(source->getString() != NULL) {
 		DrawTextEx(GetFontDefault(), source->getString(), Vector2{rect.left, rect.top}, source->getSize().y, 1, color);
 	} else if(textureRects->size() == 0) {
 		//Default square texture
-		if(texture < textureData.size() && textureData[texture].valid) {
+		if(texture < resourceData.size() && resourceData[texture].type == SK_TEXTURE) {
 			//Rectangle src = {0, 0, (float)rect.width/scale.x, (float)rect.height/scale.y};
 			Vector2 position = {rect.left, rect.top};
 			DrawTextureEx(textureSet[source->getTexture()], position, 0, scale.x, color);
@@ -213,10 +223,10 @@ void UpdateList::drawNode(Node *source) {
 		for(sint i = 0; i < textureRects->size(); i++) {
 			TextureRect tex = (*textureRects)[i];
 			if(tex.pwidth != 0 && tex.pheight != 0) {
-				Vector2 origin = Vector2{tex.pwidth*scaleA.x/2, tex.pheight*scaleA.y/2};
+				Vector2 origin = Vector2{abs(tex.pwidth)*scaleA.x/2, abs(tex.pheight)*scaleA.y/2};
 				Rectangle dst = {tex.px*scaleA.x+rect.left+origin.x, tex.py*scaleA.y+rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
 				Rectangle src = {(float)tex.tx, (float)tex.ty, flip.x*tex.twidth, flip.y*tex.theight};
-				if(textureData[texture].valid)
+				if(resourceData[texture].type == SK_TEXTURE)
 					DrawTexturePro(textureSet[source->getTexture()], src, dst, origin, (float)tex.rotation, WHITE);
 				else
 					DrawRectanglePro(dst, origin, (float)tex.rotation, PURPLE);
@@ -260,7 +270,7 @@ void UpdateList::draw(FloatRect cameraRect) {
 }
 
 void UpdateList::drawBuffer(BufferData data) {
-	BeginTextureMode(bufferSet[textureData[data.texture].buffer]);
+	BeginTextureMode(bufferSet[resourceData[data.texture].index]);
 
 	//Clear buffer
 	if(data.color != COLOR_NONE)
@@ -503,7 +513,7 @@ void UpdateList::init() {
 	bufferSet.emplace_back();
 	bufferData.emplace_back();
 	for(std::string file : textureFiles())
-		UpdateList::loadTexture(file);
+		UpdateList::loadResource(file);
 
 	//Show loading screen
 	BeginDrawing();
@@ -532,12 +542,12 @@ void UpdateList::init() {
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
 		//Prepare buffer textures
-		for(sint texture = 0; texture < textureData.size(); texture++) {
-			TextureData &data = textureData[texture];
-			if(data.buffer != 0) {
+		for(sint texture = 0; texture < resourceData.size(); texture++) {
+			ResourceData &data = resourceData[texture];
+			if(data.index != 0 && data.type == SK_INVALID) {
 				bufferSet.push_back(LoadRenderTexture(data.size.x, data.size.y));
-				textureSet[texture] = bufferSet[data.buffer].texture;
-				data.valid = true;
+				textureSet[texture] = bufferSet[data.index].texture;
+				data.type = SK_TEXTURE;
 			}
 		}
 
@@ -555,12 +565,12 @@ void UpdateList::startEngine() {
 
 	#ifdef PLATFORM_WEB
 		//Prepare buffer textures
-		for(sint texture = 0; texture < textureData.size(); texture++) {
-			TextureData &data = textureData[texture];
-			if(data.buffer != 0) {
+		for(sint texture = 0; texture < resourceData.size(); texture++) {
+			ResourceData &data = resourceData[texture];
+			if(data.index != 0 && data.type == SK_INVALID) {
 				bufferSet.push_back(LoadRenderTexture(data.size.x, data.size.y));
-				textureSet[texture] = bufferSet[data.buffer].texture;
-				data.valid = true;
+				textureSet[texture] = bufferSet[data.index].texture;
+				data.type = SK_TEXTURE;
 			}
 		}
 	#endif
