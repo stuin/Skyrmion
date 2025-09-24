@@ -31,9 +31,28 @@ public:
 	    ImGui::SliderInt("Texture", &pickTexture, 0, textureFiles().size()-1);
 		ImGui::SliderFloat("Scale", &pickTextureScale, 0.0f, 10.0f, "%.3f");
 		ResourceData &textureData = UpdateList::getResourceData(pickTexture);
-		ImGui::Text("%s", textureData.filename.c_str());
-	    //ImGui::Text("Buffer ID: %ld", textureData.buffer);
+		ImGui::Text("%s : %li", textureData.filename.c_str(), textureData.index);
 	    if(textureData.type != SK_TEXTURE) {
+	    	switch(textureData.type) {
+	    	case SK_INVALID:
+	    		ImGui::Text("Invalid Resource");
+	    		break;
+	    	case SK_SHADER:
+	    		ImGui::Text("Type = Shader");
+	    		break;
+	    	case SK_FONT:
+	    		ImGui::Text("Type = Font");
+	    		break;
+	    	case SK_AUDIO:
+	    		ImGui::Text("Type = Audio");
+	    		break;
+	    	case SK_TEXT:
+	    		ImGui::Text("Type = Text");
+	    		break;
+	    	default:
+	    		ImGui::Text("Type = Unknown");
+	    		break;
+	    	}
 	    	ImGui::End();
 	    	return;
 	    }

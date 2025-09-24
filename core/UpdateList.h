@@ -18,6 +18,7 @@ struct LayerData {
 	bool global = false;
 	Node *root = NULL;
 	int count = 0;
+	sint shader = 0;
 };
 
 //Buffer draw data

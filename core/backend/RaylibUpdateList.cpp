@@ -57,12 +57,12 @@ TimingStats DebugTimers::updateTimes;
 TimingStats DebugTimers::updateLiteralTimes;
 
 //Textures
+std::vector<ResourceData> resourceData;
 std::vector<Texture2D> textureSet;
 std::vector<BufferData> bufferData;
 std::vector<RenderTexture2D> bufferSet;
 
 //Other resources
-std::vector<ResourceData> resourceData;
 std::vector<Font> fontSet;
 std::vector<Shader> shaderSet;
 
@@ -112,11 +112,17 @@ int UpdateList::loadResource(std::string filename) {
 			int i = textureSet.size() - 1;
 			resourceData[i].type = SK_INVALID;
 
-			//Load font instead
+			//Check other resource types
 			if(filename.substr(filename.length()-4) == ".ttf") {
+				//Load font instead
 				fontSet.push_back(LoadFont(filename.c_str()));
 				resourceData[i].index = fontSet.size()-1;
 				resourceData[i].type = SK_FONT;
+			} else if(filename.substr(filename.length()-3) == ".fs") {
+				//Load shader instead
+				shaderSet.push_back(LoadShader(0, TextFormat(filename.c_str(), GLSL_VERSION)));
+				resourceData[i].index = shaderSet.size()-1;
+				resourceData[i].type = SK_SHADER;
 			}
 		}
 	} else {
@@ -254,6 +260,8 @@ void UpdateList::draw(FloatRect cameraRect) {
 		Node *source = layers[layer].root;
 
 		if(!layers[layer].hidden) {
+			if(layers[layer].shader != 0)
+				BeginShaderMode(shaderSet[resourceData[layers[layer].shader].index]);
 			while(source != NULL) {
 				if(!source->isHidden() &&
 					(layers[layer].global || source->getRect().intersects(cameraRect))) {
@@ -262,6 +270,7 @@ void UpdateList::draw(FloatRect cameraRect) {
 				}
 				source = source->getNext();
 			}
+			EndShaderMode();
 		}
 	}
 
@@ -509,9 +518,11 @@ void UpdateList::init() {
 		addDebugTextures();
 	#endif
 
-	//Load textures
+	//Load resources
 	bufferSet.emplace_back();
 	bufferData.emplace_back();
+	shaderSet.emplace_back();
+	fontSet.emplace_back();
 	for(std::string file : textureFiles())
 		UpdateList::loadResource(file);
 
@@ -616,8 +627,15 @@ void UpdateList::cleanup() {
 	running = false;
 	updates.join();
 
+	//Unload resources
 	for(Texture2D texture : textureSet)
 		UnloadTexture(texture);
+	for(RenderTexture2D buffer : bufferSet)
+		UnloadRenderTexture(buffer);
+	for(Font font : fontSet)
+		UnloadFont(font);
+	for(Shader shader : shaderSet)
+		UnloadShader(shader);
 
 	rlImGuiShutdown();
 	CloseWindow();
