@@ -28,11 +28,11 @@ public:
 		ImGui::SeparatorText("Image Selector");
 
 	    int texture = pickTexture;
-	    ImGui::SliderInt("Texture", &pickTexture, 0, textureFiles().size()-1);
+	    ImGui::SliderInt("Texture", &pickTexture, 0, UpdateList::getResourceCount()-1);
 		ImGui::SliderFloat("Scale", &pickTextureScale, 0.0f, 10.0f, "%.3f");
 		ResourceData &textureData = UpdateList::getResourceData(pickTexture);
 		ImGui::Text("%s : %li", textureData.filename.c_str(), textureData.index);
-	    if(textureData.type != SK_TEXTURE) {
+	    if(textureData.type >= 0) {
 	    	switch(textureData.type) {
 	    	case SK_INVALID:
 	    		ImGui::Text("Invalid Resource");
@@ -42,6 +42,7 @@ public:
 	    		break;
 	    	case SK_FONT:
 	    		ImGui::Text("Type = Font");
+	    		ImGui::Text("Font size = %d", textureData.size.y);
 	    		break;
 	    	case SK_AUDIO:
 	    		ImGui::Text("Type = Audio");

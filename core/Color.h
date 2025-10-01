@@ -7,12 +7,14 @@ enum SK_BLENDMODE {
 };
 
 enum SK_RESOURCE_TYPE {
-	SK_INVALID,
-	SK_TEXTURE,
-	SK_SHADER,
-	SK_FONT,
-	SK_AUDIO,
-	SK_TEXT
+	SK_INVALID = 0,
+	SK_TEXTURE = -1,
+	SK_BUFFER = -2,
+	SK_NODE_BUFFER = -3,
+	SK_SHADER = 1,
+	SK_FONT = 2,
+	SK_AUDIO = 3,
+	SK_TEXT = 4
 };
 
 struct skColor {

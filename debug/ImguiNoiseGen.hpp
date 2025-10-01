@@ -28,7 +28,7 @@ public:
 		noiseIndexer = new NoiseIndexer(zeroIndexer, limitIndexer, &testNoise, 100 / testDivisions);
 		randomIndexer = new RandomIndexer(zeroIndexer, limitIndexer, 100 / testDivisions);
 
-		debugNoise = new TileMap(greyTexture, 0, 1, 1, noiseIndexer, debugLayer);
+		debugNoise = new TileMap(greyTexture, 1, 1, noiseIndexer, debugLayer);
 		debugNoise->setScale(0.6,0.6);
 		UpdateList::addNode(debugNoise);
 

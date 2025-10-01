@@ -118,6 +118,7 @@ int UpdateList::loadResource(std::string filename) {
 				fontSet.push_back(LoadFont(filename.c_str()));
 				resourceData[i].index = fontSet.size()-1;
 				resourceData[i].type = SK_FONT;
+				resourceData[i].size.y = 10;
 			} else if(filename.substr(filename.length()-3) == ".fs") {
 				//Load shader instead
 				shaderSet.push_back(LoadShader(0, TextFormat(filename.c_str(), GLSL_VERSION)));
@@ -132,11 +133,24 @@ int UpdateList::loadResource(std::string filename) {
 	return textureSet.size() - 1;
 }
 
+//Create buffer object (must be after window start)
+void finalizeBuffer(sint index) {
+	ResourceData &data = resourceData[bufferData[index].texture];
+	if(index != 0 && data.type == SK_INVALID) {
+		bufferSet.push_back(LoadRenderTexture(data.size.x, data.size.y));
+		textureSet[bufferData[index].texture] = bufferSet[index].texture;
+		data.type = (bufferData[index].passthrough != 0) ? SK_NODE_BUFFER : SK_BUFFER;
+	}
+}
+
 //Replace blank texture with render buffer
 int UpdateList::createBuffer(BufferData data) {
 	sint texture = data.texture;
-	if(texture >= resourceData.size())
-		throw new std::invalid_argument(TEXTUREERROR);
+	while(texture >= resourceData.size()) {
+		//throw new std::invalid_argument(TEXTUREERROR);
+		textureSet.emplace_back();
+		resourceData.emplace_back("Unknown Buffer", SK_INVALID);
+	}
 	if(resourceData[texture].type == SK_TEXTURE && resourceData[texture].index != 0)
 		return resourceData[texture].index;
 	if(resourceData[texture].type != SK_INVALID)
@@ -146,7 +160,9 @@ int UpdateList::createBuffer(BufferData data) {
 	resourceData[texture].size = data.size;
 	resourceData[texture].index = bufferData.size();
 	bufferData.push_back(data);
-	return resourceData[texture].index;
+	if(UpdateList::running)
+		finalizeBuffer(resourceData[texture].index);
+	return texture;
 }
 
 int UpdateList::createBuffer(sint _texture, Vector2i _size, Layer _layer, skColor _color) {
@@ -154,8 +170,8 @@ int UpdateList::createBuffer(sint _texture, Vector2i _size, Layer _layer, skColo
 }
 
 //Schedule reload call before next draw
-void UpdateList::scheduleReload(sint buffer) {
-	bufferData[buffer].redraw = true;
+void UpdateList::scheduleReload(sint texture) {
+	bufferData[resourceData[texture].index].redraw = true;
 }
 
 //Get size of texture
@@ -175,19 +191,24 @@ ResourceData &UpdateList::getResourceData(sint index) {
 	return resourceData[index];
 }
 
+sint UpdateList::getResourceCount() {
+	return resourceData.size();
+}
+
 //Draw ImGui texture
 void UpdateList::drawImGuiTexture(sint texture, Vector2i size) {
-	if(texture >= resourceData.size() && resourceData[texture].type == SK_TEXTURE)
+	if(texture >= resourceData.size() || resourceData[texture].type >= 0)
 		throw new std::invalid_argument(TEXTUREERROR);
 	rlImGuiImageSize(&(textureSet[texture]), size.x, size.y);
 }
 
 //Pick color from texture
 skColor UpdateList::pickColor(sint texture, Vector2i position) {
-	if(texture >= resourceData.size() || resourceData[texture].type != SK_TEXTURE)
+	if(texture >= resourceData.size() || resourceData[texture].type >= 0)
 		return skColor(0,0,0,0);
 
 	Color color = GetImageColor(LoadImageFromTexture(textureSet[texture]), position.x, position.y);
+	//std::cout << resourceData[texture].type << "\n";
 	return skColor(color.r, color.g, color.b, color.a);
 }
 
@@ -198,13 +219,13 @@ static const std::map<int, int> blendModeMap = {
 	{SK_BLEND_MULT, BLEND_MULTIPLIED},
 };
 
-void UpdateList::drawNode(Node *source) {
+void UpdateList::drawNode(Node *source, sint passthrough) {
 	BeginBlendMode(blendModeMap.at(source->getBlendMode()));
 	Color color = Color{source->getColor().r(), source->getColor().g(), source->getColor().b(), source->getColor().a()};
 
-	sint texture = source->getTexture();
+	sint texture = (passthrough != 0) ? passthrough : source->getTexture();
 	FloatRect rect = source->getRect();
-	Vector2f scale = source->getScale();
+	Vector2f scale = (passthrough != 0) ? Vector2f(1,1) : source->getScale();
 	std::vector<TextureRect> *textureRects = source->getTextureRects();
 
 	if(source->getString() != NULL && resourceData[texture].type == SK_FONT) {
@@ -212,12 +233,12 @@ void UpdateList::drawNode(Node *source) {
 		DrawTextEx(fontSet[resourceData[texture].index], source->getString(), Vector2{rect.left, rect.top}, resourceData[texture].size.y, 1, color);
 	} else if(source->getString() != NULL) {
 		DrawTextEx(GetFontDefault(), source->getString(), Vector2{rect.left, rect.top}, 20, 1, color);
-	} else if(textureRects->size() == 0) {
+	} else if(textureRects->size() == 0 || resourceData[texture].type == SK_NODE_BUFFER) {
 		//Default square texture
-		if(texture < resourceData.size() && resourceData[texture].type == SK_TEXTURE) {
+		if(resourceData[texture].type < 0) {
 			//Rectangle src = {0, 0, (float)rect.width/scale.x, (float)rect.height/scale.y};
 			Vector2 position = {rect.left, rect.top};
-			DrawTextureEx(textureSet[source->getTexture()], position, 0, scale.x, color);
+			DrawTextureEx(textureSet[texture], position, 0, scale.x, color);
 		} else {
 			Rectangle dst = {rect.left, rect.top, (float)rect.width, (float)rect.height};
 			DrawRectangleRec(dst, color);
@@ -232,8 +253,8 @@ void UpdateList::drawNode(Node *source) {
 				Vector2 origin = Vector2{abs(tex.pwidth)*scaleA.x/2, abs(tex.pheight)*scaleA.y/2};
 				Rectangle dst = {tex.px*scaleA.x+rect.left+origin.x, tex.py*scaleA.y+rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
 				Rectangle src = {(float)tex.tx, (float)tex.ty, flip.x*tex.twidth, flip.y*tex.theight};
-				if(resourceData[texture].type == SK_TEXTURE)
-					DrawTexturePro(textureSet[source->getTexture()], src, dst, origin, (float)tex.rotation, WHITE);
+				if(resourceData[texture].type < 0)
+					DrawTexturePro(textureSet[texture], src, dst, origin, (float)tex.rotation, WHITE);
 				else
 					DrawRectanglePro(dst, origin, (float)tex.rotation, PURPLE);
 			}
@@ -266,7 +287,7 @@ void UpdateList::draw(FloatRect cameraRect) {
 				if(!source->isHidden() &&
 					(layers[layer].global || source->getRect().intersects(cameraRect))) {
 
-					drawNode(source);
+					drawNode(source, 0);
 				}
 				source = source->getNext();
 			}
@@ -286,20 +307,37 @@ void UpdateList::drawBuffer(BufferData data) {
 		ClearBackground(Color{data.color.r(), data.color.g(),
 			data.color.b(), data.color.a()});
 
+	//Render specific linked node
+	if(data.source != NULL) {
+		FloatRect sourceRect = data.source->getRect();
+		raycamera.target = Vector2{sourceRect.left, sourceRect.top};
+		raycamera.zoom = 1;
+
+		BeginMode2D(raycamera);
+		if(data.source->getTexture() == data.texture && data.passthrough != 0)
+			drawNode(data.source, data.passthrough);
+		else
+			drawNode(data.source);
+	} else {
+		raycamera.target = Vector2{0, 0};
+		raycamera.zoom = 1;
+
+		BeginMode2D(raycamera);
+	}
+
 	//Render nodes in included layers
 	for(Layer layer = 0; layer <= maxLayer; layer++) {
-		Node *source = layers[layer].root;
-
 		if(data.layers[layer]) {
+			Node *source = layers[layer].root;
 			while(source != NULL) {
-				if(!source->isHidden()) {
+				if(!source->isHidden())
 					drawNode(source);
-				}
 				source = source->getNext();
 			}
 		}
 	}
 
+	EndMode2D();
 	EndTextureMode();
 }
 
@@ -452,10 +490,10 @@ void UpdateList::frame(void) {
 	rlImGuiBegin();
 
 	//Reload buffer textures
-	for(BufferData data : bufferData) {
-		if(data.redraw) {
-			drawBuffer(data);
-			data.redraw = false;
+	for(sint i = 0; i < bufferData.size(); i++) {
+		if(bufferData[i].redraw) {
+			drawBuffer(bufferData[i]);
+			bufferData[i].redraw = false;
 		}
 	}
 
@@ -553,14 +591,8 @@ void UpdateList::init() {
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
 		//Prepare buffer textures
-		for(sint texture = 0; texture < resourceData.size(); texture++) {
-			ResourceData &data = resourceData[texture];
-			if(data.index != 0 && data.type == SK_INVALID) {
-				bufferSet.push_back(LoadRenderTexture(data.size.x, data.size.y));
-				textureSet[texture] = bufferSet[data.index].texture;
-				data.type = SK_TEXTURE;
-			}
-		}
+		for(sint i = 0; i < bufferData.size(); i++)
+			finalizeBuffer(i);
 
 		std::cout << "SKYRMION: Starting Rendering\n";
 		while(!WindowShouldClose() && UpdateList::running) {
@@ -576,14 +608,8 @@ void UpdateList::startEngine() {
 
 	#ifdef PLATFORM_WEB
 		//Prepare buffer textures
-		for(sint texture = 0; texture < resourceData.size(); texture++) {
-			ResourceData &data = resourceData[texture];
-			if(data.index != 0 && data.type == SK_INVALID) {
-				bufferSet.push_back(LoadRenderTexture(data.size.x, data.size.y));
-				textureSet[texture] = bufferSet[data.index].texture;
-				data.type = SK_TEXTURE;
-			}
-		}
+		for(sint i = 0; i < resourceData.size(); i++)
+			finalizeBuffer(i);
 	#endif
 
 	event_queue.emplace_back(EVENT_RESIZE, IsWindowResized(), GetRenderWidth()/GetScreenWidth(), GetScreenWidth(), GetScreenHeight());

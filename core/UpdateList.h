@@ -26,6 +26,8 @@ struct BufferData {
 	sint texture;
 	Vector2i size;
 	std::bitset<MAXLAYER> layers;
+	Node *source = NULL;
+	sint passthrough = 0;
 	skColor color;
 	bool redraw = true;
 
@@ -45,6 +47,14 @@ struct BufferData {
 		texture = _texture;
 		size = _size;
 		layers[_layer] = true;
+		color = _color;
+	}
+
+	BufferData(sint _texture, Node *_node, skColor _color = COLOR_WHITE) {
+		texture = _texture;
+		size = _node->getSize();
+		source = _node;
+		passthrough = _node->getTexture();
 		color = _color;
 	}
 };
@@ -128,6 +138,7 @@ public:
 	static void scheduleReload(sint buffer);
 	static Vector2i getTextureSize(sint index);
 	static ResourceData &getResourceData(sint index);
+	static sint getResourceCount();
 	static void drawImGuiTexture(sint texture, Vector2i size);
 	static skColor pickColor(sint texture, Vector2i position);
 
@@ -140,7 +151,7 @@ public:
 	static void processEvents();
 	static void queueEvents();
 	static void processAudio();
-	static void drawNode(Node *source);
+	static void drawNode(Node *source, sint passthrough=0);
 	static void draw(FloatRect cameraRect);
 	static void drawBuffer(BufferData data);
 	static void update(double time);

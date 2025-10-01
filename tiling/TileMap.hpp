@@ -19,8 +19,8 @@ private:
     Indexer *indexes;
     int offset = 0;
     uint gridUpdates = 0;
-
-    uint buffer = 0;
+    sint tileset;
+    sint buffer;
 
     uint fullWidth = 0;
     uint fullHeight = 0;
@@ -30,7 +30,7 @@ private:
     uint startY = 0;
 
 public:
-    TileMap(sint _tileset, sint _buffer, int _tileX, int _tileY, Indexer *_indexes, Layer layer=0, int _offset=0, Rect<uint> border=Rect<uint>())
+    TileMap(sint _tileset, int _tileX, int _tileY, Indexer *_indexes, Layer layer=0, int _offset=0, Rect<uint> border=Rect<uint>())
      : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes), offset(_offset) {
 
         //Set sizing
@@ -50,8 +50,11 @@ public:
         setSize(Vector2i(tileX * width, tileY * height));
         setOrigin(0, 0);
         setPosition(startX * tileX, startY * tileY);
-        setTexture(_tileset);
-        buffer = _buffer;
+
+        tileset = _tileset;
+        setTexture(tileset);
+        buffer = UpdateList::createBuffer(BufferData(UpdateList::getResourceCount(), this, COLOR_EMPTY));
+        setTexture(buffer);
 
         //std::cout << " " << startX << "," << startY << ", " << width << "," << height << "\n";
         //std::cout << toString(getGPosition()) << ":" << toString(getGScale()) <<  "\n";
@@ -70,13 +73,13 @@ public:
     }
 
     int countTextures() {
-        return (IO::getTextureSize(getTexture()).x / tileX) * (IO::getTextureSize(getTexture()).y / tileY);
+        return (IO::getTextureSize(tileset).x / tileX) * (IO::getTextureSize(tileset).y / tileY);
     }
 
     void reload() {
         int numTextures = countTextures();
         int usedRects = 0;
-        bool hasBuffer = buffer != 0;
+        bool hasBuffer = true;
 
         // populate the vertex array, with one quad per tile
         for(unsigned int j = 0; j < height; ++j) {
@@ -92,8 +95,8 @@ public:
                     flipv = (flipv == 0) ? 1 : 0;
 
                 // find its position in the tileset texture
-                int tu = tileNumber % (IO::getTextureSize(getTexture()).x / tileX);
-                int tv = tileNumber / (IO::getTextureSize(getTexture()).x / tileX);
+                int tu = tileNumber % (IO::getTextureSize(tileset).x / tileX);
+                int tv = tileNumber / (IO::getTextureSize(tileset).x / tileX);
 
                 if(tileNumber - offset != -1) {
                     TextureRect quad;
@@ -146,7 +149,6 @@ public:
         int height = indexes->getSize().y;
         setSize(Vector2i(tileX * width, tileY * height));
         setOrigin(0, 0);
-        setTexture(tileset);
 
         this->maxFrames = frames;
         this->delay = delay;
@@ -155,12 +157,14 @@ public:
         //Build each frame
         for(int i = 0; i < frames; i++) {
             //Load new tilemap
-            TileMap *map = new TileMap(tileset, 0, tileX, tileY, indexes, layer, i * numTiles);
+            TileMap *map = new TileMap(tileset, tileX, tileY, indexes, layer, i * numTiles);
             map->setParent(this);
             tilemaps.push_back(map);
 
-            if(i == 0)
+            if(i == 0) {
                 this->numTiles = map->countTextures() / frames;
+                setTexture(map->getTexture());
+            }
         }
     }
 
@@ -193,19 +197,19 @@ public:
                 //Reset to start frame
                 if(frame == maxFrames)
                     frame = 0;
+                setTexture(tilemaps[frame]->getTexture());
             }
         }
         for(TileMap *map : tilemaps)
             map->update(time);
     }
 
-    std::vector<TextureRect> *getTextureRects() {
-        return tilemaps[frame]->getTextureRects();
-    }
+    //std::vector<TextureRect> *getTextureRects() {
+    //    return tilemaps[frame]->getTextureRects();
+    //}
 
     void addFrame(TileMap *map) {
         map->setOffset(tilemaps.size() * numTiles);
-        setTexture(map->getTexture());
         tilemaps.push_back(map);
         maxFrames++;
     }
@@ -277,7 +281,7 @@ public:
             for(uint y = 0; y < countY; y++) {
                 //Add new tilemap
                 Rect<uint> border(x * sectionWidth, y * sectionHeight, sectionWidth, sectionHeight);
-                TileMap *map = new TileMap(tileset, 0, tileX, tileY, indexes, layer, 0, border);
+                TileMap *map = new TileMap(tileset, tileX, tileY, indexes, layer, 0, border);
                 map->setParent(this);
                 tilemaps.push_back(map);
             }
