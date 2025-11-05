@@ -105,26 +105,23 @@ void UpdateList::queueEvent(Event event) {
 //Load texture from file and add to set
 int UpdateList::loadResource(std::string filename) {
 	if(filename.length() > 0 && filename[0] != '#') {
-		Texture2D texture = LoadTexture(filename.c_str());
-		textureSet.push_back(texture);
-		resourceData.emplace_back(filename, SK_TEXTURE, Vector2i(texture.width, texture.height));
-		if(texture.id == 0 && texture.width == 0) {
-			int i = textureSet.size() - 1;
-			resourceData[i].type = SK_INVALID;
-
-			//Check other resource types
-			if(filename.substr(filename.length()-4) == ".ttf") {
-				//Load font instead
-				fontSet.push_back(LoadFont(filename.c_str()));
-				resourceData[i].index = fontSet.size()-1;
-				resourceData[i].type = SK_FONT;
-				resourceData[i].size.y = 10;
-			} else if(filename.substr(filename.length()-3) == ".fs") {
-				//Load shader instead
-				shaderSet.push_back(LoadShader(0, TextFormat(filename.c_str(), GLSL_VERSION)));
-				resourceData[i].index = shaderSet.size()-1;
-				resourceData[i].type = SK_SHADER;
-			}
+		if(filename.substr(filename.length()-4) == ".png") {
+			//Load texture
+			Texture2D texture = LoadTexture(filename.c_str());
+			textureSet.push_back(texture);
+			resourceData.emplace_back(filename, SK_TEXTURE, Vector2i(texture.width, texture.height));
+			if(texture.id == 0 && texture.width == 0)
+				resourceData[resourceData.size() - 1].type = SK_INVALID;
+		} else if(filename.substr(filename.length()-4) == ".ttf") {
+			//Load font
+			fontSet.push_back(LoadFont(filename.c_str()));
+			resourceData.emplace_back(filename, SK_FONT, Vector2i(0, 10), fontSet.size()-1);
+			textureSet.emplace_back();
+		} else if(filename.substr(filename.length()-3) == ".fs") {
+			//Load shader
+			shaderSet.push_back(LoadShader(0, TextFormat(filename.c_str(), GLSL_VERSION)));
+			resourceData.emplace_back(filename, SK_SHADER, Vector2i(0, 0), shaderSet.size()-1);
+			textureSet.emplace_back();
 		}
 	} else {
 		textureSet.emplace_back();

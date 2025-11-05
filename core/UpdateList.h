@@ -71,10 +71,11 @@ struct ResourceData {
 		type = _type;
 	}
 
-	ResourceData(std::string _filename, SK_RESOURCE_TYPE _type, Vector2i _size) {
+	ResourceData(std::string _filename, SK_RESOURCE_TYPE _type, Vector2i _size, sint _index=0) {
 		filename = _filename;
 		type = _type;
 		size = _size;
+		index = _index;
 	}
 };
 
