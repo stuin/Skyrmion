@@ -30,7 +30,7 @@ private:
     uint startY = 0;
 
 public:
-    TileMap(sint _tileset, int _tileX, int _tileY, Indexer *_indexes, Layer layer=0, int _offset=0, Rect<uint> border=Rect<uint>())
+    TileMap(sint _tileset, int _tileX, int _tileY, Indexer *_indexes, int layer=0, int _offset=0, Rect<uint> border=Rect<uint>())
      : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes), offset(_offset) {
 
         //Set sizing
@@ -144,7 +144,7 @@ private:
     bool paused = false;
 
 public:
-    AnimatedTileMap(int tileset, int tileX, int tileY, Indexer *indexes, int frames, double delay, Layer layer = 0) : Node(layer) {
+    AnimatedTileMap(int tileset, int tileX, int tileY, Indexer *indexes, int frames, double delay, int layer = 0) : Node(layer) {
         int width = indexes->getSize().x;
         int height = indexes->getSize().y;
         setSize(Vector2i(tileX * width, tileY * height));
@@ -168,7 +168,7 @@ public:
         }
     }
 
-    AnimatedTileMap(Vector2i size, double delay, Layer layer = 0) : Node(layer) {
+    AnimatedTileMap(Vector2i size, double delay, int layer = 0) : Node(layer) {
         this->numTiles = 0;
         this->maxFrames = 0;
         this->delay = delay;
@@ -262,7 +262,7 @@ private:
     uint countY;
 
 public:
-    LargeTileMap(int tileset, int tileX, int tileY, Indexer *indexes, Layer layer) : Node(layer) {
+    LargeTileMap(int tileset, int tileX, int tileY, Indexer *indexes, int layer) : Node(layer) {
         fullWidth = indexes->getSize().x;
         fullHeight = indexes->getSize().y;
         setSize(Vector2i(tileX * fullWidth, tileY * fullHeight));

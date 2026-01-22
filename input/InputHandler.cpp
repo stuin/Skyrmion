@@ -7,8 +7,8 @@ nlohmann::json Settings::data({});
 std::vector<std::pair<std::string, std::string>> Settings::edits;
 
 //Set controls directly
-InputHandler::InputHandler(std::vector<int> _controls, int layer, Node *parent)
-: Node(layer, Vector2i(16, 16), true, parent) {
+InputHandler::InputHandler(std::vector<int> _controls, int layer)
+: UNode(layer) {
 
 	for(int key : _controls)
 		controls.push_back(Keybind(key));
@@ -18,8 +18,8 @@ InputHandler::InputHandler(std::vector<int> _controls, int layer, Node *parent)
 }
 
 //Set controls through configurable settings
-InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *parent)
-: Node(layer, Vector2i(16, 16), true, parent) {
+InputHandler::InputHandler(std::vector<std::string> keys, int layer)
+: UNode(layer) {
 	//Base keys
 	sint startSize = keys.size();
 	for(sint i = 0; i < keys.size(); i++) {
@@ -78,7 +78,7 @@ InputHandler::InputHandler(std::vector<std::string> keys, int layer, Node *paren
 
 //Subscribe to all input types
 void InputHandler::addListeners() {
-	UpdateList::addNode(this);
+	UpdateList::addUNode(this);
 	UpdateList::addListener(this, EVENT_KEYPRESS);
 	UpdateList::addListener(this, EVENT_FOCUS);
 }
@@ -191,20 +191,20 @@ void InputHandler::update(double time) {
 	clearPressed(false);
 }
 
-DirectionHandler::DirectionHandler(std::vector<int> _controls, int layer, Node *parent)
-: InputHandler(_controls, layer, parent) {
+DirectionHandler::DirectionHandler(std::vector<int> _controls, int layer)
+: InputHandler(_controls, layer) {
 	moving = addKey(-2);
 	UpdateList::addListener(this, EVENT_JOYSTICK);
 }
 
-DirectionHandler::DirectionHandler(std::vector<std::string> keys, int layer, Node *parent)
-: InputHandler(keys, layer, parent) {
+DirectionHandler::DirectionHandler(std::vector<std::string> keys, int layer)
+: InputHandler(keys, layer) {
 	moving = addKey(-2);
 	UpdateList::addListener(this, EVENT_JOYSTICK);
 }
 
-DirectionHandler::DirectionHandler(std::string field, int layer, Node *parent)
-: DirectionHandler(listKeys(field), layer, parent) {
+DirectionHandler::DirectionHandler(std::string field, int layer)
+: DirectionHandler(listKeys(field), layer) {
 	std::string s = field + "/joystick";
 	joystick = Settings::getInt(s);
 }

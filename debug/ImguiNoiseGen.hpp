@@ -4,7 +4,7 @@
 
 #include "../include/imgui/imgui.h"//
 
-class ImguiNoiseGen : public Node {
+class ImguiNoiseGen : public UNode {
 private:
 	bool open = false;
 
@@ -21,7 +21,7 @@ private:
 	TileMap *debugNoise;
 
 public:
-	ImguiNoiseGen(int greyTexture, int debugLayer) : Node(debugLayer, Vector2i(16, 16), true) {
+	ImguiNoiseGen(int greyTexture, int debugLayer) : UNode(debugLayer) {
 		zeroIndexer = new ConstIndexer(0, testSize, testSize);
 		limitIndexer = new ConstIndexer(100, testSize, testSize);
 
@@ -32,7 +32,7 @@ public:
 		debugNoise->setScale(0.6,0.6);
 		UpdateList::addNode(debugNoise);
 
-		UpdateList::addNode(this);
+		UpdateList::addUNode(this);
 		UpdateList::addListener(this, EVENT_IMGUI);
 	}
 

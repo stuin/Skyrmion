@@ -32,10 +32,12 @@
 
 //Static variables
 LayerData UpdateList::layers[MAXLAYER];
-std::vector<Node *> UpdateList::deleted1;
-std::vector<Node *> UpdateList::deleted2;
-Layer UpdateList::maxLayer = 0;
+UNode * UpdateList::uLayers[MAXLAYER*2] = {NULL};
+int UpdateList::maxLayer = 0;
+int UpdateList::maxULayer = 0;
 bool UpdateList::running = false;
+std::vector<UNode *> UpdateList::deleted1;
+std::vector<UNode *> UpdateList::deleted2;
 
 //Rendering
 Node *UpdateList::camera = NULL;
@@ -44,11 +46,11 @@ FloatRect UpdateList::screenRect;
 Camera2D raycamera;
 
 //Event handling
-std::deque<Event> event_queue;
-std::array<std::vector<Node *>, EVENT_MAX> listeners;
-std::vector<int> watchedKeycodes;
-std::array<Event, EVENT_MAX> event_previous;
-std::vector<bool> watchedKeycodesPrevious;
+std::array<std::vector<UNode *>, EVENT_MAX> UpdateList::listeners;
+std::deque<Event> UpdateList::event_queue;
+std::array<Event, EVENT_MAX> UpdateList::event_previous;
+std::vector<int> UpdateList::watchedKeycodes;
+std::vector<bool> UpdateList::watchedKeycodesPrevious;
 
 //System timers
 TimingStats DebugTimers::frameTimes;
@@ -87,7 +89,7 @@ void IO::writeFile(std::string filename, std::string text) {
 }
 
 //Subscribe node to cetain event type
-void UpdateList::addListener(Node *item, int type) {
+void UpdateList::addListener(UNode *item, int type) {
 	listeners[type].push_back(item);
 }
 
@@ -162,7 +164,7 @@ int UpdateList::createBuffer(BufferData data) {
 	return texture;
 }
 
-int UpdateList::createBuffer(sint _texture, Vector2i _size, Layer _layer, skColor _color) {
+int UpdateList::createBuffer(sint _texture, Vector2i _size, int _layer, skColor _color) {
 	return createBuffer(BufferData(_texture, _size, _layer, _color));
 }
 
@@ -274,7 +276,7 @@ void UpdateList::draw(FloatRect cameraRect) {
 	double lastTime = GetTime();
 
 	//Render each node in order
-	for(Layer layer = 0; layer <= maxLayer; layer++) {
+	for(int layer = 0; layer <= maxLayer; layer++) {
 		Node *source = layers[layer].root;
 
 		if(!layers[layer].hidden) {
@@ -286,7 +288,7 @@ void UpdateList::draw(FloatRect cameraRect) {
 
 					drawNode(source, 0);
 				}
-				source = source->getNext();
+				source = (Node*)source->getNext();
 			}
 			EndShaderMode();
 		}
@@ -323,13 +325,13 @@ void UpdateList::drawBuffer(BufferData data) {
 	}
 
 	//Render nodes in included layers
-	for(Layer layer = 0; layer <= maxLayer; layer++) {
+	for(int layer = 0; layer <= maxLayer; layer++) {
 		if(data.layers[layer]) {
 			Node *source = layers[layer].root;
 			while(source != NULL) {
 				if(!source->isHidden())
 					drawNode(source);
-				source = source->getNext();
+				source = (Node*)source->getNext();
 			}
 		}
 	}
@@ -440,33 +442,6 @@ void UpdateList::queueEvents() {
 	event_queue.emplace_back(EVENT_SUSPEND, IsWindowHidden() || IsWindowMinimized(), 0);
 }
 
-//Process window events on update thread
-void UpdateList::processEvents() {
-	//Remove deleted nodes
-	for(int type = 0; type < EVENT_MAX; type++) {
-		for(auto it = listeners[type].begin(); it != listeners[type].end();) {
-			if((*it)->isDeleted())
-				it = listeners[type].erase(it);
-			else
-				++it;
-		}
-	}
-
-	//Send event to marked listeners
-	int count = event_queue.size();
-	for(int i = 0; i < count; i++) {
-		Event event = event_queue.front();
-		event_queue.pop_front();
-
-		//Skip duplicates
-		if(event != event_previous[event.type % EVENT_MAX]) {
-			for(Node *node : listeners[event.type % EVENT_MAX])
-				node->recieveEvent(event);
-			event_previous[event.type % EVENT_MAX] = event;
-		}
-	}
-}
-
 void UpdateList::frame(void) {
 	double delta = GetFrameTime();
 	DebugTimers::frameTimes.addDelta(delta);
@@ -509,22 +484,22 @@ void UpdateList::frame(void) {
 	if(ImGui::BeginMainMenuBar()) {
 		//Render menu bar
 		if(listeners[EVENT_IMGUI].size() > 0) {
-			for(Node *node : listeners[EVENT_IMGUI])
+			for(UNode *node : listeners[EVENT_IMGUI])
 				node->recieveEvent(Event(EVENT_IMGUI, true, 0));
 		}
 		ImGui::EndMainMenuBar();
 	}
 	//Render individual windows
-	for(Node *node : listeners[EVENT_IMGUI])
+	for(UNode *node : listeners[EVENT_IMGUI])
 		node->recieveEvent(Event(EVENT_IMGUI, false, 0));
 	#endif
 
 	rlImGuiEnd();
 
 	//Loop through list to delete nodes from memory
-	std::vector<Node *>::iterator dit = deleted2.begin();
+	std::vector<UNode *>::iterator dit = deleted2.begin();
 	while(dit != deleted2.end()) {
-		Node *node = *dit;
+		UNode *node = *dit;
 		dit = deleted2.erase(dit);
 		delete node;
 	}
@@ -546,7 +521,7 @@ void UpdateList::init() {
 	rlImGuiSetup(true);
 
 	//Set layer names
-	for(Layer layer = 0; layer < layerNames().size(); layer++)
+	for(sint layer = 0; layer < layerNames().size(); layer++)
 		layers[layer].name = layerNames()[layer];
 
 	#ifdef _DEBUG
@@ -612,8 +587,8 @@ void UpdateList::startEngine() {
 	event_queue.emplace_back(EVENT_RESIZE, IsWindowResized(), GetRenderWidth()/GetScreenWidth(), GetScreenWidth(), GetScreenHeight());
 
 	//Initial node update
-	for(Layer layer = 0; layer <= maxLayer; layer++) {
-		Node *source = layers[layer].root;
+	for(int layer = 0; layer <= maxLayer; layer++) {
+		UNode *source = layers[layer].root;
 
 		while(source != NULL) {
 			source->update(-1);

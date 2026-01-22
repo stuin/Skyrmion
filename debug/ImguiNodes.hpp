@@ -2,7 +2,7 @@
 
 #include "../include/imgui/imgui.h"//
 
-class ImguiNodes : public Node {
+class ImguiNodes : public UNode {
 private:
 	bool open = false;
 
@@ -14,8 +14,8 @@ private:
 	Node *currentRectNode = NULL;
 
 public:
-	ImguiNodes(int _pickTexture, int debugLayer) : Node(debugLayer, Vector2i(16, 16), true) {
-		UpdateList::addNode(this);
+	ImguiNodes(int _pickTexture, int debugLayer) : UNode(debugLayer) {
+		UpdateList::addUNode(this);
 		UpdateList::addListener(this, EVENT_IMGUI);
 
 		debugCursor = new Node(debugLayer, Vector2i(1, 1), true);
@@ -23,15 +23,15 @@ public:
 		UpdateList::addNode(debugCursor);
 
 		//Initial nodes and layer names
-		for(Layer layer = 0; layer < layerNames().size(); layer++) {
-			Node *source = UpdateList::getNode(layer);
+		for(sint layer = 0; layer < layerNames().size(); layer++) {
+			UNode *source = UpdateList::getNode(layer);
 			while(source != NULL) {
 				sint id = source->getId();
 				while(id >= nodeWindows.size()) {
 					nodeWindows.push_back(false);
 					nodes.push_back(NULL);
 				}
-				nodes[id] = source;
+				nodes[id] = (Node*)source;
 				source = source->getNext();
 			}
 		}
@@ -51,7 +51,7 @@ public:
 		ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Layers", &open);
 
-		for(Layer layer = 0; layer < UpdateList::getLayerCount(); layer++) {
+		for(int layer = 0; layer < UpdateList::getLayerCount(); layer++) {
 			ImGui::PushID(layer);
 
 			LayerData &layerData = UpdateList::getLayerData(layer);
@@ -63,14 +63,14 @@ public:
 				ImGui::Text("%d Nodes", layerData.count);
 
 				if(ImGui::BeginChild("##", ImVec2(400.0f, std::min(200.0f, layerData.count*20.f+10)), ImGuiChildFlags_Borders, 0)) {
-					Node *source = layerData.root;
+					UNode *source = layerData.root;
 					while(source != NULL) {
 						sint id = source->getId();
 						while(id >= nodeWindows.size()) {
 							nodeWindows.push_back(false);
 							nodes.push_back(NULL);
 						}
-						nodes[id] = source;
+						nodes[id] = (Node*)source;
 
 						std::string nodeName = std::to_string(id);
 						bool window = nodeWindows[id];

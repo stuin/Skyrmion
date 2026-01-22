@@ -2,31 +2,55 @@
 #include "UpdateList.h"
 
 /*
- * Sprite with collision
+ * UNode and Node implementations
  */
 
 unsigned int currentId = 0;
 
 //Base constructor
-Node::Node(Layer layer, Vector2i size, bool hidden, Node *parent) {
+UNode::UNode(int layer) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	this->layer = layer;
 	this->id = currentId++;
-
-	setSize(size);
-	setOrigin(size.x / 2, size.y / 2);
-	setHidden(hidden);
-	setParent(parent);
 }
 
-sint Node::getId() {
+sint UNode::getId() {
 	return id;
 }
 
 //Get layer node is attached to
-int Node::getLayer() {
+int UNode::getLayer() {
 	return layer;
+}
+
+//Get next node in list
+UNode *UNode::getNext() {
+	return next;
+}
+
+//Add new node after this
+void UNode::addNode(UNode *node) {
+	if(next == NULL)
+		next = node;
+	else
+		next->addNode(node);
+}
+
+//Remove node immdiately after this from list
+void UNode::deleteNext() {
+	if(next != NULL && next->isDeleted())
+		next = next->getNext();
+}
+
+//Base constructor
+Node::Node(int layer, Vector2i size, bool hidden, Node *parent) : UNode(layer) {
+	if(layer < 0)
+		throw new std::invalid_argument(DRAWLAYERERROR);
+	setSize(size);
+	setOrigin(size.x / 2, size.y / 2);
+	setHidden(hidden);
+	setParent(parent);
 }
 
 //Get parent node
@@ -36,7 +60,7 @@ Node *Node::getParent() {
 
 //Check if node is hidden
 bool Node::isHidden() {
-	return hidden || deleted || (parent != NULL && parent->isHidden());
+	return hidden || isDeleted() || (parent != NULL && parent->isHidden());
 }
 
 //Get scaled size of node
@@ -220,36 +244,17 @@ std::bitset<MAXLAYER> Node::getCollisionLayers() {
 }
 
 //Check if node collides with layer
-bool Node::getCollisionLayer(Layer layer) {
+bool Node::getCollisionLayer(int layer) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	return collisionLayers[layer];
 }
 
 //Set if node collides with layer
-void Node::collideWith(Layer layer, bool collide) {
+void Node::collideWith(int layer, bool collide) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	collisionLayers[layer] = collide;
-}
-
-//Get next node in list
-Node *Node::getNext() {
-	return next;
-}
-
-//Add new node after this
-void Node::addNode(Node *node) {
-	if(next == NULL)
-		next = node;
-	else
-		next->addNode(node);
-}
-
-//Remove node immdiately after this from list
-void Node::deleteNext() {
-	if(next != NULL && next->isDeleted())
-		next = next->getNext();
 }
 
 //Convert screen space coordinates to global

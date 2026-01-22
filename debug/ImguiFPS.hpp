@@ -3,13 +3,13 @@
 
 #include "../include/imgui/imgui.h"//
 
-class ImguiFPS : public Node {
+class ImguiFPS : public UNode {
 private:
 	bool open = false;
 
 public:
-	ImguiFPS(int debugLayer) : Node(debugLayer, Vector2i(16, 16), true) {
-		UpdateList::addNode(this);
+	ImguiFPS(int debugLayer) : UNode(debugLayer) {
+		UpdateList::addUNode(this);
 		UpdateList::addListener(this, EVENT_IMGUI);
 	}
 

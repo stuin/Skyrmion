@@ -8,19 +8,54 @@
 #include "Color.h"
 
 #define MAXLAYER 16
-#define LAYERERROR "Used collision layer > " + std::to_string(MAXLAYER)
-
-using Layer = unsigned char;
+#define LAYERERROR "Used layer > " + std::to_string(MAXLAYER)
+#define DRAWLAYERERROR "Used node layer < 0"
 
 /*
- * Sprite with collision, events, parenting, etc.
+ * UNode has id, updating, and events
+ * Node adds transform, collision, parenting, etc.
  */
 
-class Node {
+class UNode {
+private:
+	sint id;
+	int layer;
+
+	//Background system variables
+	bool deleted = false;
+	UNode *next = NULL;
+
+public:
+	//Node constructors
+	UNode(int layer=0);
+
+	//General getters
+	sint getId();
+	int getLayer();
+
+	//Linked list functions
+	UNode *getNext();
+	void addNode(UNode *node);
+	void deleteNext();
+
+	//Proper deletion procedure
+	bool isDeleted() {
+		return deleted;
+	}
+	void setDelete() {
+		deleted = true;
+	}
+	virtual ~UNode() {}
+
+	//Custom functions
+	virtual void update(double time) {}
+	virtual void recieveEvent(Event event) {}
+	virtual void recieveSignal(int id, UNode *sender) {}
+};
+
+class Node : public UNode {
 private:
 	//Base semi-public variables
-	sint id;
-	Layer layer;
 	Node *parent = NULL;
 	bool hidden = false;
 
@@ -40,21 +75,15 @@ private:
 	std::vector<TextureRect> textureRects;
 	const char *text = NULL;
 
-	//Background system variables
-	bool deleted = false;
-	Node *next = NULL;
-
 public:
 
 	//Node constructors
-	Node(Layer layer=0,
+	Node(int layer=0,
 		Vector2i size = Vector2i(16, 16),
 		bool hidden = false,
 		Node *parent = NULL);
 
 	//General getters
-	sint getId();
-	int getLayer();
 	Node *getParent();
 	bool isHidden();
 	Vector2f getSize();
@@ -105,30 +134,14 @@ public:
 
 	//Collision system
 	std::bitset<MAXLAYER> getCollisionLayers();
-	bool getCollisionLayer(Layer layer);
-	void collideWith(Layer layer, bool collide=true);
+	bool getCollisionLayer(int layer);
+	void collideWith(int layer, bool collide=true);
 
-	//Linked list functions
-	Node *getNext();
-	void addNode(Node *node);
-	void deleteNext();
-
-	//Proper deletion procedure
-	bool isDeleted() {
-		return deleted;
-	}
-	void setDelete() {
-		deleted = true;
-	}
+	//Custom functions
 	virtual ~Node() {}
-
-	//Entity implementation
-	virtual void update(double time) {}
 	virtual void collide(Node *object) {}
 	virtual void collide(Node *object, double time) {
 		collide(object);
 	}
-	virtual void recieveEvent(Event event) {}
-	virtual void recieveSignal(int id, Node *sender) {}
 	virtual void reloadBuffer() {}
 };

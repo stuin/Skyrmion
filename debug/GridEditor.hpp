@@ -18,7 +18,7 @@ private:
 
 public:
 	GridEditor(std::string _name, std::string _saveFile, std::string _loadFile, GridMaker *_grid,
-		std::map<int, std::string> _tiles, Vector2i size, Layer layer) :
+		std::map<int, std::string> _tiles, Vector2i size, int layer) :
 		Node(layer, size), name(_name), saveFile(_saveFile), loadFile(_loadFile), grid(_grid), tiles(_tiles) {
 
 		UpdateList::addNode(this);
@@ -90,7 +90,7 @@ public:
 	}
 };
 
-void addGridEditor(std::string name, std::string saveFile, std::string loadFile, GridMaker *grid, FloatRect bounds, std::map<int, std::string> tiles, sint texture, Layer layer) {
+void addGridEditor(std::string name, std::string saveFile, std::string loadFile, GridMaker *grid, FloatRect bounds, std::map<int, std::string> tiles, sint texture, int layer) {
 	GridEditor *editor = new GridEditor(name, saveFile, loadFile, grid, tiles, bounds.size(), layer);
 	editor->setPosition(bounds.pos());
 	editor->setOrigin(0,0);

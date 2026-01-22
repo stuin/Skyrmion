@@ -33,7 +33,7 @@ struct Keybind {
 	}
 };
 
-class InputHandler : public Node {
+class InputHandler : public UNode {
 private:
 	void addListeners();
 
@@ -45,8 +45,8 @@ public:
 	long int remap = -1;
 	sint count = 0;
 
-	InputHandler(std::vector<int> _controls, int layer, Node *parent = NULL);
-	InputHandler(std::vector<std::string> keys, int layer, Node *parent = NULL);
+	InputHandler(std::vector<int> _controls, int layer);
+	InputHandler(std::vector<std::string> keys, int layer);
 
 	//Key management
 	int addKey(int code, int alt=0);
@@ -75,9 +75,9 @@ public:
 	bool joystickMovement = false;
 	int moving = 0;
 
-	DirectionHandler(std::vector<int> _controls, int layer, Node *parent = NULL);
-	DirectionHandler(std::vector<std::string> keys, int layer, Node *parent = NULL);
-	DirectionHandler(std::string field, int layer, Node *parent = NULL);
+	DirectionHandler(std::vector<int> _controls, int layer);
+	DirectionHandler(std::vector<std::string> keys, int layer);
+	DirectionHandler(std::string field, int layer);
 
 	Vector2f getDirection();
 	Vector2f getMovement(double distance);

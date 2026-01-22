@@ -43,7 +43,7 @@ struct BufferData {
 		color = _color;
 	}
 
-	BufferData(sint _texture, Vector2i _size, Layer _layer, skColor _color = COLOR_WHITE) {
+	BufferData(sint _texture, Vector2i _size, int _layer, skColor _color = COLOR_WHITE) {
 		texture = _texture;
 		size = _size;
 		layers[_layer] = true;
@@ -83,10 +83,19 @@ class UpdateList {
 private:
 	//Node management
 	static LayerData layers[MAXLAYER];
-	static Layer maxLayer;
+	static UNode* uLayers[MAXLAYER*2];
+	static int maxLayer;
+	static int maxULayer;
 	static bool running;
-	static std::vector<Node *> deleted1;
-	static std::vector<Node *> deleted2;
+	static std::vector<UNode *> deleted1;
+	static std::vector<UNode *> deleted2;
+
+	//Event handling
+	static std::array<std::vector<UNode *>, EVENT_MAX> listeners;
+	static std::deque<Event> event_queue;
+	static std::array<Event, EVENT_MAX> event_previous;
+	static std::vector<int> watchedKeycodes;
+	static std::vector<bool> watchedKeycodesPrevious;
 
 	//Viewport variables
 	static Node *camera;
@@ -105,15 +114,18 @@ public:
 	//Manage node lists
 	static void addNode(Node *next);
 	static void addNodes(std::vector<Node *> nodes);
-	static Node *getNode(Layer layer);
-	static void clearLayer(Layer layer);
+	static Node *getNode(int layer);
+	static void clearLayer(int layer);
+
+	static void addUNode(UNode *next);
+	static UNode *getUNode(int layer);
 
 	//Events and signals
-	static void addListener(Node *item, int type);
+	static void addListener(UNode *item, int type);
 	static void watchKeycode(int keycode);
 	static void queueEvent(Event event);
-	static void sendSignal(Layer layer, int id, Node *sender);
-	static void sendSignal(int id, Node *sender);
+	static void sendSignal(int layer, int id, UNode *sender);
+	static void sendSignal(int id, UNode *sender);
 
 	//Screen view
 	static Node *setCamera(Node *follow, Vector2f size, Vector2f position=Vector2f(0,0));
@@ -122,20 +134,20 @@ public:
 	static Vector2f getScaleFactor();
 
 	//Layer control features
-	static void pauseLayer(Layer layer, bool pause=true);
-	static void hideLayer(Layer layer, bool hidden=true);
-	static void globalLayer(Layer layer, bool global=true);
+	static void pauseLayer(int layer, bool pause=true);
+	static void hideLayer(int layer, bool hidden=true);
+	static void globalLayer(int layer, bool global=true);
 
 	//Layer read features
-	static bool isLayerPaused(Layer layer);
-	static bool isLayerHidden(Layer layer);
-	static LayerData &getLayerData(Layer layer);
+	static bool isLayerPaused(int layer);
+	static bool isLayerHidden(int layer);
+	static LayerData &getLayerData(int layer);
 	static int getLayerCount();
 
 	//Texture Handling
 	static int loadResource(std::string filename);
 	static int createBuffer(BufferData data);
-	static int createBuffer(sint _texture, Vector2i _size, Layer _layer, skColor _color = COLOR_WHITE);
+	static int createBuffer(sint _texture, Vector2i _size, int _layer, skColor _color = COLOR_WHITE);
 	static void scheduleReload(sint buffer);
 	static Vector2i getTextureSize(sint index);
 	static ResourceData &getResourceData(sint index);

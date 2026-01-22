@@ -59,9 +59,11 @@ FloatRect UpdateList::cameraRect;
 FloatRect UpdateList::screenRect;
 
 //Event handling
-std::deque<Event> event_queue;
-std::array<std::vector<Node *>, EVENT_MAX> listeners;
-std::vector<int> watchedKeycodes;
+std::deque<Event> UpdateList::event_queue;
+std::array<std::vector<UNode *>, EVENT_MAX> UpdateList::listeners;
+std::array<Event, EVENT_MAX> UpdateList::event_previous;
+std::vector<int> UpdateList::watchedKeycodes;
+std::vector<bool> UpdateList::watchedKeycodesPrevious;
 
 //System timers
 TimingStats DebugTimers::frameTimes;

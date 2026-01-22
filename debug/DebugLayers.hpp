@@ -15,13 +15,13 @@ std::vector<std::string> debugLayerKeys = {
 	"/debug/layers/toggle9"
 };
 
-class DebugLayers : public Node {
+class DebugLayers : public UNode {
 private:
 	InputHandler input;
 
 public:
-	DebugLayers(int layer) : Node(layer, Vector2i(16, 16), true),
-	input(debugLayerKeys, layer, this) {
+	DebugLayers(int layer) : UNode(layer),
+	input(debugLayerKeys, layer) {
 
 		input.pressedFunc = [layer](int i) {
 			if(i < layer)

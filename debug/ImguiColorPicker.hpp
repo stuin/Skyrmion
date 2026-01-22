@@ -2,7 +2,7 @@
 
 #include "../include/imgui/imgui.h"//
 
-class ImguiColorPicker : public Node {
+class ImguiColorPicker : public UNode {
 private:
 	bool open = false;
 
@@ -13,8 +13,8 @@ private:
 	float pickTextureScale = 6;
 
 public:
-	ImguiColorPicker(int _pickTexture, int debugLayer) : Node(debugLayer, Vector2i(16, 16), true) {
-		UpdateList::addNode(this);
+	ImguiColorPicker(int _pickTexture, int debugLayer) : UNode(debugLayer) {
+		UpdateList::addUNode(this);
 		UpdateList::addListener(this, EVENT_IMGUI);
 
 		pickTexture = _pickTexture;

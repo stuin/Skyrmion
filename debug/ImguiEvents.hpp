@@ -11,7 +11,7 @@ static std::vector<std::string> EVENT_NAME = {
 	"CUSTOM", "MAX"
 };
 
-class ImguiEvents : public Node {
+class ImguiEvents : public UNode {
 private:
 	bool open = false;
 
@@ -22,8 +22,8 @@ private:
 	std::map<int, Keybind> keys;
 
 public:
-	ImguiEvents(int debugLayer) : Node(debugLayer, Vector2i(16, 16), true) {
-		UpdateList::addNode(this);
+	ImguiEvents(int debugLayer) : UNode(debugLayer) {
+		UpdateList::addUNode(this);
 
 		for(int i = 0; i < EVENT_MAX; i++)
 			UpdateList::addListener(this, i);

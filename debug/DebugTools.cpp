@@ -29,10 +29,10 @@ void setupDebugTools() {
 	int debugTextures = std::distance(textureFiles().begin(),
 		std::find(textureFiles().begin(), textureFiles().end(), "#DEBUG"));
 
-	UpdateList::addNode(new DebugLayers(debugLayer));
+	UpdateList::addUNode(new DebugLayers(-debugLayer));
 
-	debugBreakpoints = new DebugBreakpoints(debugLayer);
-	UpdateList::addNode(debugBreakpoints);
+	debugBreakpoints = new DebugBreakpoints(-debugLayer);
+	UpdateList::addUNode(debugBreakpoints);
 
 	new ImguiFPS(debugLayer);
 	new ImguiNodes(debugTextures+3, debugLayer);

@@ -14,7 +14,7 @@ std::vector<std::string> debugBreakpointKeys = {
 	"/debug/breakpoints/nextframe"
 };
 
-class DebugBreakpoints : public Node {
+class DebugBreakpoints : public UNode {
 private:
 	InputHandler input;
 
@@ -22,8 +22,8 @@ public:
 	bool pauseFrame = false;
 	bool stayPaused = false;
 
-	DebugBreakpoints(int layer) : Node(layer, Vector2i(16, 16), true),
-	input(debugBreakpointKeys, layer, this) {
+	DebugBreakpoints(int layer) : UNode(layer),
+	input(debugBreakpointKeys, layer) {
 
 		DebugBreakpoints *_this = this;
 		input.pressedFunc = [_this](int i) {
@@ -57,7 +57,7 @@ public:
 			UpdateList::processEvents();
 
 			//Simulate updates for debug layer
-			Node *source = UpdateList::getNode(getLayer());
+			UNode *source = UpdateList::getNode(getLayer());
 			while(source != NULL) {
 				if(source != this && !source->isDeleted())
 					source->update(0);
