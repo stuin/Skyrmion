@@ -22,7 +22,7 @@ public:
 	int x = 0;
 	int y = 0;
 
-	GridSection(GridSection *root, json data, Layer layer) : Vertex(root), Node(layer) {
+	GridSection(GridSection *root, json data, Layer layer) : Vertex(root), Node(layer, RENDER_TEXTURE_ARRAY) {
 		id = data.value("id", 0);
 		file = data.value("file", "");
 		tileOffset = data.value("tile_offset", 0);

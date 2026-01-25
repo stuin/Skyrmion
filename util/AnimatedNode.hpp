@@ -41,7 +41,7 @@ class AnimatedNode : public Node {
     bool horizontal;
 public:
 	AnimatedNode(sint texture, int _maxFrames, double _maxTime, int layer, Vector2i size, bool _horizontal=true) :
-    Node(layer, size), timer(_maxFrames, _maxTime) {
+    Node(layer, RENDER_TEXTURE_RECT, size), timer(_maxFrames, _maxTime) {
 		setTexture(texture);
 
         horizontal = _horizontal;

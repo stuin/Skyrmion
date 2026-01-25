@@ -44,9 +44,11 @@ void UNode::deleteNext() {
 }
 
 //Base constructor
-Node::Node(int layer, Vector2i size, bool hidden, Node *parent) : UNode(layer) {
+Node::Node(int layer, int renderType, Vector2i size, bool hidden, Node *parent) : UNode(layer) {
 	if(layer < 0)
 		throw new std::invalid_argument(DRAWLAYERERROR);
+	rendering = createRenderComponent(renderType);
+
 	setSize(size);
 	setOrigin(size.x / 2, size.y / 2);
 	setHidden(hidden);
@@ -80,10 +82,6 @@ FloatRect Node::getRect() {
 	return rec;
 }
 
-const char *Node::getString() {
-	return text;
-}
-
 //Get local position
 Vector2f Node::getPosition() {
 	return position;
@@ -109,23 +107,46 @@ Vector2f Node::getSOrigin() {
 	return origin*getScale().abs();
 }
 
+RenderComponent *Node::getRenderComponent() {
+	return rendering;
+}
+
 //Get blend mode for rendering
 int Node::getBlendMode() {
-	return blendMode;
+	if(rendering != NULL)
+		return rendering->getBlendMode();
+	else
+		return 1;
 }
 
 //Get texture number
 sint Node::getTexture() {
-	return texture;
+	if(rendering != NULL)
+		return rendering->getTexture();
+	else
+		return 0;
 }
 
 skColor Node::getColor() {
-	return color;
+	if(rendering != NULL)
+		return rendering->getColor();
+	else
+		return COLOR_WHITE;
 }
 
 //Get sections of texture to render
 std::vector<TextureRect> *Node::getTextureRects() {
-	return &textureRects;
+	if(rendering != NULL)
+		return rendering->getTextureRects();
+	else
+		return NULL;
+}
+
+const char *Node::getString() {
+	if(rendering != NULL)
+		return rendering->getString();
+	else
+		return NULL;
 }
 
 //Set parent node
@@ -190,52 +211,68 @@ void Node::setOrigin(float x, float y) {
 	this->origin = Vector2f(x, y);
 }
 
+//Link rendering component
+void Node::setRenderComponent(int type) {
+	if(rendering != NULL)
+		delete rendering;
+	rendering = createRenderComponent(type);
+}
+void Node::setRenderComponent(RenderComponent *component) {
+	if(rendering != NULL)
+		delete rendering;
+	rendering = component;
+}
+
+//Pass data to RenderComponent
+
 //Set blend mode to use in rendering
 void Node::setBlendMode(int _blendMode) {
-	this->blendMode = _blendMode;
+	if(rendering != NULL)
+		rendering->setBlendMode(_blendMode);
 }
 
 //Set texture channel
 void Node::setTexture(sint _texture) {
-	this->texture = _texture;
+	if(rendering != NULL)
+		rendering->setTexture(_texture);
 }
 
 void Node::setColor(skColor _color) {
-	this->color = _color;
+	if(rendering != NULL)
+		rendering->setColor(_color);
 }
 
 //Set texture rect
 void Node::setTextureRect(TextureRect rectangle, sint i) {
-	while(i >= textureRects.size())
-		textureRects.emplace_back();
-	textureRects[i] = rectangle;
+	if(rendering != NULL)
+		rendering->setTextureRect(rectangle, i);
 }
 
 //Set basic texture rect
 void Node::setTextureIntRect(IntRect rect, sint i) {
-	while(i >= textureRects.size())
-		textureRects.emplace_back();
-	textureRects[i] = {0, 0, (float)rect.width,(float)rect.height, rect.left,rect.top, rect.width,rect.height, 0};
+	if(rendering != NULL)
+		rendering->setTextureIntRect(rect, i);
 }
 
 //Set texture rect based on corner and node size
 void Node::setTextureVecRect(Vector2i corner, sint i) {
-	setTextureVecRect(corner.x, corner.y, i);
+	if(rendering != NULL)
+		rendering->setTextureVecRect(corner, size, i);
 }
 void Node::setTextureVecRect(int x, int y, sint i) {
-	setTextureIntRect(IntRect(x, y, size.x, size.y));
+	if(rendering != NULL)
+		rendering->setTextureVecRect(Vector2i(x, y), size, i);
 }
 
 //Create rectangle borders from one pixel of texture
 void Node::createPixelRect(FloatRect rect, Vector2i pixel, sint i) {
-	setTextureRect({rect.left,rect.top, 			rect.width,1,  pixel.x,pixel.y, 1,1,0}, i+0);
-	setTextureRect({rect.left,rect.top+rect.height,	rect.width,1,  pixel.x,pixel.y, 1,1,0}, i+1);
-	setTextureRect({rect.left,rect.top, 			1,rect.height, pixel.x,pixel.y, 1,1,0}, i+2);
-	setTextureRect({rect.left+rect.width,rect.top, 	1,rect.height, pixel.x,pixel.y, 1,1,0}, i+3);
+	if(rendering != NULL)
+		rendering->createPixelRect(rect, pixel, i);
 }
 
 void Node::setString(const char *_text) {
-	this->text = _text;
+	if(rendering != NULL)
+		rendering->setString(_text);
 }
 
 //Get list of layers node collides with

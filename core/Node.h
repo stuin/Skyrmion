@@ -1,11 +1,9 @@
 #pragma once
 
 #include <bitset>
-#include <vector>
 
-#include "Vector.h"
 #include "Event.h"
-#include "Color.h"
+#include "RenderComponent.h"
 
 #define MAXLAYER 16
 #define LAYERERROR "Used layer > " + std::to_string(MAXLAYER)
@@ -68,17 +66,13 @@ private:
 	Vector2f scale = Vector2f(1.0f,1.0f);
 	Vector2f origin = Vector2f(0.0f,0.0f);
 
-	//Rendering
-	int blendMode = 1;
-	sint texture = 0;
-	skColor color = COLOR_WHITE;
-	std::vector<TextureRect> textureRects;
-	const char *text = NULL;
+	RenderComponent *rendering = NULL;
 
 public:
 
 	//Node constructors
 	Node(int layer=0,
+		int renderType=RENDER_SINGLE_TEXTURE,
 		Vector2i size = Vector2i(16, 16),
 		bool hidden = false,
 		Node *parent = NULL);
@@ -88,7 +82,6 @@ public:
 	bool isHidden();
 	Vector2f getSize();
 	FloatRect getRect();
-	const char *getString();
 
 	//Positioning
 	Vector2f getPosition();
@@ -98,10 +91,12 @@ public:
 	Vector2f getSOrigin();
 
 	//Rendering
+	RenderComponent *getRenderComponent();
 	int getBlendMode();
 	sint getTexture();
 	skColor getColor();
-	virtual std::vector<TextureRect> *getTextureRects();
+	std::vector<TextureRect> *getTextureRects();
+	const char *getString();
 
 	//General setters
 	void setParent(Node *parent);
@@ -122,6 +117,8 @@ public:
 	void setOrigin(float x, float y);
 
 	//Rendering
+	void setRenderComponent(int type);
+	void setRenderComponent(RenderComponent *component);
 	void setBlendMode(int blendMode);
 	void setTexture(sint textureChannel);
 	void setColor(skColor color);

@@ -19,7 +19,7 @@ private:
 public:
 	GridEditor(std::string _name, std::string _saveFile, std::string _loadFile, GridMaker *_grid,
 		std::map<int, std::string> _tiles, Vector2i size, int layer) :
-		Node(layer, size), name(_name), saveFile(_saveFile), loadFile(_loadFile), grid(_grid), tiles(_tiles) {
+		Node(layer, RENDER_TEXTURE_ARRAY, size), name(_name), saveFile(_saveFile), loadFile(_loadFile), grid(_grid), tiles(_tiles) {
 
 		UpdateList::addNode(this);
 		UpdateList::addListener(this, EVENT_IMGUI);

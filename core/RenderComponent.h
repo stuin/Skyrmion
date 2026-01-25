@@ -1,0 +1,61 @@
+#pragma once
+
+#include <vector>
+
+#include "Color.h"
+#include "Vector.h"
+
+#define RENDERCOMPONENTERROR std::invalid_argument("Feature not in Render Component " + std::to_string(getType()))
+
+enum SK_RESOURCE_TYPE {
+	SK_INVALID = 0,
+	SK_TEXTURE = -1,
+	SK_BUFFER = -2,
+	SK_NODE_BUFFER = -3,
+	SK_SHADER = 1,
+	SK_FONT = 2,
+	SK_AUDIO = 3,
+	SK_TEXT = 4
+};
+
+enum SK_RENDER_TYPE {
+	RENDER_NONE,
+	RENDER_SINGLE_TEXTURE,
+	RENDER_SINGLE_BUFFER,
+	RENDER_SINGLE_COLOR,
+	RENDER_TEXTURE_RECT,
+	RENDER_TEXTURE_ARRAY,
+	RENDER_TEXTURE_MAP,
+	RENDER_COLOR_MAP,
+	RENDER_STRING
+};
+
+class RenderComponent {
+public:
+	virtual int getType() = 0;
+	virtual ~RenderComponent() {}
+
+	//Required getters
+	virtual int getBlendMode() = 0;
+	virtual sint getTexture() = 0;
+	virtual skColor getColor() = 0;
+
+	//Optional getters
+	virtual int getFontSize() { throw new RENDERCOMPONENTERROR; }
+	virtual TextureRect getTextureRect() { throw new RENDERCOMPONENTERROR; }
+	virtual std::vector<TextureRect> *getTextureRects() { throw new RENDERCOMPONENTERROR; }
+	virtual const char *getString() { throw new RENDERCOMPONENTERROR; }
+
+	//Optional setters
+	virtual void setBlendMode(int blendMode) { throw new RENDERCOMPONENTERROR; }
+	virtual void setTexture(sint texture) { throw new RENDERCOMPONENTERROR; }
+	virtual void setColor(skColor color) { throw new RENDERCOMPONENTERROR; }
+	virtual void setFontSize(int size) { throw new RENDERCOMPONENTERROR; }
+	virtual void setTextureRect(TextureRect rectangle, sint i=0) { throw new RENDERCOMPONENTERROR; }
+	virtual void setTextureVecRect(Vector2i corner, Vector2i size, sint i=0) { throw new RENDERCOMPONENTERROR; }
+	virtual void setTextureIntRect(IntRect rect, sint i=0) { throw new RENDERCOMPONENTERROR; }
+	virtual void createPixelRect(FloatRect rect, Vector2i pixel, sint i) { throw new RENDERCOMPONENTERROR; }
+	virtual void setString(const char *text) { throw new RENDERCOMPONENTERROR; }
+};
+
+RenderComponent *createRenderComponent(int _type);

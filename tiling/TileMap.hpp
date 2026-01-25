@@ -31,7 +31,7 @@ private:
 
 public:
     TileMap(sint _tileset, int _tileX, int _tileY, Indexer *_indexes, int layer=0, int _offset=0, Rect<uint> border=Rect<uint>())
-     : Node(layer), tileX(_tileX), tileY(_tileY), indexes(_indexes), offset(_offset) {
+     : Node(layer, RENDER_TEXTURE_ARRAY), tileX(_tileX), tileY(_tileY), indexes(_indexes), offset(_offset) {
 
         //Set sizing
         fullWidth = width = indexes->getSize().x;

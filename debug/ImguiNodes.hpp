@@ -18,7 +18,7 @@ public:
 		UpdateList::addUNode(this);
 		UpdateList::addListener(this, EVENT_IMGUI);
 
-		debugCursor = new Node(debugLayer, Vector2i(1, 1), true);
+		debugCursor = new Node(debugLayer, RENDER_TEXTURE_ARRAY, Vector2i(1, 1), true);
 		debugCursor->setTexture(_pickTexture);
 		UpdateList::addNode(debugCursor);
 
@@ -133,7 +133,7 @@ public:
 		ImGui::Checkbox("##", &nodeHidden);
 		source->setHidden(nodeHidden);
 
-		if(source->getTextureRects()->size() > 0) {
+		if(source->getTextureRects() != NULL && source->getTextureRects()->size() > 0) {
 			ImGui::Text("Texture Rects = %lu", source->getTextureRects()->size());
 
 			if(ImGui::BeginChild("##", ImVec2(400.0f, 200.0f), ImGuiChildFlags_Borders, 0)) {

@@ -7,7 +7,7 @@ private:
 	bool touch = false;
 
 public:
-	TouchscreenJoystick(uint texture, int _joystick, int layer) : Node(layer, Vector2i(32,32)) {
+	TouchscreenJoystick(uint texture, int _joystick, int layer) : Node(layer, RENDER_TEXTURE_ARRAY, Vector2i(32,32)) {
 		setTexture(texture);
 		setTextureRect({16,16,32,32, 0,0,32,32,  0}, 0);
 		setTextureRect({16,16,32,32, 32,0,32,32, 0}, 1);

@@ -222,28 +222,48 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 	BeginBlendMode(blendModeMap.at(source->getBlendMode()));
 	Color color = Color{source->getColor().r(), source->getColor().g(), source->getColor().b(), source->getColor().a()};
 
+	RenderComponent *rendering = source->getRenderComponent();
 	sint texture = (passthrough != 0) ? passthrough : source->getTexture();
 	FloatRect rect = source->getRect();
+	Rectangle dst = {rect.left, rect.top, (float)rect.width, (float)rect.height};
 	Vector2f scale = (passthrough != 0) ? Vector2f(1,1) : source->getScale();
-	std::vector<TextureRect> *textureRects = source->getTextureRects();
 
-	if(source->getString() != NULL && resourceData[texture].type == SK_FONT) {
-		//std::cout << rect.pos() << "\n";
-		DrawTextEx(fontSet[resourceData[texture].index], source->getString(), Vector2{rect.left, rect.top}, resourceData[texture].size.y, 1, color);
-	} else if(source->getString() != NULL) {
-		DrawTextEx(GetFontDefault(), source->getString(), Vector2{rect.left, rect.top}, 20, 1, color);
-	} else if(textureRects->size() == 0 || resourceData[texture].type == SK_NODE_BUFFER) {
-		//Default square texture
+	if(rendering == NULL) {
+		DrawRectangleRec(dst, color);
+		EndBlendMode();
+		return;
+	}
+
+	int renderType = rendering->getType();
+	if(renderType == RENDER_TEXTURE_ARRAY && resourceData[texture].type == SK_NODE_BUFFER)
+		renderType = RENDER_SINGLE_BUFFER;
+
+	switch(renderType) {
+	case RENDER_SINGLE_TEXTURE: case RENDER_SINGLE_BUFFER:
 		if(resourceData[texture].type < 0) {
-			//Rectangle src = {0, 0, (float)rect.width/scale.x, (float)rect.height/scale.y};
 			Vector2 position = {rect.left, rect.top};
 			DrawTextureEx(textureSet[texture], position, 0, scale.x, color);
-		} else {
-			Rectangle dst = {rect.left, rect.top, (float)rect.width, (float)rect.height};
-			DrawRectangleRec(dst, color);
+			break;
 		}
-	} else {
-		//Tilemapped or partial texture
+	case RENDER_SINGLE_COLOR:
+		DrawRectangleRec(dst, color);
+		break;
+	case RENDER_TEXTURE_RECT: {
+		TextureRect tex = rendering->getTextureRect();
+		Vector2f flip = Vector2f(scale.x < 0 ? -1 : 1, scale.y < 0 ? -1 : 1);
+		Vector2f scaleA = scale.abs();
+		if(tex.pwidth != 0 && tex.pheight != 0) {
+			Vector2 origin = Vector2{abs(tex.pwidth)*scaleA.x/2, abs(tex.pheight)*scaleA.y/2};
+			dst = {tex.px*scaleA.x+rect.left+origin.x, tex.py*scaleA.y+rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
+			Rectangle src = {(float)tex.tx, (float)tex.ty, flip.x*tex.twidth, flip.y*tex.theight};
+			if(resourceData[texture].type < 0)
+				DrawTexturePro(textureSet[texture], src, dst, origin, (float)tex.rotation, WHITE);
+			else
+				DrawRectanglePro(dst, origin, (float)tex.rotation, PURPLE);
+		}
+		} break;
+	case RENDER_TEXTURE_ARRAY: {
+		std::vector<TextureRect> *textureRects = rendering->getTextureRects();
 		Vector2f flip = Vector2f(scale.x < 0 ? -1 : 1, scale.y < 0 ? -1 : 1);
 		Vector2f scaleA = scale.abs();
 		for(sint i = 0; i < textureRects->size(); i++) {
@@ -258,6 +278,14 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 					DrawRectanglePro(dst, origin, (float)tex.rotation, PURPLE);
 			}
 		}
+		} break;
+	case RENDER_STRING:
+		if(source->getString() != NULL && resourceData[texture].type == SK_FONT) {
+			DrawTextEx(fontSet[resourceData[texture].index], source->getString(), Vector2{rect.left, rect.top}, rendering->getFontSize(), 1, color);
+		} else if(source->getString() != NULL) {
+			DrawTextEx(GetFontDefault(), source->getString(), Vector2{rect.left, rect.top}, 20, 1, color);
+		}
+		break;
 	}
 
 	EndBlendMode();

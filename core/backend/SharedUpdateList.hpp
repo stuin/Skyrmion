@@ -83,7 +83,7 @@ Node *UpdateList::setCamera(Node *follow, Vector2f size, Vector2f position) {
 		camera->setSize(size);
 		camera->setParent(follow);
 	} else
-		camera = new Node(0, size, true, follow);
+		camera = new Node(0, RENDER_NONE, size, true, follow);
 	cameraRect = FloatRect(position, size);
 	camera->setPosition(position);
 	return camera;
