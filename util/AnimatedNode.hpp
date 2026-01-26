@@ -47,7 +47,7 @@ public:
         horizontal = _horizontal;
 
         //Get individual frame size
-        frameSize = IO::getTextureSize(texture);
+        frameSize = getTextureSize();
         if(horizontal)
 		  frameSize.x /= _maxFrames;
         else

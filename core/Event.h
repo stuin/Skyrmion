@@ -69,6 +69,4 @@ public:
 	static void closeFile(char *file);
 	static void writeFile(std::string filename, char *text);
 	static void writeFile(std::string filename, std::string text);
-
-	static Vector2i getTextureSize(sint index);
 };

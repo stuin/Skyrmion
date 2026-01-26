@@ -47,7 +47,7 @@ void UNode::deleteNext() {
 Node::Node(int layer, int renderType, Vector2i size, bool hidden, Node *parent) : UNode(layer) {
 	if(layer < 0)
 		throw new std::invalid_argument(DRAWLAYERERROR);
-	rendering = createRenderComponent(renderType);
+	rendering = createRenderComponent(renderType, this);
 
 	setSize(size);
 	setOrigin(size.x / 2, size.y / 2);
@@ -62,7 +62,9 @@ Node *Node::getParent() {
 
 //Check if node is hidden
 bool Node::isHidden() {
-	return hidden || isDeleted() || (parent != NULL && parent->isHidden());
+	if(rendering != NULL)
+		return rendering->isHidden() || isDeleted() || (parent != NULL && parent->isHidden());
+	return true;
 }
 
 //Get scaled size of node
@@ -107,46 +109,52 @@ Vector2f Node::getSOrigin() {
 	return origin*getScale().abs();
 }
 
-RenderComponent *Node::getRenderComponent() {
+RenderComponent *Node::getRenderComponent(bool passBuffer) {
+	if(passBuffer && rendering != NULL && rendering->getType() == RENDER_PASSTHROUGH_BUFFER)
+		return rendering->getSubComponent();
 	return rendering;
 }
 
 //Get blend mode for rendering
 int Node::getBlendMode() {
 	if(rendering != NULL)
-		return rendering->getBlendMode();
+		return getRenderComponent()->getBlendMode();
 	else
-		return 1;
+		throw new RENDERCOMPONENTNULL;
 }
 
 //Get texture number
 sint Node::getTexture() {
 	if(rendering != NULL)
-		return rendering->getTexture();
+		return getRenderComponent()->getTexture();
 	else
-		return 0;
+		throw new RENDERCOMPONENTNULL;
+}
+
+Vector2i Node::getTextureSize() {
+	return UpdateList::getTextureSize(getTexture());
 }
 
 skColor Node::getColor() {
 	if(rendering != NULL)
-		return rendering->getColor();
+		return getRenderComponent()->getColor();
 	else
-		return COLOR_WHITE;
+		throw new RENDERCOMPONENTNULL;
 }
 
 //Get sections of texture to render
 std::vector<TextureRect> *Node::getTextureRects() {
 	if(rendering != NULL)
-		return rendering->getTextureRects();
+		return getRenderComponent()->getTextureRects();
 	else
-		return NULL;
+		throw new RENDERCOMPONENTNULL;
 }
 
 const char *Node::getString() {
 	if(rendering != NULL)
-		return rendering->getString();
+		return getRenderComponent()->getString();
 	else
-		return NULL;
+		throw new RENDERCOMPONENTNULL;
 }
 
 //Set parent node
@@ -156,7 +164,8 @@ void Node::setParent(Node *_parent) {
 
 //Set whether node is hidden
 void Node::setHidden(bool _hidden) {
-	this->hidden = _hidden;
+	if(rendering != NULL)
+		rendering->setHidden(_hidden);
 }
 
 //Set collision box size
@@ -215,64 +224,99 @@ void Node::setOrigin(float x, float y) {
 void Node::setRenderComponent(int type) {
 	if(rendering != NULL)
 		delete rendering;
-	rendering = createRenderComponent(type);
+	rendering = createRenderComponent(type, this);
 }
-void Node::setRenderComponent(RenderComponent *component) {
-	if(rendering != NULL)
-		delete rendering;
-	rendering = component;
-}
+//void Node::setRenderComponent(RenderComponent *component) {
+//	if(rendering != NULL)
+//		delete rendering;
+//	rendering = component;
+//}
 
 //Pass data to RenderComponent
 
 //Set blend mode to use in rendering
 void Node::setBlendMode(int _blendMode) {
 	if(rendering != NULL)
-		rendering->setBlendMode(_blendMode);
+		getRenderComponent()->setBlendMode(_blendMode);
+	else
+		throw new RENDERCOMPONENTNULL;
 }
 
 //Set texture channel
 void Node::setTexture(sint _texture) {
 	if(rendering != NULL)
-		rendering->setTexture(_texture);
+		getRenderComponent()->setTexture(_texture);
+	else
+		throw new RENDERCOMPONENTNULL;
 }
 
 void Node::setColor(skColor _color) {
 	if(rendering != NULL)
-		rendering->setColor(_color);
+		getRenderComponent()->setColor(_color);
+	else
+		throw new RENDERCOMPONENTNULL;
 }
 
 //Set texture rect
 void Node::setTextureRect(TextureRect rectangle, sint i) {
 	if(rendering != NULL)
-		rendering->setTextureRect(rectangle, i);
+		getRenderComponent()->setTextureRect(rectangle, i);
+	else
+		throw new RENDERCOMPONENTNULL;
 }
 
 //Set basic texture rect
 void Node::setTextureIntRect(IntRect rect, sint i) {
 	if(rendering != NULL)
-		rendering->setTextureIntRect(rect, i);
+		getRenderComponent()->setTextureIntRect(rect, i);
+	else
+		throw new RENDERCOMPONENTNULL;
 }
 
 //Set texture rect based on corner and node size
 void Node::setTextureVecRect(Vector2i corner, sint i) {
 	if(rendering != NULL)
-		rendering->setTextureVecRect(corner, size, i);
+		getRenderComponent()->setTextureVecRect(corner, size, i);
+	else
+		throw new RENDERCOMPONENTNULL;
 }
 void Node::setTextureVecRect(int x, int y, sint i) {
 	if(rendering != NULL)
-		rendering->setTextureVecRect(Vector2i(x, y), size, i);
+		getRenderComponent()->setTextureVecRect(Vector2i(x, y), size, i);
+	else
+		throw new RENDERCOMPONENTNULL;
 }
 
 //Create rectangle borders from one pixel of texture
 void Node::createPixelRect(FloatRect rect, Vector2i pixel, sint i) {
 	if(rendering != NULL)
-		rendering->createPixelRect(rect, pixel, i);
+		getRenderComponent()->createPixelRect(rect, pixel, i);
+	else
+		throw new RENDERCOMPONENTNULL;
 }
 
 void Node::setString(const char *_text) {
 	if(rendering != NULL)
-		rendering->setString(_text);
+		getRenderComponent()->setString(_text);
+	else
+		throw new RENDERCOMPONENTNULL;
+}
+
+//Setup RENDER_PASSTHROUGH_BUFFER Component and Buffer Texture
+void Node::setupBuffer(skColor _color) {
+	RenderComponent *buffer = createRenderComponent(RENDER_PASSTHROUGH_BUFFER, this);
+	buffer->setSubComponent(rendering);
+	rendering = buffer;
+	buffer->setTexture(UpdateList::createBuffer(this, _color));
+}
+
+void Node::scheduleBufferRefresh(sint buffer) {
+	if(buffer != 0)
+		UpdateList::scheduleBufferRefresh(buffer);
+	else if(rendering != NULL && rendering->getType() == RENDER_PASSTHROUGH_BUFFER)
+		UpdateList::scheduleBufferRefresh(rendering->getTexture());
+	else
+		throw new RENDERCOMPONENTNULL;
 }
 
 //Get list of layers node collides with

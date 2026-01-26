@@ -1,3 +1,28 @@
+//Buffer draw data
+struct BufferData {
+	sint texture;
+	sint shader;
+	Vector2i size;
+	std::bitset<MAXLAYER> layers;
+	Node *source = NULL;
+	skColor color;
+	bool redraw = true;
+
+	BufferData() {
+		texture = 0;
+		redraw = false;
+	}
+
+	BufferData(sint _texture, Vector2i _size, std::bitset<MAXLAYER> _layers, Node *_source, sint _shader, skColor _color) {
+		texture = _texture;
+		size = _size;
+		layers = _layers;
+		source = _source;
+		shader = _shader;
+		color = _color;
+	}
+};
+
 //Add node to update/draw cycle
 void UpdateList::addNode(Node *next) {
 	int layer = next->getLayer();
@@ -63,16 +88,16 @@ UNode *UpdateList::getUNode(int layer) {
 }
 
 //Send signal message to all nodes in layer
-void UpdateList::sendSignal(int layer, int id, UNode *sender) {
-	UNode *source = layers[layer].root;
+void UpdateList::sendSignal(int layer, int id, Node *sender) {
+	Node *source = layers[layer].root;
 	while(source != NULL) {
 		source->recieveSignal(id, sender);
-		source = source->getNext();
+		source = (Node*)source->getNext();
 	}
 }
 
 //Send signal message to all nodes in game
-void UpdateList::sendSignal(int id, UNode *sender) {
+void UpdateList::sendSignal(int id, Node *sender) {
 	for(int layer = 0; layer <= maxLayer; layer++)
 		sendSignal(layer, id, sender);
 }

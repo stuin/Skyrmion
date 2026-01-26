@@ -6,37 +6,10 @@ private:
 	sint texture = 0;
 
 public:
+	SingleTextureRenderComponent(Node *source) : RenderComponent(source) {}
+
 	int getType() {
 		return RENDER_SINGLE_TEXTURE;
-	}
-
-	int getBlendMode() {
-		return blendMode;
-	}
-	sint getTexture() {
-		return texture;
-	}
-
-	skColor getColor() {
-		return COLOR_WHITE;
-	}
-
-	void setBlendMode(int _blendMode) {
-		blendMode = _blendMode;
-	}
-	void setTexture(sint _texture) {
-		texture = _texture;
-	}
-};
-
-class SingleBufferRenderComponent : public RenderComponent {
-private:
-	int blendMode = 1;
-	sint texture = 0;
-
-public:
-	int getType() {
-		return RENDER_SINGLE_BUFFER;
 	}
 
 	int getBlendMode() {
@@ -64,6 +37,8 @@ private:
 	skColor color = COLOR_WHITE;
 
 public:
+	SingleColorRenderComponent(Node *source) : RenderComponent(source) {}
+
 	int getType() {
 		return RENDER_SINGLE_COLOR;
 	}
@@ -93,6 +68,8 @@ private:
 	TextureRect textureRect;
 
 public:
+	TextureRectRenderComponent(Node *source) : RenderComponent(source) {}
+
 	int getType() {
 		return RENDER_TEXTURE_RECT;
 	}
@@ -135,6 +112,8 @@ private:
 	std::vector<TextureRect> textureRects;
 
 public:
+	TextureArrayRenderComponent(Node *source) : RenderComponent(source) {}
+
 	int getType() {
 		return RENDER_TEXTURE_ARRAY;
 	}
@@ -196,6 +175,8 @@ private:
 	const char *text = NULL;
 
 public:
+	StringRenderComponent(Node *source) : RenderComponent(source) {}
+
 	int getType() {
 		return RENDER_STRING;
 	}
@@ -234,22 +215,71 @@ public:
 	}
 };
 
-RenderComponent *createRenderComponent(int _type) {
+class PassthroughBufferRenderComponent : public RenderComponent {
+private:
+	int blendMode = 1;
+	sint bufferTexture = 0;
+
+	RenderComponent *subComponent = NULL;
+
+public:
+	PassthroughBufferRenderComponent(Node *source) : RenderComponent(source) {}
+
+	int getType() {
+		return RENDER_PASSTHROUGH_BUFFER;
+	}
+
+	int getBlendMode() {
+		return blendMode;
+	}
+	sint getTexture() {
+		return bufferTexture;
+	}
+	RenderComponent *getSubComponent() {
+		if(subComponent != NULL)
+			return subComponent;
+		else
+			return this;
+	}
+
+	skColor getColor() {
+		return COLOR_WHITE;
+	}
+
+	void setBlendMode(int _blendMode) {
+		blendMode = _blendMode;
+	}
+	void setTexture(sint _texture) {
+		bufferTexture = _texture;
+	}
+	void setSubComponent(int _type) {
+		if(subComponent != NULL)
+			delete subComponent;
+		subComponent = createRenderComponent(_type, getSource());
+	}
+	void setSubComponent(RenderComponent *_component) {
+		if(subComponent != NULL)
+			delete subComponent;
+		subComponent = _component;
+	}
+};
+
+RenderComponent *createRenderComponent(int _type, Node *_source) {
 	switch(_type) {
 	case RENDER_NONE:
 		return NULL;
 	case RENDER_SINGLE_TEXTURE:
-		return new SingleTextureRenderComponent();
-	case RENDER_SINGLE_BUFFER:
-		return new SingleBufferRenderComponent();
+		return new SingleTextureRenderComponent(_source);
 	case RENDER_SINGLE_COLOR:
-		return new SingleColorRenderComponent();
+		return new SingleColorRenderComponent(_source);
 	case RENDER_TEXTURE_RECT:
-		return new TextureRectRenderComponent();
+		return new TextureRectRenderComponent(_source);
 	case RENDER_TEXTURE_ARRAY:
-		return new TextureArrayRenderComponent();
+		return new TextureArrayRenderComponent(_source);
 	case RENDER_STRING:
-		return new StringRenderComponent();
+		return new StringRenderComponent(_source);
+	case RENDER_PASSTHROUGH_BUFFER:
+		return new PassthroughBufferRenderComponent(_source);
 	default:
 		return NULL;
 	}

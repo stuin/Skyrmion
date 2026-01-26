@@ -138,12 +138,13 @@ void finalizeBuffer(sint index) {
 	if(index != 0 && data.type == SK_INVALID) {
 		bufferSet.push_back(LoadRenderTexture(data.size.x, data.size.y));
 		textureSet[bufferData[index].texture] = bufferSet[index].texture;
-		data.type = (bufferData[index].passthrough != 0) ? SK_NODE_BUFFER : SK_BUFFER;
+		data.type = SK_BUFFER;
 	}
 }
 
 //Replace blank texture with render buffer
-int UpdateList::createBuffer(BufferData data) {
+int UpdateList::createBuffer(sint _texture, Vector2i _size, std::bitset<MAXLAYER> _layers, Node *_source, sint _shader, skColor _color) {
+	BufferData data = BufferData(_texture, _size, _layers, _source, _shader, _color);
 	sint texture = data.texture;
 	while(texture >= resourceData.size()) {
 		//throw new std::invalid_argument(TEXTUREERROR);
@@ -165,11 +166,18 @@ int UpdateList::createBuffer(BufferData data) {
 }
 
 int UpdateList::createBuffer(sint _texture, Vector2i _size, int _layer, skColor _color) {
-	return createBuffer(BufferData(_texture, _size, _layer, _color));
+	std::bitset<MAXLAYER> layers;
+	layers[_layer] = true;
+	return createBuffer(_texture, _size, layers, NULL, _color);
 }
 
-//Schedule reload call before next draw
-void UpdateList::scheduleReload(sint texture) {
+int UpdateList::createBuffer(Node *_node, skColor _color) {
+	std::bitset<MAXLAYER> layers;
+	return createBuffer(UpdateList::getResourceCount(), _node->getSize(), layers,  _node, _color);
+}
+
+//Schedule buffer draw before next draw
+void UpdateList::scheduleBufferRefresh(sint texture) {
 	bufferData[resourceData[texture].index].redraw = true;
 }
 
@@ -178,9 +186,6 @@ Vector2i UpdateList::getTextureSize(sint texture) {
 	if(texture >= resourceData.size())
 		throw new std::invalid_argument(TEXTUREERROR);
 	return resourceData[texture].size;
-}
-Vector2i IO::getTextureSize(sint texture) {
-	return UpdateList::getTextureSize(texture);
 }
 
 //Get all resource data
@@ -219,27 +224,25 @@ static const std::map<int, int> blendModeMap = {
 };
 
 void UpdateList::drawNode(Node *source, sint passthrough) {
-	BeginBlendMode(blendModeMap.at(source->getBlendMode()));
-	Color color = Color{source->getColor().r(), source->getColor().g(), source->getColor().b(), source->getColor().a()};
-
-	RenderComponent *rendering = source->getRenderComponent();
-	sint texture = (passthrough != 0) ? passthrough : source->getTexture();
 	FloatRect rect = source->getRect();
 	Rectangle dst = {rect.left, rect.top, (float)rect.width, (float)rect.height};
 	Vector2f scale = (passthrough != 0) ? Vector2f(1,1) : source->getScale();
 
+	RenderComponent *rendering = source->getRenderComponent(false);
 	if(rendering == NULL) {
-		DrawRectangleRec(dst, color);
-		EndBlendMode();
+		DrawRectangleRec(dst, PURPLE);
 		return;
 	}
+	if(rendering->getType() == RENDER_PASSTHROUGH_BUFFER && passthrough != 0)
+		rendering = rendering->getSubComponent();
 
-	int renderType = rendering->getType();
-	if(renderType == RENDER_TEXTURE_ARRAY && resourceData[texture].type == SK_NODE_BUFFER)
-		renderType = RENDER_SINGLE_BUFFER;
+	BeginBlendMode(blendModeMap.at(rendering->getBlendMode()));
+	skColor color1 = rendering->getColor();
+	Color color = Color{color1.r(), color1.g(), color1.b(), color1.a()};
+	sint texture = rendering->getTexture();
 
-	switch(renderType) {
-	case RENDER_SINGLE_TEXTURE: case RENDER_SINGLE_BUFFER:
+	switch(rendering->getType()) {
+	case RENDER_SINGLE_TEXTURE: case RENDER_PASSTHROUGH_BUFFER:
 		if(resourceData[texture].type < 0) {
 			Vector2 position = {rect.left, rect.top};
 			DrawTextureEx(textureSet[texture], position, 0, scale.x, color);
@@ -326,13 +329,16 @@ void UpdateList::draw(FloatRect cameraRect) {
 	EndMode2D();
 }
 
-void UpdateList::drawBuffer(BufferData data) {
+void UpdateList::drawBuffer(sint buffer) {
+	BufferData data = bufferData[buffer];
 	BeginTextureMode(bufferSet[resourceData[data.texture].index]);
 
 	//Clear buffer
 	if(data.color != COLOR_NONE)
 		ClearBackground(Color{data.color.r(), data.color.g(),
 			data.color.b(), data.color.a()});
+	if(data.shader != 0)
+		BeginShaderMode(shaderSet[resourceData[data.shader].index]);
 
 	//Render specific linked node
 	if(data.source != NULL) {
@@ -341,8 +347,8 @@ void UpdateList::drawBuffer(BufferData data) {
 		raycamera.zoom = 1;
 
 		BeginMode2D(raycamera);
-		if(data.source->getTexture() == data.texture && data.passthrough != 0)
-			drawNode(data.source, data.passthrough);
+		if(data.source->getRenderComponent(false)->getType() == RENDER_PASSTHROUGH_BUFFER)
+			drawNode(data.source, 1);
 		else
 			drawNode(data.source);
 	} else {
@@ -365,6 +371,7 @@ void UpdateList::drawBuffer(BufferData data) {
 	}
 
 	EndMode2D();
+	EndShaderMode();
 	EndTextureMode();
 }
 
@@ -492,7 +499,7 @@ void UpdateList::frame(void) {
 	//Reload buffer textures
 	for(sint i = 0; i < bufferData.size(); i++) {
 		if(bufferData[i].redraw) {
-			drawBuffer(bufferData[i]);
+			drawBuffer(i);
 			bufferData[i].redraw = false;
 		}
 	}

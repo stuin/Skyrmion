@@ -48,14 +48,12 @@ public:
 	//Custom functions
 	virtual void update(double time) {}
 	virtual void recieveEvent(Event event) {}
-	virtual void recieveSignal(int id, UNode *sender) {}
 };
 
 class Node : public UNode {
 private:
 	//Base semi-public variables
 	Node *parent = NULL;
-	bool hidden = false;
 
 	//Collision
 	Vector2i size = Vector2i(1,1);
@@ -91,9 +89,10 @@ public:
 	Vector2f getSOrigin();
 
 	//Rendering
-	RenderComponent *getRenderComponent();
+	RenderComponent *getRenderComponent(bool passBuffer=true);
 	int getBlendMode();
 	sint getTexture();
+	Vector2i getTextureSize();
 	skColor getColor();
 	std::vector<TextureRect> *getTextureRects();
 	const char *getString();
@@ -118,7 +117,6 @@ public:
 
 	//Rendering
 	void setRenderComponent(int type);
-	void setRenderComponent(RenderComponent *component);
 	void setBlendMode(int blendMode);
 	void setTexture(sint textureChannel);
 	void setColor(skColor color);
@@ -128,6 +126,8 @@ public:
 	void setTextureVecRect(int x, int y, sint i=0);
 	void createPixelRect(FloatRect rect, Vector2i pixel, sint i=0);
 	void setString(const char *text);
+	void setupBuffer(skColor color=COLOR_WHITE);
+	void scheduleBufferRefresh(sint buffer=0);
 
 	//Collision system
 	std::bitset<MAXLAYER> getCollisionLayers();
@@ -135,10 +135,14 @@ public:
 	void collideWith(int layer, bool collide=true);
 
 	//Custom functions
-	virtual ~Node() {}
+	virtual ~Node() {
+		if(rendering != NULL)
+			delete rendering;
+	}
 	virtual void collide(Node *object) {}
 	virtual void collide(Node *object, double time) {
 		collide(object);
 	}
+	virtual void recieveSignal(int id, Node *sender) {}
 	virtual void reloadBuffer() {}
 };

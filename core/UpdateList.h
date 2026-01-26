@@ -21,44 +21,6 @@ struct LayerData {
 	sint shader = 0;
 };
 
-//Buffer draw data
-struct BufferData {
-	sint texture;
-	Vector2i size;
-	std::bitset<MAXLAYER> layers;
-	Node *source = NULL;
-	sint passthrough = 0;
-	skColor color;
-	bool redraw = true;
-
-	BufferData() {
-		texture = 0;
-		redraw = false;
-	}
-
-	BufferData(sint _texture, Vector2i _size, std::bitset<MAXLAYER> _layers, skColor _color = COLOR_WHITE) {
-		texture = _texture;
-		size = _size;
-		layers = _layers;
-		color = _color;
-	}
-
-	BufferData(sint _texture, Vector2i _size, int _layer, skColor _color = COLOR_WHITE) {
-		texture = _texture;
-		size = _size;
-		layers[_layer] = true;
-		color = _color;
-	}
-
-	BufferData(sint _texture, Node *_node, skColor _color = COLOR_WHITE) {
-		texture = _texture;
-		size = _node->getSize();
-		source = _node;
-		passthrough = _node->getTexture();
-		color = _color;
-	}
-};
-
 //Metadata surrounding each resource
 struct ResourceData {
 	std::string filename = "";
@@ -124,8 +86,8 @@ public:
 	static void addListener(UNode *item, int type);
 	static void watchKeycode(int keycode);
 	static void queueEvent(Event event);
-	static void sendSignal(int layer, int id, UNode *sender);
-	static void sendSignal(int id, UNode *sender);
+	static void sendSignal(int layer, int id, Node *sender);
+	static void sendSignal(int id, Node *sender);
 
 	//Screen view
 	static Node *setCamera(Node *follow, Vector2f size, Vector2f position=Vector2f(0,0));
@@ -146,9 +108,10 @@ public:
 
 	//Texture Handling
 	static int loadResource(std::string filename);
-	static int createBuffer(BufferData data);
+	static int createBuffer(sint _texture, Vector2i _size, std::bitset<MAXLAYER> _layers, Node *source=NULL, sint shader=0, skColor _color = COLOR_WHITE);
 	static int createBuffer(sint _texture, Vector2i _size, int _layer, skColor _color = COLOR_WHITE);
-	static void scheduleReload(sint buffer);
+	static int createBuffer(Node *_node, skColor _color = COLOR_WHITE);
+	static void scheduleBufferRefresh(sint buffer);
 	static Vector2i getTextureSize(sint index);
 	static ResourceData &getResourceData(sint index);
 	static sint getResourceCount();
@@ -166,7 +129,7 @@ public:
 	static void processAudio();
 	static void drawNode(Node *source, sint passthrough=0);
 	static void draw(FloatRect cameraRect);
-	static void drawBuffer(BufferData data);
+	static void drawBuffer(sint buffer);
 	static void update(double time);
 	static void frame(void);
 	static void init(void);

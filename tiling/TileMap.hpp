@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../core/Node.h"
-#include "../core/UpdateList.h"
 #include "../tiling/GridMaker.h"
 
 #include <vector>
@@ -19,8 +18,6 @@ private:
     Indexer *indexes;
     int offset = 0;
     uint gridUpdates = 0;
-    sint tileset;
-    sint buffer;
 
     uint fullWidth = 0;
     uint fullHeight = 0;
@@ -51,10 +48,8 @@ public:
         setOrigin(0, 0);
         setPosition(startX * tileX, startY * tileY);
 
-        tileset = _tileset;
-        setTexture(tileset);
-        buffer = UpdateList::createBuffer(BufferData(UpdateList::getResourceCount(), this, COLOR_EMPTY));
-        setTexture(buffer);
+        setTexture(_tileset);
+        setupBuffer(COLOR_EMPTY);
 
         //std::cout << " " << startX << "," << startY << ", " << width << "," << height << "\n";
         //std::cout << toString(getGPosition()) << ":" << toString(getGScale()) <<  "\n";
@@ -73,7 +68,7 @@ public:
     }
 
     int countTextures() {
-        return (IO::getTextureSize(tileset).x / tileX) * (IO::getTextureSize(tileset).y / tileY);
+        return (getTextureSize().x / tileX) * (getTextureSize().y / tileY);
     }
 
     void reload() {
@@ -95,8 +90,8 @@ public:
                     flipv = (flipv == 0) ? 1 : 0;
 
                 // find its position in the tileset texture
-                int tu = tileNumber % (IO::getTextureSize(tileset).x / tileX);
-                int tv = tileNumber / (IO::getTextureSize(tileset).x / tileX);
+                int tu = tileNumber % (getTextureSize().x / tileX);
+                int tv = tileNumber / (getTextureSize().x / tileX);
 
                 if(tileNumber - offset != -1) {
                     TextureRect quad;
@@ -117,7 +112,7 @@ public:
         getTextureRects()->resize(usedRects);
 
         if(hasBuffer)
-            UpdateList::scheduleReload(buffer);
+            scheduleBufferRefresh();
     }
 
     void setIndexer(Indexer *indexes) {
@@ -144,7 +139,7 @@ private:
     bool paused = false;
 
 public:
-    AnimatedTileMap(int tileset, int tileX, int tileY, Indexer *indexes, int frames, double delay, int layer = 0) : Node(layer) {
+    AnimatedTileMap(int tileset, int tileX, int tileY, Indexer *indexes, int frames, double delay, int layer = 0) : Node(layer, RENDER_SINGLE_TEXTURE) {
         int width = indexes->getSize().x;
         int height = indexes->getSize().y;
         setSize(Vector2i(tileX * width, tileY * height));
@@ -163,7 +158,7 @@ public:
 
             if(i == 0) {
                 this->numTiles = map->countTextures() / frames;
-                setTexture(map->getTexture());
+                setTexture(map->getRenderComponent(false)->getTexture());
             }
         }
     }
@@ -197,7 +192,7 @@ public:
                 //Reset to start frame
                 if(frame == maxFrames)
                     frame = 0;
-                setTexture(tilemaps[frame]->getTexture());
+                setTexture(tilemaps[frame]->getRenderComponent(false)->getTexture());
             }
         }
         for(TileMap *map : tilemaps)

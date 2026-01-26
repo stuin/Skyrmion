@@ -28,3 +28,6 @@
 [submodule "include/dr_libs"]
 	path = include/dr_libs
 	url = https://github.com/mackron/dr_libs
+[submodule "include/entt"]
+	path = include/entt
+	url = https://github.com/skypjack/entt.git
