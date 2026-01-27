@@ -44,14 +44,13 @@ void UNode::deleteNext() {
 }
 
 //Base constructor
-Node::Node(int layer, int renderType, Vector2i size, bool hidden, Node *parent) : UNode(layer) {
+Node::Node(int layer, int renderType, Vector2i size, Node *parent) : UNode(layer) {
 	if(layer < 0)
 		throw new std::invalid_argument(DRAWLAYERERROR);
 	rendering = createRenderComponent(renderType, this);
 
 	setSize(size);
 	setOrigin(size.x / 2, size.y / 2);
-	setHidden(hidden);
 	setParent(parent);
 }
 
@@ -287,14 +286,6 @@ void Node::setTextureVecRect(int x, int y, sint i) {
 		throw new RENDERCOMPONENTNULL;
 }
 
-//Create rectangle borders from one pixel of texture
-void Node::createPixelRect(FloatRect rect, Vector2i pixel, sint i) {
-	if(rendering != NULL)
-		getRenderComponent()->createPixelRect(rect, pixel, i);
-	else
-		throw new RENDERCOMPONENTNULL;
-}
-
 void Node::setString(const char *_text) {
 	if(rendering != NULL)
 		getRenderComponent()->setString(_text);
@@ -307,7 +298,7 @@ void Node::setupBuffer(skColor _color) {
 	RenderComponent *buffer = createRenderComponent(RENDER_PASSTHROUGH_BUFFER, this);
 	buffer->setSubComponent(rendering);
 	rendering = buffer;
-	buffer->setTexture(UpdateList::createBuffer(this, _color));
+	buffer->setTexture(UpdateList::createBuffer(0, this, _color));
 }
 
 void Node::scheduleBufferRefresh(sint buffer) {

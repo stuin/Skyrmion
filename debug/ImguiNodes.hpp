@@ -9,18 +9,24 @@ private:
 	std::vector<bool> nodeWindows;
 	std::vector<Node *> nodes;
 
-	Node *debugCursor = NULL;
+	Node nodeCursor;
+	Node rectCursor;
 	int currentRect = -1;
 	Node *currentRectNode = NULL;
 
 public:
-	ImguiNodes(int _pickTexture, int debugLayer) : UNode(debugLayer) {
+	ImguiNodes(int _pickTexture, int debugLayer) : UNode(debugLayer),
+	nodeCursor(debugLayer, RENDER_COLOR_RECT), rectCursor(debugLayer, RENDER_COLOR_RECT) {
+
 		UpdateList::addUNode(this);
 		UpdateList::addListener(this, EVENT_IMGUI);
 
-		debugCursor = new Node(debugLayer, RENDER_TEXTURE_ARRAY, Vector2i(1, 1), true);
-		debugCursor->setTexture(_pickTexture);
-		UpdateList::addNode(debugCursor);
+		nodeCursor.setColor(skColor(239,131,68));
+		rectCursor.setColor(skColor(223,135,0));
+		nodeCursor.setHidden(true);
+		rectCursor.setHidden(true);
+		UpdateList::addNode(&nodeCursor);
+		UpdateList::addNode(&rectCursor);
 
 		//Initial nodes and layer names
 		for(sint layer = 0; layer < layerNames().size(); layer++) {
@@ -114,6 +120,25 @@ public:
 		Text("Size", source->getSize());
 		Text("Scale", source->getScale());
 
+		//Display node borders
+		if(focused) {
+			nodeCursor.setSize((Vector2f)source->getSize());
+			nodeCursor.setOrigin(source->getSOrigin());
+			nodeCursor.setPosition(source->getGPosition());
+			rectCursor.setOrigin(source->getSOrigin());
+			//nodeCursor.setTextureRect({source->getSOrigin().x,source->getSOrigin().y,1,1, 22,8,1,1,0}, 4);
+			//nodeCursor.createPixelRect(FloatRect(0,0, source->getSize().x,source->getSize().y), Vector2i(18,8), 0);
+		}
+		nodeCursor.setHidden(false);
+
+		if(source->getRenderComponent() == NULL) {
+			ImGui::Text("RenderComponent = NULL");
+			ImGui::End();
+			rectCursor.setHidden(true);
+			return;
+		}
+
+		ImGui::Text("RenderComponent = %d", source->getRenderComponent()->getType());
 		ImGui::Text("BlendMode = %d", source->getBlendMode());
 
 		sint texture = source->getTexture();
@@ -122,9 +147,7 @@ public:
 		else
 			ImGui::Text("Texture = %ld", texture);
 
-		if(source->getString() == NULL)
-			ImGui::Text("String = NULL");
-		else
+		if(source->getRenderComponent()->getType() == RENDER_STRING)
 			ImGui::Text("String = \"%s\"", source->getString());
 
 		bool nodeHidden = source->isHidden();
@@ -133,7 +156,7 @@ public:
 		ImGui::Checkbox("##", &nodeHidden);
 		source->setHidden(nodeHidden);
 
-		if(source->getTextureRects() != NULL && source->getTextureRects()->size() > 0) {
+		if(source->getRenderComponent()->getType() == RENDER_TEXTURE_ARRAY && source->getTextureRects()->size() > 0) {
 			ImGui::Text("Texture Rects = %lu", source->getTextureRects()->size());
 
 			if(ImGui::BeginChild("##", ImVec2(400.0f, 200.0f), ImGuiChildFlags_Borders, 0)) {
@@ -150,17 +173,20 @@ public:
 						rect.px, rect.py, rect.tx, rect.ty, rect.tx+rect.twidth, rect.ty+rect.theight, rect.rotation);
 
 					if(rectBorderBox && focused) {
-						debugCursor->createPixelRect(FloatRect(rect.p().pos()*source->getScale().abs(), rect.p().size()*source->getScale().abs()), Vector2i(18,13), 5);
+						rectCursor.setSize(rect.p().size()*source->getScale().abs());
+						rectCursor.setPosition(source->getGPosition()+rect.p().pos()*source->getScale().abs());
+						rectCursor.setHidden(false);
+						//nodeCursor.createPixelRect(FloatRect(rect.p().pos()*source->getScale().abs(), rect.p().size()*source->getScale().abs()), Vector2i(18,13), 5);
 						currentRect = rectId;
 						currentRectNode = source;
 					} else if(rectBorderBox) {
 						currentRect = rectId;
 						currentRectNode = source;
-						debugCursor->getTextureRects()->resize(5);
+						rectCursor.setHidden();
 					} else if(rectBorder) {
 						currentRect = -1;
 						currentRectNode = NULL;
-						debugCursor->getTextureRects()->resize(5);
+						rectCursor.setHidden();
 					}
 
 					rectId++;
@@ -168,18 +194,10 @@ public:
 				}
 			}
 			ImGui::EndChild();
-		} else
+		} else {
 			ImGui::Text("No Texture Rects");
-
-		//Display node borders
-		if(focused) {
-			debugCursor->setSize((Vector2f)source->getSize());
-			debugCursor->setOrigin(source->getSOrigin());
-			debugCursor->setTextureRect({source->getSOrigin().x,source->getSOrigin().y,1,1, 22,8,1,1,0}, 4);
-			debugCursor->createPixelRect(FloatRect(0,0, source->getSize().x,source->getSize().y), Vector2i(18,8), 0);
-			debugCursor->setPosition(source->getGPosition());
+			rectCursor.setHidden();
 		}
-		debugCursor->setHidden(false);
 
 		ImGui::End();
 	}
@@ -191,7 +209,7 @@ public:
 			if(open)
 				showWindow();
 
-			debugCursor->setHidden(true);
+			nodeCursor.setHidden(true);
 			for(sint i = 0; i < nodeWindows.size(); i++)
 				if(nodeWindows[i] && nodes[i] != NULL && !nodes[i]->isDeleted())
 					showNodeWindow(nodes[i]);

@@ -9,6 +9,7 @@ private:
 	bool open = false;
 	int current = 0;
 	Vector2i tileSize;
+	Node cursor;
 
 	std::string name;
 	std::string saveFile;
@@ -19,15 +20,17 @@ private:
 public:
 	GridEditor(std::string _name, std::string _saveFile, std::string _loadFile, GridMaker *_grid,
 		std::map<int, std::string> _tiles, Vector2i size, int layer) :
-		Node(layer, RENDER_TEXTURE_ARRAY, size), name(_name), saveFile(_saveFile), loadFile(_loadFile), grid(_grid), tiles(_tiles) {
+		Node(layer, RENDER_NONE, size), cursor(layer, RENDER_COLOR_RECT, Vector2i(16,16)), name(_name), saveFile(_saveFile), loadFile(_loadFile), grid(_grid), tiles(_tiles) {
 
 		UpdateList::addNode(this);
+		UpdateList::addNode(&cursor);
 		UpdateList::addListener(this, EVENT_IMGUI);
 		UpdateList::addListener(this, EVENT_MOUSE);
 
 		current = tiles.begin()->first;
 		tileSize = Vector2i(size/_grid->getSize());
-		setTextureRect({0});
+		cursor.setSize(tileSize);
+		cursor.setOrigin(0,0);
 	}
 
 	void showWindow() {
@@ -71,12 +74,13 @@ public:
 		} else if(event.type == EVENT_IMGUI) {
 			if(open)
 				showWindow();
-			setHidden(!open);
+			cursor.setHidden(!open);
 		} else if(event.type == EVENT_MOUSE && open) {
 			Vector2f pos = screenToGlobal(event.x, event.y);
 			if(getRect().contains(pos)) {
 				pos = (Vector2i)(pos / tileSize) * tileSize;
-				createPixelRect({pos.x, pos.y, (float)tileSize.x, (float)tileSize.y}, Vector2i(0,0), 0);
+				cursor.setPosition(pos);
+				//createPixelRect({pos.x, pos.y, (float)tileSize.x, (float)tileSize.y}, Vector2i(0,0), 0);
 
 				if(event.down && !ImGui::GetIO().WantCaptureMouse) {
 					pos = pos / tileSize;

@@ -110,7 +110,7 @@ public:
 	static int loadResource(std::string filename);
 	static int createBuffer(sint _texture, Vector2i _size, std::bitset<MAXLAYER> _layers, Node *source=NULL, sint shader=0, skColor _color = COLOR_WHITE);
 	static int createBuffer(sint _texture, Vector2i _size, int _layer, skColor _color = COLOR_WHITE);
-	static int createBuffer(Node *_node, skColor _color = COLOR_WHITE);
+	static int createBuffer(sint _texture, Node *_node, skColor _color = COLOR_WHITE);
 	static void scheduleBufferRefresh(sint buffer);
 	static Vector2i getTextureSize(sint index);
 	static ResourceData &getResourceData(sint index);

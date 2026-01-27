@@ -70,10 +70,9 @@ public:
 
 	//Node constructors
 	Node(int layer=0,
-		int renderType=RENDER_SINGLE_TEXTURE,
-		Vector2i size = Vector2i(16, 16),
-		bool hidden = false,
-		Node *parent = NULL);
+		int renderType=RENDER_TEXTURE_SINGLE,
+		Vector2i size=Vector2i(16, 16),
+		Node *parent=NULL);
 
 	//General getters
 	Node *getParent();
@@ -124,7 +123,6 @@ public:
 	void setTextureIntRect(IntRect rect, sint i=0);
 	void setTextureVecRect(Vector2i corner, sint i=0);
 	void setTextureVecRect(int x, int y, sint i=0);
-	void createPixelRect(FloatRect rect, Vector2i pixel, sint i=0);
 	void setString(const char *text);
 	void setupBuffer(skColor color=COLOR_WHITE);
 	void scheduleBufferRefresh(sint buffer=0);

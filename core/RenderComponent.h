@@ -20,11 +20,12 @@ enum SK_RESOURCE_TYPE {
 
 enum SK_RENDER_TYPE {
 	RENDER_NONE,
-	RENDER_SINGLE_TEXTURE,
-	RENDER_SINGLE_COLOR,
+	RENDER_TEXTURE_SINGLE,
 	RENDER_TEXTURE_RECT,
 	RENDER_TEXTURE_ARRAY,
 	RENDER_TEXTURE_MAP,
+	RENDER_COLOR_SINGLE,
+	RENDER_COLOR_RECT,
 	RENDER_COLOR_MAP,
 	RENDER_PASSTHROUGH_BUFFER,
 	RENDER_STRING
@@ -62,7 +63,8 @@ public:
 	virtual skColor getColor() = 0;
 
 	//Optional getters
-	virtual int getFontSize() { throw new RENDERCOMPONENTERROR; }
+	virtual int getPixelSize() { throw new RENDERCOMPONENTERROR; }
+	virtual skColor getInsideColor() { throw new RENDERCOMPONENTERROR; }
 	virtual TextureRect getTextureRect() { throw new RENDERCOMPONENTERROR; }
 	virtual std::vector<TextureRect> *getTextureRects() { throw new RENDERCOMPONENTERROR; }
 	virtual RenderComponent *getSubComponent() { throw new RENDERCOMPONENTERROR; }
@@ -72,11 +74,11 @@ public:
 	virtual void setBlendMode(int blendMode) { throw new RENDERCOMPONENTERROR; }
 	virtual void setTexture(sint texture) { throw new RENDERCOMPONENTERROR; }
 	virtual void setColor(skColor color) { throw new RENDERCOMPONENTERROR; }
-	virtual void setFontSize(int size) { throw new RENDERCOMPONENTERROR; }
+	virtual void setInsideColor(skColor color) { throw new RENDERCOMPONENTERROR; }
+	virtual void setPixelSize(int size) { throw new RENDERCOMPONENTERROR; }
 	virtual void setTextureRect(TextureRect rectangle, sint i=0) { throw new RENDERCOMPONENTERROR; }
 	virtual void setTextureVecRect(Vector2i corner, Vector2i size, sint i=0) { throw new RENDERCOMPONENTERROR; }
 	virtual void setTextureIntRect(IntRect rect, sint i=0) { throw new RENDERCOMPONENTERROR; }
-	virtual void createPixelRect(FloatRect rect, Vector2i pixel, sint i) { throw new RENDERCOMPONENTERROR; }
 	virtual void setSubComponent(int type) { throw new RENDERCOMPONENTERROR; }
 	virtual void setSubComponent(RenderComponent *component) { throw new RENDERCOMPONENTERROR; }
 	virtual void setString(const char *text) { throw new RENDERCOMPONENTERROR; }

@@ -139,7 +139,8 @@ private:
     bool paused = false;
 
 public:
-    AnimatedTileMap(int tileset, int tileX, int tileY, Indexer *indexes, int frames, double delay, int layer = 0) : Node(layer, RENDER_SINGLE_TEXTURE) {
+    AnimatedTileMap(int tileset, int tileX, int tileY, Indexer *indexes, int frames, double delay, int layer = 0)
+     : Node(layer, RENDER_TEXTURE_SINGLE) {
         int width = indexes->getSize().x;
         int height = indexes->getSize().y;
         setSize(Vector2i(tileX * width, tileY * height));
@@ -257,7 +258,7 @@ private:
     uint countY;
 
 public:
-    LargeTileMap(int tileset, int tileX, int tileY, Indexer *indexes, int layer) : Node(layer) {
+    LargeTileMap(int tileset, int tileX, int tileY, Indexer *indexes, int layer) : Node(layer, RENDER_NONE) {
         fullWidth = indexes->getSize().x;
         fullHeight = indexes->getSize().y;
         setSize(Vector2i(tileX * fullWidth, tileY * fullHeight));

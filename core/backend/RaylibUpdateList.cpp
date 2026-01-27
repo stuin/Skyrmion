@@ -144,6 +144,8 @@ void finalizeBuffer(sint index) {
 
 //Replace blank texture with render buffer
 int UpdateList::createBuffer(sint _texture, Vector2i _size, std::bitset<MAXLAYER> _layers, Node *_source, sint _shader, skColor _color) {
+	if(_texture == 0)
+		_texture = UpdateList::getResourceCount();
 	BufferData data = BufferData(_texture, _size, _layers, _source, _shader, _color);
 	sint texture = data.texture;
 	while(texture >= resourceData.size()) {
@@ -168,12 +170,12 @@ int UpdateList::createBuffer(sint _texture, Vector2i _size, std::bitset<MAXLAYER
 int UpdateList::createBuffer(sint _texture, Vector2i _size, int _layer, skColor _color) {
 	std::bitset<MAXLAYER> layers;
 	layers[_layer] = true;
-	return createBuffer(_texture, _size, layers, NULL, _color);
+	return createBuffer(_texture, _size, layers, NULL, 0, _color);
 }
 
-int UpdateList::createBuffer(Node *_node, skColor _color) {
+int UpdateList::createBuffer(sint _texture, Node *_node, skColor _color) {
 	std::bitset<MAXLAYER> layers;
-	return createBuffer(UpdateList::getResourceCount(), _node->getSize(), layers,  _node, _color);
+	return createBuffer(_texture, _node->getSize(), layers,  _node, 0, _color);
 }
 
 //Schedule buffer draw before next draw
@@ -225,11 +227,10 @@ static const std::map<int, int> blendModeMap = {
 
 void UpdateList::drawNode(Node *source, sint passthrough) {
 	FloatRect rect = source->getRect();
-	Rectangle dst = {rect.left, rect.top, (float)rect.width, (float)rect.height};
-	Vector2f scale = (passthrough != 0) ? Vector2f(1,1) : source->getScale();
 
 	RenderComponent *rendering = source->getRenderComponent(false);
 	if(rendering == NULL) {
+		Rectangle dst = {rect.left, rect.top, (float)rect.width, (float)rect.height};
 		DrawRectangleRec(dst, PURPLE);
 		return;
 	}
@@ -241,23 +242,27 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 	Color color = Color{color1.r(), color1.g(), color1.b(), color1.a()};
 	sint texture = rendering->getTexture();
 
+	Vector2f scale = (passthrough != 0) ? Vector2f(1,1) : source->getScale();
+	Vector2f flip = Vector2f(scale.x < 0 ? -1 : 1, scale.y < 0 ? -1 : 1);
+	Vector2f scaleA = scale.abs();
+
 	switch(rendering->getType()) {
-	case RENDER_SINGLE_TEXTURE: case RENDER_PASSTHROUGH_BUFFER:
+	case RENDER_TEXTURE_SINGLE: case RENDER_PASSTHROUGH_BUFFER:
 		if(resourceData[texture].type < 0) {
+			Vector2i size = resourceData[texture].size;
+			Rectangle src = {(float)0, (float)0, size.x*flip.x, size.y*flip.y};
 			Vector2 position = {rect.left, rect.top};
-			DrawTextureEx(textureSet[texture], position, 0, scale.x, color);
+			DrawTextureRec(textureSet[texture], src, position, color);
 			break;
 		}
-	case RENDER_SINGLE_COLOR:
-		DrawRectangleRec(dst, color);
+	case RENDER_COLOR_SINGLE:
+		DrawRectangleRec({rect.left, rect.top, (float)rect.width, (float)rect.height}, color);
 		break;
 	case RENDER_TEXTURE_RECT: {
 		TextureRect tex = rendering->getTextureRect();
-		Vector2f flip = Vector2f(scale.x < 0 ? -1 : 1, scale.y < 0 ? -1 : 1);
-		Vector2f scaleA = scale.abs();
 		if(tex.pwidth != 0 && tex.pheight != 0) {
 			Vector2 origin = Vector2{abs(tex.pwidth)*scaleA.x/2, abs(tex.pheight)*scaleA.y/2};
-			dst = {tex.px*scaleA.x+rect.left+origin.x, tex.py*scaleA.y+rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
+			Rectangle dst = {tex.px*scaleA.x+rect.left+origin.x, tex.py*scaleA.y+rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
 			Rectangle src = {(float)tex.tx, (float)tex.ty, flip.x*tex.twidth, flip.y*tex.theight};
 			if(resourceData[texture].type < 0)
 				DrawTexturePro(textureSet[texture], src, dst, origin, (float)tex.rotation, WHITE);
@@ -267,8 +272,6 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 		} break;
 	case RENDER_TEXTURE_ARRAY: {
 		std::vector<TextureRect> *textureRects = rendering->getTextureRects();
-		Vector2f flip = Vector2f(scale.x < 0 ? -1 : 1, scale.y < 0 ? -1 : 1);
-		Vector2f scaleA = scale.abs();
 		for(sint i = 0; i < textureRects->size(); i++) {
 			TextureRect tex = (*textureRects)[i];
 			if(tex.pwidth != 0 && tex.pheight != 0) {
@@ -282,12 +285,19 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 			}
 		}
 		} break;
+	case RENDER_COLOR_RECT: {
+		skColor color2 = rendering->getInsideColor();
+		Color colorI = Color{color2.r(), color2.g(), color2.b(), color2.a()};
+		Rectangle dst = {rect.left, rect.top, (float)rect.width, (float)rect.height};
+		if(color2 != COLOR_EMPTY)
+			DrawRectangleRec(dst, colorI);
+		DrawRectangleLinesEx(dst, rendering->getPixelSize(), color);
+		} break;
 	case RENDER_STRING:
-		if(source->getString() != NULL && resourceData[texture].type == SK_FONT) {
-			DrawTextEx(fontSet[resourceData[texture].index], source->getString(), Vector2{rect.left, rect.top}, rendering->getFontSize(), 1, color);
-		} else if(source->getString() != NULL) {
-			DrawTextEx(GetFontDefault(), source->getString(), Vector2{rect.left, rect.top}, 20, 1, color);
-		}
+		if(source->getString() != NULL && resourceData[texture].type == SK_FONT)
+			DrawTextEx(fontSet[resourceData[texture].index], source->getString(), Vector2{rect.left, rect.top}, rendering->getPixelSize(), 1, color);
+		else if(source->getString() != NULL)
+			DrawTextEx(GetFontDefault(), source->getString(), Vector2{rect.left, rect.top}, rendering->getPixelSize(), 1, color);
 		break;
 	}
 
