@@ -1,12 +1,12 @@
 #pragma once
 
 #include <string>
+#include <map>
+#include <unordered_set>
 
 #include "../core/Event.h"
 
-#include "../include/json.hpp"
-
-using json_pointer = nlohmann::json::json_pointer;
+using string_pair = std::pair<std::string, std::string>;
 
 /*
  * Read/write from a centralized json settings file
@@ -14,94 +14,35 @@ using json_pointer = nlohmann::json::json_pointer;
 
 class Settings {
 private:
-	static nlohmann::json data;
-	static std::vector<std::pair<std::string, std::string>> edits;
+	static std::vector<string_pair> edits;
 
 public:
-	static std::map<std::string, int> EVENT_KEYMAP;
-	static std::map<int, int> FONT_SPRITEMAP;
+	static const std::map<std::string, int> EVENT_KEYMAP;
+	static const std::map<int, int> FONT_SPRITEMAP;
+
+	static std::unordered_set<std::string> markKeycode;
+	static std::string filename;
 
 	//Load settings from file
-	static void loadSettings(std::string filename) {
-		char *text = IO::openFile(filename);
-		if(text == NULL) {
-			std::cout << "Missing settings file " << filename << "\n";
-			IO::closeFile(text);
-			return;
-		}
+	static void loadSettings(std::string _filename, bool saveFile=true);
+	static std::vector<string_pair> listKeys(std::string field="");
 
-		nlohmann::json input = nlohmann::json::parse(text);
-		for(auto& el : input.items())
-			data[el.key()] = el.value();
-		IO::closeFile(text);
-	}
+	static int mapKeycode(const std::string &_keyname);
+	static std::string reverseKeycode(int code);
 
 	//Get value functions
-	static bool getBool(const std::string &field) {
-		return data.value(json_pointer(field), false);
-	}
-
-	static int getInt(const std::string &field, int def=0) {
-		return data.value(json_pointer(field), def);
-	}
-
-	static std::string getString(const std::string &field) {
-		return data.value(json_pointer(field), "");
-	}
-
-	//Get key number from key name
-	static int mapKeycode(const std::string &_keyname) {
-		//Convert to uppercase
-		std::string keyname = _keyname;
-		for(sint i = 0; i < keyname.length(); i++)
-			keyname[i] = toupper(keyname[i]);
-		return EVENT_KEYMAP[keyname];
-	}
-
-	//Get key number from settings field
-	static int getControl(const std::string &field) {
-		std::string keyname = data.value(json_pointer(field), "");
-		return mapKeycode(keyname);
-	}
+	static bool getBool(const std::string &field);
+	static int getInt(const std::string &field, int def=0);
+	static std::string getString(const std::string &field);
+	static int getControl(const std::string &field);
+	static bool isKeycode(const std::string &field);
 
 	//Set value in memory
-	static void setBool(std::string field, bool value) {
-		json_pointer pointer = json_pointer(field);
-		std::string name = '"' + pointer.back() + "\": ";
-		std::string old = getBool(field) ? "true" : "false";
-		edits.push_back(std::make_pair(name + old, name + (value ? "true" : "false")));
-		data[pointer] = value;
-	}
-
-	static void setInt(std::string field, int value) {
-		json_pointer pointer = json_pointer(field);
-		std::string name = '"' + pointer.back() + "\": ";
-		std::string old = std::to_string(getInt(field));
-		edits.push_back(std::make_pair(name + old, name + std::to_string(value)));
-		data[pointer] = value;
-	}
-
-	static void setString(std::string field, std::string value) {
-		json_pointer pointer = json_pointer(field);
-		std::string name = '"' + pointer.back() + "\": \"";
-		std::string old = getString(field);
-		edits.push_back(std::make_pair(name + old, name + value));
-		data[pointer] = value;
-	}
+	static void setBool(std::string field, bool value);
+	static void setInt(std::string field, int value);
+	static void setString(std::string field, std::string value);
 
 	//Save edited values back to file
-	static void save(std::string filename) {
-		char *inFile = IO::openFile(filename);
-		std::string outFile(inFile);
-		size_t i = 0;
-
-		for(std::pair<std::string, std::string> edit : edits) {
-			i = outFile.find(edit.first);
-			if(i != std::string::npos)
-				outFile.replace(i, edit.first.length(), edit.second);
-		}
-
-		IO::closeFile(inFile);
-		IO::writeFile(filename, outFile);
-	}
+	static void save(std::string _filename);
+	static void settingsEvent();
 };

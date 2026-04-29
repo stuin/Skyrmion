@@ -3,6 +3,7 @@
 #include <thread>
 
 #include "../UpdateList.h"
+#include "../../input/Settings.h"
 #include "../../util/TimingStats.hpp"
 #include "SharedUpdateList.hpp"
 
@@ -14,17 +15,10 @@
 #endif
 
 #if defined(PLATFORM_DESKTOP)
-    #define GLSL_VERSION            330
+    #define GLSL_VERSION            460
 #else   // PLATFORM_ANDROID, PLATFORM_WEB
     #define GLSL_VERSION            100
 #endif
-
-#define DTOR 0.0174532925199
-#define RTOD 57.2957795131
-
-#define TEXTUREERROR "Texture does not exist"
-#define BUFFERERROR "Cannot replace texture with render buffer"
-#define FILEERROR "Failed to read file"
 
 /*
  * Manages layers of nodes through update cycle
@@ -51,20 +45,23 @@ std::deque<Event> UpdateList::event_queue;
 std::array<Event, EVENT_MAX> UpdateList::event_previous;
 std::vector<int> UpdateList::watchedKeycodes;
 std::vector<bool> UpdateList::watchedKeycodesPrevious;
+bool UpdateList::remapKeycode = false;
 
 //System timers
-TimingStats DebugTimers::frameTimes;
-TimingStats DebugTimers::frameLiteralTimes;
 TimingStats DebugTimers::updateTimes;
 TimingStats DebugTimers::updateLiteralTimes;
+TimingStats DebugTimers::frameTimes;
+TimingStats DebugTimers::frameNodeTimes;
+TimingStats DebugTimers::frameBufferTimes;
 
-//Textures
-std::vector<ResourceData> resourceData;
+//Skyrmion Resource Data
+std::vector<ResourceData> UpdateList::resourceData;
+std::vector<BufferData> UpdateList::bufferData;
+std::vector<ShaderUniform> UpdateList::shaderUniforms;
+
+//Raylib resources
 std::vector<Texture2D> textureSet;
-std::vector<BufferData> bufferData;
 std::vector<RenderTexture2D> bufferSet;
-
-//Other resources
 std::vector<Font> fontSet;
 std::vector<Shader> shaderSet;
 
@@ -88,22 +85,6 @@ void IO::writeFile(std::string filename, std::string text) {
 	free(out);
 }
 
-//Subscribe node to cetain event type
-void UpdateList::addListener(UNode *item, int type) {
-	listeners[type].push_back(item);
-}
-
-void UpdateList::watchKeycode(int keycode) {
-	watchedKeycodes.push_back(keycode);
-	watchedKeycodesPrevious.push_back(false);
-}
-
-//Send custom event
-void UpdateList::queueEvent(Event event) {
-	if(event != event_previous[event.type % EVENT_MAX])
-		event_queue.push_back(event);
-}
-
 //Load texture from file and add to set
 int UpdateList::loadResource(std::string filename) {
 	if(filename.length() > 0 && filename[0] != '#') {
@@ -121,7 +102,8 @@ int UpdateList::loadResource(std::string filename) {
 			textureSet.emplace_back();
 		} else if(filename.substr(filename.length()-3) == ".fs") {
 			//Load shader
-			shaderSet.push_back(LoadShader(0, TextFormat(filename.c_str(), GLSL_VERSION)));
+			filename = TextFormat(filename.c_str(), GLSL_VERSION);
+			shaderSet.push_back(LoadShader(0, filename.c_str()));
 			resourceData.emplace_back(filename, SK_SHADER, Vector2i(0, 0), shaderSet.size()-1);
 			textureSet.emplace_back();
 		}
@@ -132,73 +114,24 @@ int UpdateList::loadResource(std::string filename) {
 	return textureSet.size() - 1;
 }
 
-//Create buffer object (must be after window start)
-void finalizeBuffer(sint index) {
-	ResourceData &data = resourceData[bufferData[index].texture];
-	if(index != 0 && data.type == SK_INVALID) {
-		bufferSet.push_back(LoadRenderTexture(data.size.x, data.size.y));
-		textureSet[bufferData[index].texture] = bufferSet[index].texture;
-		data.type = SK_BUFFER;
-	}
-}
-
-//Replace blank texture with render buffer
-int UpdateList::createBuffer(sint _texture, Vector2i _size, std::bitset<MAXLAYER> _layers, Node *_source, sint _shader, skColor _color) {
-	if(_texture == 0)
-		_texture = UpdateList::getResourceCount();
-	BufferData data = BufferData(_texture, _size, _layers, _source, _shader, _color);
-	sint texture = data.texture;
+//Replace blank texture with custom resource
+sint UpdateList::createResource(sint texture, Vector2i size, sint index) {
+	if(texture == 0)
+		texture = UpdateList::getResourceCount();
 	while(texture >= resourceData.size()) {
 		//throw new std::invalid_argument(TEXTUREERROR);
 		textureSet.emplace_back();
-		resourceData.emplace_back("Unknown Buffer", SK_INVALID);
+		resourceData.emplace_back(UNKNOWNRESOURCE, SK_INVALID);
 	}
-	if(resourceData[texture].type == SK_TEXTURE && resourceData[texture].index != 0)
-		return resourceData[texture].index;
+	//if(resourceData[texture].type == SK_TEXTURE && resourceData[texture].index != 0)
+	//	return resourceData[texture].index;
 	if(resourceData[texture].type != SK_INVALID)
 		throw new std::invalid_argument(BUFFERERROR);
 
-	//Create and add buffer
-	resourceData[texture].size = data.size;
-	resourceData[texture].index = bufferData.size();
-	bufferData.push_back(data);
-	if(UpdateList::running)
-		finalizeBuffer(resourceData[texture].index);
+	//Mark resource location
+	resourceData[texture].size = size;
+	resourceData[texture].index = index;
 	return texture;
-}
-
-int UpdateList::createBuffer(sint _texture, Vector2i _size, int _layer, skColor _color) {
-	std::bitset<MAXLAYER> layers;
-	layers[_layer] = true;
-	return createBuffer(_texture, _size, layers, NULL, 0, _color);
-}
-
-int UpdateList::createBuffer(sint _texture, Node *_node, skColor _color) {
-	std::bitset<MAXLAYER> layers;
-	return createBuffer(_texture, _node->getSize(), layers,  _node, 0, _color);
-}
-
-//Schedule buffer draw before next draw
-void UpdateList::scheduleBufferRefresh(sint texture) {
-	bufferData[resourceData[texture].index].redraw = true;
-}
-
-//Get size of texture
-Vector2i UpdateList::getTextureSize(sint texture) {
-	if(texture >= resourceData.size())
-		throw new std::invalid_argument(TEXTUREERROR);
-	return resourceData[texture].size;
-}
-
-//Get all resource data
-ResourceData &UpdateList::getResourceData(sint index) {
-	if(index >= resourceData.size())
-		throw new std::invalid_argument(TEXTUREERROR);
-	return resourceData[index];
-}
-
-sint UpdateList::getResourceCount() {
-	return resourceData.size();
 }
 
 //Draw ImGui texture
@@ -216,6 +149,24 @@ skColor UpdateList::pickColor(sint texture, Vector2i position) {
 	Color color = GetImageColor(LoadImageFromTexture(textureSet[texture]), position.x, position.y);
 	//std::cout << resourceData[texture].type << "\n";
 	return skColor(color.r, color.g, color.b, color.a);
+}
+
+//Send values to shader uniform
+void UpdateList::sendUniformValues(sint rIndex) {
+	sint uIndex = resourceData[rIndex].index;
+	ShaderUniform uniform = shaderUniforms[uIndex];
+	sint sIndex = resourceData[uniform.shader].index;
+
+	//Finalize unknown shader uniform
+	if(uniform.location == -1) {
+		uniform.location = GetShaderLocation(shaderSet[sIndex], uniform.name.c_str());
+		resourceData[uniform.texture].type = SK_SHADER_UNIFORM;
+		if(resourceData[uniform.texture].filename == UNKNOWNRESOURCE)
+			resourceData[uniform.texture].filename = uniform.name;
+	}
+
+	SetShaderValueV(shaderSet[sIndex], uniform.location, uniform.values.data(), SHADER_UNIFORM_IVEC3, uniform.values.size() / 3);
+	std::cout << "INFO: SHADER UNIFORM: " << uniform.location << ": " << uniform.values << "\n";
 }
 
 static const std::map<int, int> blendModeMap = {
@@ -335,13 +286,24 @@ void UpdateList::draw(FloatRect cameraRect) {
 		}
 	}
 
-	DebugTimers::frameLiteralTimes.addDelta(GetTime()-lastTime);
+	DebugTimers::frameNodeTimes.addDelta(GetTime()-lastTime);
 	EndMode2D();
 }
 
-void UpdateList::drawBuffer(sint buffer) {
-	BufferData data = bufferData[buffer];
-	BeginTextureMode(bufferSet[resourceData[data.texture].index]);
+void UpdateList::drawBuffer(sint bIndex) {
+	BufferData data = bufferData[bIndex];
+	sint rIndex = data.texture;
+	std::cout << "INFO: BUFFER: " << rIndex << "\n";
+
+	//Create buffer object
+	if(resourceData[rIndex].type == SK_INVALID) {
+		bufferSet.push_back(LoadRenderTexture(data.size.x, data.size.y));
+		textureSet[rIndex] = bufferSet[bIndex].texture;
+		resourceData[rIndex].type = SK_BUFFER;
+	}
+
+	double lastTime = GetTime();
+	BeginTextureMode(bufferSet[bIndex]);
 
 	//Clear buffer
 	if(data.color != COLOR_NONE)
@@ -383,6 +345,8 @@ void UpdateList::drawBuffer(sint buffer) {
 	EndMode2D();
 	EndShaderMode();
 	EndTextureMode();
+
+	DebugTimers::frameBufferTimes.addDelta(GetTime()-lastTime);
 }
 
 //Audio systems
@@ -410,41 +374,64 @@ void UpdateList::processAudio() {
 		UpdateMusicStream(backgroundMusic);
 }
 
+//Register keycode for polling
+void UpdateList::watchKeycode(int keycode) {
+	watchedKeycodes.push_back(keycode);
+	watchedKeycodesPrevious.push_back(false);
+}
+
+void UpdateList::startRemap() {
+	remapKeycode = true;
+}
+
+bool UpdateList::checkKeycode(int code, bool down) {
+	//Check keypress by input type
+	if(code < MOUSE_OFFSET)
+		down = IsKeyDown(code);
+	else if(code < MOUSE_OFFSET+7)
+		down = IsMouseButtonDown(code-MOUSE_OFFSET);
+	else if(code == MOUSE_OFFSET+7)
+		down = GetMouseWheelMoveV().y>0;
+	else if(code == MOUSE_OFFSET+8)
+		down = GetMouseWheelMoveV().y<0;
+	else if(code == MOUSE_OFFSET+9)
+		down = GetTouchPointCount()>0;
+	else if(code >= JOYSTICK_OFFSET) {
+		int joystickId = (code-JOYSTICK_OFFSET)/JOYSTICK_NEXT;
+		int buttonId = (code-JOYSTICK_OFFSET)%JOYSTICK_NEXT;
+		int axisId = (buttonId-33)/2;
+		bool negative = (buttonId-33)%2 == 0;
+		if(buttonId<33 && IsGamepadAvailable(joystickId))
+			down = IsGamepadButtonDown(joystickId, buttonId);
+		else if(IsGamepadAvailable(joystickId) && axisId < GetGamepadAxisCount(joystickId) && negative)
+			down = GetGamepadAxisMovement(joystickId, axisId) < -JOYSTICK_DEADZONE;
+		else if(IsGamepadAvailable(joystickId) && axisId < GetGamepadAxisCount(joystickId) && !negative)
+			down = GetGamepadAxisMovement(joystickId, axisId) > JOYSTICK_DEADZONE;
+	}
+	return down;
+}
+
 //Add events to queue on draw thread
 void UpdateList::queueEvents() {
 	//Keyboard
 	for(sint i = 0; i < watchedKeycodes.size(); i++) {
-		bool down = watchedKeycodesPrevious[i];
 		int code = watchedKeycodes[i];
-
-		//Check keypress by input type
-		if(code < MOUSE_OFFSET)
-			down = IsKeyDown(code);
-		else if(code < MOUSE_OFFSET+7)
-			down = IsMouseButtonDown(code-MOUSE_OFFSET);
-		else if(code == MOUSE_OFFSET+7)
-			down = GetMouseWheelMoveV().y>0;
-		else if(code == MOUSE_OFFSET+8)
-			down = GetMouseWheelMoveV().y<0;
-		else if(code == MOUSE_OFFSET+9)
-			down = GetTouchPointCount()>0;
-		else if(code >= JOYSTICK_OFFSET) {
-			int joystickId = (code-JOYSTICK_OFFSET)/JOYSTICK_NEXT;
-			int buttonId = (code-JOYSTICK_OFFSET)%JOYSTICK_NEXT;
-			int axisId = (buttonId-33)/2;
-			bool negative = (buttonId-33)%2 == 0;
-			if(buttonId<33 && IsGamepadAvailable(joystickId))
-				down = IsGamepadButtonDown(joystickId, buttonId);
-			else if(IsGamepadAvailable(joystickId) && axisId < GetGamepadAxisCount(joystickId) && negative)
-				down = GetGamepadAxisMovement(joystickId, axisId) < -JOYSTICK_DEADZONE;
-			else if(IsGamepadAvailable(joystickId) && axisId < GetGamepadAxisCount(joystickId) && !negative)
-				down = GetGamepadAxisMovement(joystickId, axisId) > JOYSTICK_DEADZONE;
-		}
+		bool down = checkKeycode(code, watchedKeycodesPrevious[i]);
 
 		//Only send changed keys
 		if(down != watchedKeycodesPrevious[i]) {
 			event_queue.emplace_back(EVENT_KEYPRESS, down, code);
 			watchedKeycodesPrevious[i] = down;
+		}
+	}
+
+	//Keyboard remapping
+	if(remapKeycode) {
+		for(const auto& [key, code] : Settings::EVENT_KEYMAP) {
+			if(code > 0 && checkKeycode(code, false)) {
+				event_queue.emplace_back(EVENT_KEYPRESS, true, code);
+				remapKeycode = false;
+			}
 		}
 	}
 
@@ -488,12 +475,12 @@ void UpdateList::queueEvents() {
 }
 
 void UpdateList::frame(void) {
-	double delta = GetFrameTime();
-	DebugTimers::frameTimes.addDelta(delta);
-
 	#ifdef PLATFORM_WEB
 		UpdateList::update(delta);
 	#endif
+
+	double delta = GetFrameTime();
+	DebugTimers::frameTimes.addDelta(delta);
 
 	// Get current window size.
 	int width = GetRenderWidth();
@@ -505,6 +492,14 @@ void UpdateList::frame(void) {
 
 	//Start imgui frame
 	rlImGuiBegin();
+
+	//Update shader uniforms
+	for(sint i = 0; i < shaderUniforms.size(); i++) {
+		if(shaderUniforms[i].update) {
+			sendUniformValues(i);
+			shaderUniforms[i].update = false;
+		}
+	}
 
 	//Reload buffer textures
 	for(sint i = 0; i < bufferData.size(); i++) {
@@ -603,18 +598,12 @@ void UpdateList::init() {
 
 		//Start update thread and initialize
 		updates = std::thread(initialize);
-
 		while(!UpdateList::running)
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-		//Prepare buffer textures
-		for(sint i = 0; i < bufferData.size(); i++)
-			finalizeBuffer(i);
-
 		std::cout << "SKYRMION: Starting Rendering\n";
-		while(!WindowShouldClose() && UpdateList::running) {
+		while(!WindowShouldClose() && UpdateList::running)
 			frame();
-		}
 	#endif
 
 	cleanup();

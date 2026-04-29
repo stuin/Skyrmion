@@ -122,21 +122,6 @@ void IO::writeFile(std::string filename, std::string text) {
 	file.close();
 }
 
-//Subscribe node to cetain event type
-void UpdateList::addListener(Node *item, int type) {
-	listeners[type].push_back(item);
-}
-
-void UpdateList::watchKeycode(int keycode) {
-	if(keycode >= JOYSTICK_OFFSET)
-		watchedKeycodes.push_back(keycode);
-}
-
-//Send custom event
-void UpdateList::queueEvent(Event event) {
-	event_queue.push_back(event);
-}
-
 //Load image from file
 static sg_image load_image(std::string filename) {
     int width, height, channels;
@@ -357,6 +342,12 @@ void UpdateList::drawBuffer(BufferData data) {
     sgp_end();
     sg_end_pass();
     sg_commit();
+}
+
+//Register keycode for polling
+void UpdateList::watchKeycode(int keycode) {
+	if(keycode >= JOYSTICK_OFFSET)
+		watchedKeycodes.push_back(keycode);
 }
 
 void event(const sapp_event* event) {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <vector>
 #include <deque>
 
 #include "Node.h"
@@ -41,6 +40,58 @@ struct ResourceData {
 	}
 };
 
+//Buffer draw data
+struct BufferData {
+	sint texture;
+	sint shader = 0;
+	Vector2i size;
+	std::bitset<MAXLAYER> layers;
+	Node *source = NULL;
+	skColor color;
+	bool redraw = true;
+
+	BufferData() {
+		texture = 0;
+		redraw = false;
+	}
+
+	BufferData(sint _texture, Vector2i _size, std::bitset<MAXLAYER> _layers, skColor _color = COLOR_WHITE) {
+		texture = _texture;
+		size = _size;
+		layers = _layers;
+		color = _color;
+	}
+
+	BufferData(sint _texture, Vector2i _size, int _layer, skColor _color = COLOR_WHITE) {
+		texture = _texture;
+		size = _size;
+		layers[_layer] = true;
+		color = _color;
+	}
+
+	BufferData(sint _texture, Node *_node, skColor _color = COLOR_WHITE) {
+		texture = _texture;
+		size = _node->getSize();
+		source = _node;
+		color = _color;
+	}
+};
+
+struct ShaderUniform {
+	sint texture = 0;
+	sint shader;
+	std::string name;
+	std::vector<int> values;
+	int location = -1;
+	bool update = true;
+
+	ShaderUniform(sint _shader, std::string _name, std::vector<int> _values) {
+		shader = _shader;
+		name = _name;
+		values = _values;
+	}
+};
+
 class UpdateList {
 private:
 	//Node management
@@ -58,11 +109,17 @@ private:
 	static std::array<Event, EVENT_MAX> event_previous;
 	static std::vector<int> watchedKeycodes;
 	static std::vector<bool> watchedKeycodesPrevious;
+	static bool remapKeycode;
 
 	//Viewport variables
 	static Node *camera;
 	static FloatRect cameraRect;
 	static FloatRect screenRect;
+
+	//Skyrmion Resource Data
+	static std::vector<ResourceData> resourceData;
+	static std::vector<BufferData> bufferData;
+	static std::vector<ShaderUniform> shaderUniforms;
 
 	//Networking
 	static bool networkInitialized;
@@ -70,6 +127,20 @@ private:
 	static bool networkConnected;
 	static int networkId;
 	static unsigned int networkTimer;
+
+	//Private internal functions
+	static int loadResource(std::string filename);
+	static void queueEvents();
+	static void processAudio();
+	static void drawNode(Node *source, sint passthrough=0);
+	static void draw(FloatRect cameraRect);
+	static void drawBuffer(sint buffer);
+	static void sendUniformValues(sint uniform);
+	static void update(double time);
+	static void frame(void);
+	static void cleanup(void);
+	static void processNetworking();
+	static void processNetworkMessage();
 
 public:
 
@@ -85,6 +156,8 @@ public:
 	//Events and signals
 	static void addListener(UNode *item, int type);
 	static void watchKeycode(int keycode);
+	static void startRemap();
+	static bool checkKeycode(int keycode, bool down);
 	static void queueEvent(Event event);
 	static void sendSignal(int layer, int id, Node *sender);
 	static void sendSignal(int id, Node *sender);
@@ -106,34 +179,27 @@ public:
 	static LayerData &getLayerData(int layer);
 	static int getLayerCount();
 
-	//Texture Handling
-	static int loadResource(std::string filename);
-	static int createBuffer(sint _texture, Vector2i _size, std::bitset<MAXLAYER> _layers, Node *source=NULL, sint shader=0, skColor _color = COLOR_WHITE);
-	static int createBuffer(sint _texture, Vector2i _size, int _layer, skColor _color = COLOR_WHITE);
-	static int createBuffer(sint _texture, Node *_node, skColor _color = COLOR_WHITE);
-	static void scheduleBufferRefresh(sint buffer);
-	static Vector2i getTextureSize(sint index);
+	//Resource handling
+	static sint createResource(sint texture, Vector2i size, sint index);
 	static ResourceData &getResourceData(sint index);
 	static sint getResourceCount();
+	static Vector2i getTextureSize(sint index);
 	static void drawImGuiTexture(sint texture, Vector2i size);
 	static skColor pickColor(sint texture, Vector2i position);
+	static sint createBuffer(BufferData data);
+	static void scheduleBufferRefresh(sint buffer);
+	static sint createUniform(sint shader, std::string name, std::vector<int> values);
+	static ShaderUniform &getUniform(sint uniform);
+	static void updateUniform(sint uniform, std::vector<int> values);
 
 	//Start engine
 	static void startEngine();
 	static void stopEngine();
 	static bool isRunning();
 
-	//Main loop functions
+	//Semi private internal functions
 	static void processEvents();
-	static void queueEvents();
-	static void processAudio();
-	static void drawNode(Node *source, sint passthrough=0);
-	static void draw(FloatRect cameraRect);
-	static void drawBuffer(sint buffer);
-	static void update(double time);
-	static void frame(void);
 	static void init(void);
-	static void cleanup(void);
 
 	//Audio controls
 	static void setVolume(int volume);
@@ -145,8 +211,6 @@ public:
 	static bool isConnected();
 	static int getNetworkId();
 	static bool isNetworkTick();
-	static void processNetworking();
-	static void processNetworkMessage();
 	static void sendNetworkEvent(Event event, bool reliable=false);
 	static void sendNetworkString(std::string data, int code=0, bool reliable=true);
 };

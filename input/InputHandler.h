@@ -51,6 +51,7 @@ public:
 	//Key management
 	int addKey(int code, int alt=0);
 	int addKey(std::string key);
+	void refreshSettings();
 
 	//Key press and unpress
 	void updateKey(int code, bool press);
@@ -66,6 +67,7 @@ class DirectionHandler : public InputHandler {
 private:
 	Vector2f direction = Vector2f(0, 0);
 	Vector2f joystickDirection = Vector2f(0,0);
+	std::string field;
 
 	int joystick = 0;
 	int joystickLast = 0;

@@ -1,27 +1,11 @@
-//Buffer draw data
-struct BufferData {
-	sint texture;
-	sint shader;
-	Vector2i size;
-	std::bitset<MAXLAYER> layers;
-	Node *source = NULL;
-	skColor color;
-	bool redraw = true;
+#define DTOR 0.0174532925199
+#define RTOD 57.2957795131
 
-	BufferData() {
-		texture = 0;
-		redraw = false;
-	}
-
-	BufferData(sint _texture, Vector2i _size, std::bitset<MAXLAYER> _layers, Node *_source, sint _shader, skColor _color) {
-		texture = _texture;
-		size = _size;
-		layers = _layers;
-		source = _source;
-		shader = _shader;
-		color = _color;
-	}
-};
+#define TEXTUREERROR "Texture does not exist"
+#define BUFFERERROR "Cannot replace texture with render buffer"
+#define FILEERROR "Failed to read file"
+#define UNKNOWNRESOURCE "Unknown Resource"
+#define UNKNOWNBUFFER "Unknown Buffer"
 
 //Add node to update/draw cycle
 void UpdateList::addNode(Node *next) {
@@ -172,6 +156,17 @@ int UpdateList::getLayerCount() {
 	return maxLayer + 1;
 }
 
+//Subscribe node to cetain event type
+void UpdateList::addListener(UNode *item, int type) {
+	listeners[type].push_back(item);
+}
+
+//Send custom event
+void UpdateList::queueEvent(Event event) {
+	if(event != event_previous[event.type % EVENT_MAX])
+		event_queue.push_back(event);
+}
+
 //Process window events on update thread
 void UpdateList::processEvents() {
 	//Remove deleted nodes
@@ -301,4 +296,60 @@ void UpdateList::update(double time) {
 			uSource = (Node*)uSource->getNext();
 		}
 	}
+}
+
+//Get size of texture
+Vector2i UpdateList::getTextureSize(sint texture) {
+	if(texture >= resourceData.size())
+		throw new std::invalid_argument(TEXTUREERROR);
+	return resourceData[texture].size;
+}
+
+//Get resource data
+ResourceData &UpdateList::getResourceData(sint index) {
+	if(index >= resourceData.size())
+		throw new std::invalid_argument(TEXTUREERROR);
+	return resourceData[index];
+}
+
+sint UpdateList::getResourceCount() {
+	return resourceData.size();
+}
+
+//Create render buffer resource
+sint UpdateList::createBuffer(BufferData data) {
+	data.texture = createResource(data.texture, data.size, bufferData.size());
+	bufferData.push_back(data);
+	return data.texture;
+}
+
+//Schedule buffer draw before next draw
+void UpdateList::scheduleBufferRefresh(sint texture) {
+	bufferData[resourceData[texture].index].redraw = true;
+}
+
+//Create uniform object
+sint UpdateList::createUniform(sint shader, std::string name, std::vector<int> values) {
+	ShaderUniform uniform(shader, name, values);
+	uniform.texture = createResource(0, Vector2i(3, values.size()/3), shaderUniforms.size());
+	shaderUniforms.push_back(uniform);
+	return uniform.texture;
+}
+
+//Store new uniform values
+void UpdateList::updateUniform(sint rIndex, std::vector<int> values) {
+	sint uniform = resourceData[rIndex].index;
+	if(values != shaderUniforms[uniform].values)
+		shaderUniforms[uniform].values = values;
+	shaderUniforms[uniform].update = true;
+
+	//Check for buffers to redraw
+	for(sint i = 0; i < bufferData.size(); i++)
+		if(bufferData[i].shader == shaderUniforms[uniform].shader)
+			bufferData[i].redraw = true;
+}
+
+ShaderUniform &UpdateList::getUniform(sint rIndex) {
+	sint uIndex = resourceData[rIndex].index;
+	return shaderUniforms[uIndex];
 }

@@ -8,7 +8,8 @@
 #include "ImguiFPS.hpp"
 #include "ImguiNodes.hpp"
 #include "ImguiEvents.hpp"
-#include "ImguiColorPicker.hpp"
+#include "ImguiResources.hpp"
+#include "ImguiSettings.hpp"
 #include "ImguiNoiseGen.hpp"
 
 void addDebugTextures() {
@@ -19,7 +20,7 @@ void addDebugTextures() {
 }
 
 void setupDebugTools() {
-	Settings::loadSettings("res/debug/debug_settings.json");
+	Settings::loadSettings("res/debug/debug_settings.json", false);
 
 	int debugLayer = layerNames().size();
 	LayerData &data = UpdateList::getLayerData(debugLayer);
@@ -37,6 +38,7 @@ void setupDebugTools() {
 	new ImguiFPS(debugLayer);
 	new ImguiNodes(debugTextures+3, debugLayer);
 	new ImguiEvents(debugLayer);
-	new ImguiColorPicker(debugTextures+3, debugLayer);
+	new ImguiResources(debugTextures+3, debugLayer);
+	new ImguiSettings(debugLayer);
 	new ImguiNoiseGen(debugTextures+1, debugLayer);
 }

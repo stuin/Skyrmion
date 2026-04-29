@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
 #include <math.h>
 
 #define RT2O2 sqrt(2) / 2.0
@@ -171,6 +172,13 @@ Vector2f operator*(const Vector2i &first, const float second);
 Vector2f operator/(const Vector2f &first, const Vector2i &second);
 std::ostream& operator<<(std::ostream& os, const Vector2f &pos);
 std::ostream& operator<<(std::ostream& os, const Vector2i &pos);
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const std::vector<T> &v) {
+	for(T i : v)
+		os << i << " ";
+	return os;
+}
 
 bool operator==(const TextureRect &first, const TextureRect &second);
 

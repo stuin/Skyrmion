@@ -13,9 +13,11 @@ enum SK_RESOURCE_TYPE {
 	SK_TEXTURE = -1,
 	SK_BUFFER = -2,
 	SK_SHADER = 1,
-	SK_FONT = 2,
-	SK_AUDIO = 3,
-	SK_TEXT = 4
+	SK_SHADER_UNIFORM = 2,
+	SK_FONT = 3,
+	SK_AUDIO = 4,
+	SK_TEXT = 5,
+	SK_JSON = 6
 };
 
 enum SK_RENDER_TYPE {

@@ -1,6 +1,7 @@
 #include "Settings.h"
 
-std::map<std::string, int> Settings::EVENT_KEYMAP = {
+const std::map<std::string, int> Settings::EVENT_KEYMAP = {
+	{"UNKNOWN",		-5},
 	{"COMBO", 		-3},
 	{"MOVING", 		-2},
 	{"", 			-1},
@@ -45,6 +46,7 @@ std::map<std::string, int> Settings::EVENT_KEYMAP = {
 	{"LCTRL",		341},
 	{"LCONTROL",	341},
 	{"LSHIFT", 		340},
+	{"SHIFT", 		340},
 	{"LALT", 		342},
 	{"LSYSTEM", 	343},
 	{"LSUPER", 		343},
@@ -211,7 +213,7 @@ std::map<std::string, int> Settings::EVENT_KEYMAP = {
 	{"JOYSTICK4DOWN",		JOYSTICK_OFFSET+48},
 };
 
-std::map<int, int> Settings::FONT_SPRITEMAP = {
+const std::map<int, int> Settings::FONT_SPRITEMAP = {
 	{' ', -1},
 	{'A', 0},
 	{'B', 1},

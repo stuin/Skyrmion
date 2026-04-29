@@ -3,9 +3,6 @@
 #include "Settings.h"
 #include "../core/UpdateList.h"
 
-nlohmann::json Settings::data({});
-std::vector<std::pair<std::string, std::string>> Settings::edits;
-
 //Set controls directly
 InputHandler::InputHandler(std::vector<int> _controls, int layer)
 : UNode(layer) {
@@ -34,6 +31,7 @@ InputHandler::InputHandler(std::vector<std::string> keys, int layer)
 				controls.push_back(Keybind(-3, keys[i], keys.size()));
 				keys.push_back(keyname.substr(0, splitI));
 				keys.push_back(keyname.substr(splitI+1));
+				Settings::markKeycode.insert(keys[i]);
 			} else {
 				splitI = keyname.find('%');
 				if(splitI != std::string::npos) {
@@ -81,6 +79,7 @@ void InputHandler::addListeners() {
 	UpdateList::addUNode(this);
 	UpdateList::addListener(this, EVENT_KEYPRESS);
 	UpdateList::addListener(this, EVENT_FOCUS);
+	UpdateList::addListener(this, EVENT_SETTINGS);
 }
 
 //Register key through configurable settings
@@ -109,6 +108,22 @@ int InputHandler::addKey(int code, int alt) {
 	}
 
 	return count++;
+}
+
+//Refresh inputs from settings
+void InputHandler::refreshSettings() {
+	for(sint i = 0; i < controls.size(); i++) {
+		std::string name = controls[i].configName;
+		if(name != "" && name[0] == '/' && controls[i].combo == -1 && controls[i].key != Settings::getControl(name)) {
+			int code = Settings::getControl(name);
+			//std::cout << name << code << "\n";
+			if(code > 0) {
+				controls[i].key = code;
+				UpdateList::watchKeycode(controls[i].key);
+				clearPressed(true);
+			}
+		}
+	}
 }
 
 //Find if key is used and update pressed/held states
@@ -175,6 +190,8 @@ void InputHandler::recieveEvent(Event event) {
 		updateKey(event.code, event.down);
 	else if(event.type == EVENT_FOCUS && event.down)
 		clearPressed(true);
+	else if(event.type == EVENT_SETTINGS)
+		refreshSettings();
 }
 
 //Run key press functions
@@ -203,8 +220,9 @@ DirectionHandler::DirectionHandler(std::vector<std::string> keys, int layer)
 	UpdateList::addListener(this, EVENT_JOYSTICK);
 }
 
-DirectionHandler::DirectionHandler(std::string field, int layer)
-: DirectionHandler(listKeys(field), layer) {
+DirectionHandler::DirectionHandler(std::string _field, int layer)
+: DirectionHandler(listKeys(_field), layer) {
+	field = _field;
 	std::string s = field + "/joystick";
 	joystick = Settings::getInt(s);
 }
@@ -230,6 +248,10 @@ void DirectionHandler::recieveEvent(Event event) {
 			joystickDirection = event.vector();
 		} else if(joystickSim)
 			joystickDirection = event.vector();
+	} else if(event.type == EVENT_SETTINGS) {
+		refreshSettings();
+		std::string s = field + "/joystick";
+		joystick = Settings::getInt(s);
 	}
 }
 

@@ -86,7 +86,7 @@ public:
 					if(event.code == it->second)
 						keys.emplace(event.code, Keybind(event.code, it->first));
 				}
-				if(!keys.contains(event.code))
+				if(keys.find(event.code) == keys.end())
 					keys.emplace(event.code, Keybind(event.code, "NONE"));
 				key = keys.find(event.code);
 				key->second.pressed = true;

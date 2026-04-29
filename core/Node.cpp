@@ -298,7 +298,7 @@ void Node::setupBuffer(skColor _color) {
 	RenderComponent *buffer = createRenderComponent(RENDER_PASSTHROUGH_BUFFER, this);
 	buffer->setSubComponent(rendering);
 	rendering = buffer;
-	buffer->setTexture(UpdateList::createBuffer(0, this, _color));
+	buffer->setTexture(UpdateList::createBuffer(BufferData(0, this, _color)));
 }
 
 void Node::scheduleBufferRefresh(sint buffer) {

@@ -13,41 +13,43 @@ public:
 		UpdateList::addListener(this, EVENT_IMGUI);
 	}
 
+	void timer(TimingStats stats, bool theoretical) {
+		if(theoretical)
+			ImGui::Text("Theoretical Per Second = %d", stats.getFPS());
+		else
+			ImGui::Text("Per Second = %d", stats.getFPS());
+
+	    ImGui::Text("Last delta = %f", stats.last());
+	    ImGui::Text("Average delta = %f", stats.totalTime/stats.totalCount);
+	    ImGui::Text("Max delta = %f", stats.maxDelta);
+
+	    if(!theoretical)
+	    	ImGui::Text("Total count = %d", stats.totalCount);
+	    ImGui::Text("Total time = %f", stats.totalTime);
+	}
+
 	void showWindow() {
 		ImGui::SetNextWindowSize(ImVec2(300, 500), ImGuiCond_FirstUseEver);
 	    ImGui::Begin("FPS", &open);
 
 	    #ifndef PLATFORM_WEB
 		    ImGui::SeparatorText("Updates");
-		    ImGui::Text("Per Second = %d", DebugTimers::updateTimes.getFPS());
-		    ImGui::Text("Last delta = %f", DebugTimers::updateTimes.last());
-		    ImGui::Text("Average delta = %f", DebugTimers::updateTimes.totalTime/DebugTimers::updateTimes.totalCount);
-		    ImGui::Text("Max delta = %f", DebugTimers::updateTimes.maxDelta);
-		    ImGui::Text("Total updates = %d", DebugTimers::updateTimes.totalCount);
-		    ImGui::Text("Total time = %f", DebugTimers::updateTimes.totalTime);
+		    timer(DebugTimers::updateTimes, false);
 
 		    ImGui::SeparatorText("Literal Update Length");
-		    ImGui::Text("Theoretical Per Second = %d", DebugTimers::updateLiteralTimes.getFPS());
-		    ImGui::Text("Last delta = %f", DebugTimers::updateLiteralTimes.last());
-		    ImGui::Text("Average delta = %f", DebugTimers::updateLiteralTimes.totalTime/DebugTimers::updateLiteralTimes.totalCount);
-		    ImGui::Text("Max delta = %f", DebugTimers::updateLiteralTimes.maxDelta);
-		    ImGui::Text("Total time = %f", DebugTimers::updateLiteralTimes.totalTime);
+		    timer(DebugTimers::updateLiteralTimes, true);
 		#endif
 
 	    ImGui::SeparatorText("Draw Frames");
-	    ImGui::Text("Per Second = %d", DebugTimers::frameTimes.getFPS());
-	    ImGui::Text("Last delta = %f", DebugTimers::frameTimes.last());
-	    ImGui::Text("Average delta = %f", DebugTimers::frameTimes.totalTime/DebugTimers::frameTimes.totalCount);
-	    ImGui::Text("Max delta = %f", DebugTimers::frameTimes.maxDelta);
-	    ImGui::Text("Total frames = %d", DebugTimers::frameTimes.totalCount);
-	    ImGui::Text("Total time = %f", DebugTimers::frameTimes.totalTime);
+	    timer(DebugTimers::frameTimes, false);
 
 	    ImGui::SeparatorText("Draw Only Nodes");
-	    ImGui::Text("Theoretical Per Second = %d", DebugTimers::frameLiteralTimes.getFPS());
-	    ImGui::Text("Last delta = %f", DebugTimers::frameLiteralTimes.last());
-	    ImGui::Text("Average delta = %f", DebugTimers::frameLiteralTimes.totalTime/DebugTimers::frameLiteralTimes.totalCount);
-	    ImGui::Text("Max delta = %f", DebugTimers::frameLiteralTimes.maxDelta);
-	    ImGui::Text("Total time = %f", DebugTimers::frameLiteralTimes.totalTime);
+	    timer(DebugTimers::frameNodeTimes, true);
+
+	    ImGui::SeparatorText("Draw Only Buffers");
+	    ImGui::Text("Max delta = %f", DebugTimers::frameBufferTimes.maxDelta);
+	    ImGui::Text("Total count = %d", DebugTimers::frameBufferTimes.totalCount);
+	    ImGui::Text("Total time = %f", DebugTimers::frameBufferTimes.totalTime);
 
 	    ImGui::End();
 	}

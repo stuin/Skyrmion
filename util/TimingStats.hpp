@@ -32,8 +32,9 @@ struct TimingStats {
 
 class DebugTimers {
 public:
-    static TimingStats frameTimes;
-    static TimingStats frameLiteralTimes;
     static TimingStats updateTimes;
     static TimingStats updateLiteralTimes;
+    static TimingStats frameTimes;
+    static TimingStats frameNodeTimes;
+    static TimingStats frameBufferTimes;
 };
