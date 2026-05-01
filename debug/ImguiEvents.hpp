@@ -4,13 +4,6 @@
 
 #include "../include/imgui/imgui.h"//
 
-static std::vector<std::string> EVENT_NAME = {
-	"KEYPRESS", "MOUSE", "SCROLL", "TOUCH", "JOYSTICK", "JOYSTICK_SIM",
-	"RESIZE", "FOCUS", "SUSPEND", "IMGUI",
-	"NETWORK_CONNECT_SERVER", "NETWORK_CONNECT_CLIENT", "NETWORK_POSITION", "NETWORK",
-	"CUSTOM", "MAX"
-};
-
 class ImguiEvents : public UNode {
 private:
 	bool open = false;
@@ -36,7 +29,9 @@ public:
 		for(int i = 0; i < EVENT_MAX; i++) {
 			ImGui::PushID(i);
 
-			if(ImGui::CollapsingHeader(EVENT_NAME[i].c_str())) {
+			if(count[i] == 0)
+				ImGui::BeginDisabled();
+			if(ImGui::CollapsingHeader(EVENT_NAMES[i].c_str())) {
 				ImGui::Text("type = %d", last[i].type);
 				ImGui::Text("down = %d", last[i].down);
 				ImGui::Text("code = %d", last[i].code);
@@ -60,6 +55,9 @@ public:
 					ImGui::EndChild();
 				}
 			}
+			if(count[i] == 0)
+				ImGui::EndDisabled();
+
 			ImGui::PopID();
 		}
 

@@ -167,9 +167,12 @@ constexpr skVector2<T> operator/(const skVector2<T>& first, T second) {
 	return skVector2<T>(first.x / second, first.y / second);
 }
 
+//Different type combinations
 Vector2f operator*(const Vector2f &first, const Vector2i &second);
 Vector2f operator*(const Vector2i &first, const float second);
 Vector2f operator/(const Vector2f &first, const Vector2i &second);
+
+//Output to string
 std::ostream& operator<<(std::ostream& os, const Vector2f &pos);
 std::ostream& operator<<(std::ostream& os, const Vector2i &pos);
 
@@ -180,10 +183,10 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T> &v) {
 	return os;
 }
 
-bool operator==(const TextureRect &first, const TextureRect &second);
-
+//Other assorted helpers
 Vector2f vectorLength(Vector2f dir, double distance);
 float distance(Vector2f start, Vector2f end=Vector2f(0,0));
 Vector2i round(Vector2f pos);
-
 Vector2f screenToGlobal(float x, float y);
+
+bool operator==(const TextureRect &first, const TextureRect &second);

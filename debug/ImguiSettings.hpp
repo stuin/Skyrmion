@@ -63,6 +63,20 @@ public:
 							}
 						}
 					}
+				} else if(Settings::getString(key)[0] == '#') {
+					float color[4];
+					Settings::getColor(key).write(color);
+					ImGui::Text("%s =", s.first.c_str());
+					ImGui::TableNextColumn();
+					ImGui::PushItemWidth(-FLT_MIN);
+					if(Settings::getString(key).size() > 7) {
+						if(ImGui::ColorEdit4(id.c_str(), color))
+							Settings::setColor(key, skColor(color));
+					} else {
+						if(ImGui::ColorEdit3(id.c_str(), color))
+							Settings::setColor(key, skColor3(color));
+					}
+					ImGui::PopItemWidth();
 				} else {
 					char str[128];
 					std::strcpy(str, Settings::getString(key).c_str());
@@ -83,9 +97,54 @@ public:
 				ImGui::PopItemWidth();
 			} else if(s.second == "boolean") {
 				bool v = Settings::getBool(key);
-				if(ImGui::Checkbox(s.first.c_str(), &v))
+				ImGui::Text("%s =", s.first.c_str());
+				ImGui::TableNextColumn();
+				if(ImGui::Checkbox(id.c_str(), &v))
 					Settings::setBool(key, v);
 			}
+		}
+	}
+
+	void showPopup() {
+		if(ImGui::BeginPopup("new_field_popup")) {
+			static char key[128] = "/new_field";
+			static int type = 0;
+
+			static char str[128];
+			static int v = 0;
+			static bool b = false;
+			static float color[4];
+
+			ImGui::InputText("Name", key, 128);
+			ImGui::Combo("Type", &type, "String\0Number\0Boolean\0Color\0Keybind\0");
+			switch(type) {
+			case 0:
+				ImGui::InputText("String", str, 128);
+				if(ImGui::Button("Add"))
+					Settings::setString(key, str);
+				break;
+			case 1:
+				ImGui::InputInt("Number", &v);
+				if(ImGui::Button("Add"))
+					Settings::setInt(key, v);
+				break;
+			case 2:
+				ImGui::Checkbox("Boolean", &b);
+				if(ImGui::Button("Add"))
+					Settings::setBool(key, b);
+				break;
+			case 3:
+				ImGui::ColorEdit4("Color", color);
+				if(ImGui::Button("Add"))
+					Settings::setColor(key, skColor(color));
+				break;
+			case 4:
+				ImGui::InputText("Keybind", str, 128);
+				if(ImGui::Button("Add"))
+					Settings::setString(key, str);
+				break;
+			}
+			ImGui::EndPopup();
 		}
 	}
 
@@ -102,9 +161,16 @@ public:
 			ImGui::EndTable();
 		}
 
-		ImGui::Checkbox("Add Alt Keybinds", &forceAlts);
+		ImGui::SeparatorText("Edit");
+		ImGui::Checkbox("Show Alt Keybinds", &forceAlts);
+
+		if(ImGui::Button("Add New Field"))
+			ImGui::OpenPopup("new_field_popup");
+		showPopup();
+
 	    if(ImGui::Button("Save"))
 	    	Settings::save("");
+
 
 	    ImGui::End();
 	}

@@ -6,7 +6,7 @@ class ImguiResources : public UNode {
 private:
 	bool open = false;
 
-	float col1[4] = { 1.0f, 0.0f, 0.2f, 1.0f };
+	float pickColor[4] = { 1.0f, 0.0f, 0.2f, 1.0f };
 	Vector2i pickPosition;
 	int pickIndex = 10;
 	int pickTexture = -1;
@@ -49,19 +49,29 @@ public:
 				int sIndex = UpdateList::getUniform(pickTexture).shader;
 				ImGui::Text("Shader = %d: %s", sIndex, UpdateList::getResourceData(sIndex).filename.c_str());
 				ImGui::SeparatorText("Data");
-
-				ImGui::BeginTable("Data", size.x);
-
 				std::vector<int> &values = UpdateList::getUniform(pickTexture).values;
-				for(int y = 0; y < size.y; y++) {
-					ImGui::TableNextRow();
-					for(int x = 0; x < size.x; x++) {
-						ImGui::TableNextColumn();
-						std::string id = "##" + std::to_string(y) + ":" + std::to_string(x);
-						ImGui::InputInt(id.c_str(), &values[y*size.x+x], 0, 255);
+
+				if(size.x == 3) {
+					//Edit uniform colors
+					for(int y = 0; y < size.y; y++) {
+						std::string id = "##" + std::to_string(y);
+						skColor3(values, y).write(pickColor);
+						if(ImGui::ColorEdit3(id.c_str(), pickColor))
+							skColor3(pickColor).write(values, y);
 					}
+				} else {
+					//Edit uniform numbers
+					ImGui::BeginTable("Data", size.x);
+					for(int y = 0; y < size.y; y++) {
+						ImGui::TableNextRow();
+						for(int x = 0; x < size.x; x++) {
+							ImGui::TableNextColumn();
+							std::string id = "##" + std::to_string(y) + ":" + std::to_string(x);
+							ImGui::InputInt(id.c_str(), &values[y*size.x+x], 0, 255);
+						}
+					}
+					ImGui::EndTable();
 				}
-				ImGui::EndTable();
 
 				if(ImGui::Button("Save"))
 					UpdateList::updateUniform(pickTexture, values);
@@ -93,7 +103,11 @@ public:
 
 		if(ImGui::CollapsingHeader("Color Picker")) {
 
-			ImGui::ColorEdit4("Color", col1);
+			ImGui::ColorEdit4("Color", pickColor);
+
+			skColor color = skColor(pickColor);
+			ImGui::Text("HSL: %d, %d%%, %d%%", (int)color.hue(),
+				(int)(color.saturation()*100), (int)(color.luminance()*100));
 
 			ImGui::SliderInt("x", &pickPosition.x, 0, size.x-1);
 			ImGui::SameLine();
@@ -110,11 +124,8 @@ public:
 				pickPosition.x = index % size.x;
 				pickPosition.y = index / size.x;
 
-				skColor pickColor = UpdateList::pickColor(pickTexture, pickPosition);
-				col1[0] = pickColor.red;
-				col1[1] = pickColor.green;
-				col1[2] = pickColor.blue;
-				col1[3] = pickColor.alpha;
+				color = UpdateList::pickColor(pickTexture, pickPosition);
+				color.write(pickColor, 0);
 				pickIndex = index;
 			}
 		}

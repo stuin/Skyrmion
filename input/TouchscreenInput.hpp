@@ -1,9 +1,11 @@
 #include "../core/UpdateList.h"
+#include "Settings.h"
 
 class TouchscreenJoystick : public Node {
 private:
-	Vector2f dir;
+	std::string joystickConfig = "";
 	int joystick;
+	Vector2f dir;
 	bool touch = false;
 
 public:
@@ -23,9 +25,15 @@ public:
 		UpdateList::addListener(this, EVENT_MOUSE);
 	}
 
+	TouchscreenJoystick(uint texture, std::string _joystick, int layer) : TouchscreenJoystick(texture, Settings::getInt(_joystick), layer) {
+		joystickConfig = _joystick;
+	}
+
 	void recieveEvent(Event event) {
 		if(event.type == EVENT_TOUCH && event.down)
 			UpdateList::hideLayer(getLayer(), false);
+		if(event.type == EVENT_SETTINGS && joystickConfig != "")
+			joystick = Settings::getInt(joystickConfig);
 		if(isHidden())
 			return;
 

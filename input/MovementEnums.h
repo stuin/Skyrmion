@@ -2,6 +2,8 @@
 
 #include <map>
 
+#include "../core/Event.h"
+
 /*
  * General purpose directional enums
  */
@@ -29,9 +31,3 @@ enum MovementDirections {
 	LEFT,
 	UP_LEFT
 };
-
-//Macro to build enum with array of names
-#define GENERATE_TYPES(ENUM) ENUM,
-#define GENERATE_STRING(STRING) #STRING,
-
-#define NAMED_ENUM(ENUM) enum ENUM##_TYPES { ENUM##_FOREACH(GENERATE_TYPES) }; static std::vector<std::string> ENUM##_NAMES = { ENUM##_FOREACH(GENERATE_STRING) };

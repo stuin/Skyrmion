@@ -84,19 +84,6 @@ int NetworkString_Serialize(NetworkString *msg, NBN_Stream *stream) {
     return 0;
 }
 
-//Event operators
-bool operator==(const Event &first, const Event &second) {
-    return first.type == second.type && first.down == second.down && first.code == second.code &&
-        first.x == second.x && first.y == second.y;
-}
-bool operator!=(const Event &first, const Event &second) {
-    return !(first == second);
-}
-
-std::ostream& operator<<(std::ostream& os, const Event &e) {
-    return os << std::to_string(e.type) << ':' << std::to_string(e.down) << ':' << std::to_string(e.code) <<
-        "(" << std::to_string(e.x) << ',' << std::to_string(e.y) << ") ";
-}
 std::ostream& operator<<(std::ostream& os, const NetworkString &s) {
     return os << std::to_string(s.code) << ':' << s.data << "\n";
 }

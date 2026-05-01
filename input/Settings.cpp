@@ -46,6 +46,31 @@ std::vector<string_pair> Settings::listKeys(std::string field) {
 	return out;
 }
 
+//Get value functions
+bool Settings::getBool(const std::string &field) {
+	return data.value(json_pointer(field), false);
+}
+int Settings::getInt(const std::string &field, int def) {
+	return data.value(json_pointer(field), def);
+}
+std::string Settings::getString(const std::string &field) {
+	return data.value(json_pointer(field), "");
+}
+skColor Settings::getColor(const std::string &field) {
+	return hexColor(getString(field));
+}
+
+//Get key number from settings field
+int Settings::getControl(const std::string &field) {
+	std::string keyname = data.value(json_pointer(field), "");
+	markKeycode.insert(field);
+	return mapKeycode(keyname);
+}
+
+bool Settings::isKeycode(const std::string &field) {
+	return markKeycode.count(field) > 0;
+}
+
 //Get key number from key name
 int Settings::mapKeycode(const std::string &_keyname) {
 	//Convert to uppercase
@@ -65,30 +90,6 @@ std::string Settings::reverseKeycode(int _code) {
 			return key;
 	}
 	return "";
-}
-
-//Get value functions
-bool Settings::getBool(const std::string &field) {
-	return data.value(json_pointer(field), false);
-}
-
-int Settings::getInt(const std::string &field, int def) {
-	return data.value(json_pointer(field), def);
-}
-
-std::string Settings::getString(const std::string &field) {
-	return data.value(json_pointer(field), "");
-}
-
-//Get key number from settings field
-int Settings::getControl(const std::string &field) {
-	std::string keyname = data.value(json_pointer(field), "");
-	markKeycode.insert(field);
-	return mapKeycode(keyname);
-}
-
-bool Settings::isKeycode(const std::string &field) {
-	return markKeycode.count(field) > 0;
 }
 
 //Set value in memory
@@ -117,6 +118,10 @@ void Settings::setString(std::string field, std::string value) {
 	edits.push_back(std::make_pair(name + old, name + value));
 	data[pointer] = value;
 	settingsEvent();
+}
+
+void Settings::setColor(std::string field, skColor value) {
+	setString(field, value.hex());
 }
 
 //Save edited values back to file

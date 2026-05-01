@@ -2,31 +2,41 @@
 
 #include "Vector.h"
 
+//Control input constants
 #define MOUSE_OFFSET 350
 #define JOYSTICK_OFFSET 360
 #define JOYSTICK_NEXT 50
 #define JOYSTICK_DEADZONE 0.05f
 
-enum EVENT_TYPES {
-	EVENT_KEYPRESS,
-	EVENT_MOUSE,
-	EVENT_SCROLL,
-	EVENT_TOUCH,
-	EVENT_JOYSTICK,
-	EVENT_JOYSTICK_SIM,
-	EVENT_RESIZE,
-	EVENT_FOCUS,
-	EVENT_SUSPEND,
-	EVENT_SETTINGS,
-	EVENT_IMGUI,
-	EVENT_NETWORK_CONNECT_SERVER,
-	EVENT_NETWORK_CONNECT_CLIENT,
-	EVENT_NETWORK_POSITION,
-	EVENT_NETWORK,
-	EVENT_CUSTOM,
-	EVENT_MAX
-};
+//Macro to build enum + array of names
+#define GENERATE_TYPES(ENUM) ENUM,
+#define GENERATE_STRING(STRING) #STRING,
 
+#define NAMED_ENUM(ENUM) enum ENUM##_TYPES { ENUM##_FOREACH(GENERATE_TYPES) }; static std::vector<std::string> ENUM##_NAMES = { ENUM##_FOREACH(GENERATE_STRING) };
+
+//List of event types
+#define EVENT_FOREACH(E) \
+	E(EVENT_KEYPRESS) \
+	E(EVENT_MOUSE) \
+	E(EVENT_SCROLL) \
+	E(EVENT_TOUCH) \
+	E(EVENT_JOYSTICK) \
+	E(EVENT_JOYSTICK_SIM) \
+	E(EVENT_RESIZE) \
+	E(EVENT_FOCUS) \
+	E(EVENT_SUSPEND) \
+	E(EVENT_SETTINGS) \
+	E(EVENT_IMGUI) \
+	E(EVENT_NETWORK_CONNECT_SERVER) \
+	E(EVENT_NETWORK_CONNECT_CLIENT) \
+	E(EVENT_NETWORK_POSITION) \
+	E(EVENT_NETWORK) \
+	E(EVENT_CUSTOM) \
+	E(EVENT_MAX) \
+
+NAMED_ENUM(EVENT);
+
+//Minimized event data
 struct Event {
 	int type;
 	bool down;
@@ -59,6 +69,7 @@ struct Event {
 	}
 };
 
+//Event operators (Vector.cpp)
 bool operator==(const Event &first, const Event &second);
 bool operator!=(const Event &first, const Event &second);
 std::ostream& operator<<(std::ostream& os, const Event &event);
