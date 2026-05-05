@@ -4,60 +4,12 @@ Currently built on top of [Raylib](https://github.com/raysan5/raylib), with supp
 
 Many dependencies included as submodules, including: [Dear ImGui](https://github.com/ocornut/imgui), [nlohmann json](https://json.nlohmann.me/) and [libnoise](https://libnoise.sourceforge.net/).
 
-## Tilemaps
-Load from txt files as ASCII art, each char representing a tile and it's properties, or randomly generate tiles and modify them during the game.
-
-- Collision
-- Transparency
-- Animations
-- Rotated and flipped textures
-- Tiles with different properties sharing the same texture
-- Invisible tiles
-- Changing tiles during runtime
-- Dynamic Lighting (emmision and shadow casting)
-- Randomly rotating or choosing between multiple textures
-- Perlin noise and related options provided by libnoise
-- Choosing textures based on intersections between multiple tiles (Autotiling)
-- Multiple layers rendering below and on top of other objects
-- Using multiple layers to visually extend into other tiles
-- Spawning objects at specific locations on startup
-- Buffering to a render texture
-
-#### Sources
-- [GridMaker.h](https://github.com/stuin/Skyrmion/blob/main/tiling/GridMaker.h)
-- [TileMap.hpp](https://github.com/stuin/Skyrmion/blob/main/tiling/TileMap.hpp)
-- [LightMap.h](https://github.com/stuin/Skyrmion/blob/main/tiling/LightMap.h)
+## Tilemaps:
+Most of the focus of the engine is on Grids which can be used for collision, lighting, and placing other objects. As well as Tilemaps, which can be animated, offset and layered in different ways to provide many visual effects from one grid. Full information on those [here](https://github.com/stuin/Skyrmion/blob/main/docs/Tiles.md).
 
 ## Nodes:
 Everything visible in the game is a Node.
-Each node is attached to a specific layer in UpdateList, usually ordered and named by an enum, which decides render, collision, and update order.
-
-- Vectors for Position, Origin, Size, and Scaling
-- Textures are stored separatly and referenced with a global id
-- Texture Rectangles allow for rendering sections of textures with transformations
-- Support for animations, tilemaps, rotations
-- Can replace texture with text rendering
-- Can be hidden while still updating
-- By default nodes are only rendered when on screen
-- Layers can be paused while still being visible, or hidden without being paused
-- Thread safe node deletion
-- Nodes can be deleted on mass by layer
-- Camera can be static or attached to any node
-- Parent a node to any other node in a tree
-- Uses centered position by default
-- Set and get position relative to parent or globally
-- Set position by screen coordinates
-- Collision with tiles
-- Collision with other nodes by layer
-- Send signals to any nodes by layer
-- Subscribe to input/window events by type (resizing, mouse, keyboard, etc)
-- Thread safe deletion and render texture drawing
-
-Updates are run at ~100 per second, with a time delta variable provided for consistency. Draw calls are done in a separate read-only thread.
-
-#### Sources
-- [Node.h](https://github.com/stuin/Skyrmion/blob/main/core/Node.h)
-- [UpdateList.h](https://github.com/stuin/Skyrmion/blob/main/core/UpdateList.h)
+Each node is attached to a specific layer in UpdateList, usually ordered and named by an enum, which decides render, collision, and update order. Full information on those [here](https://github.com/stuin/Skyrmion/blob/main/docs/Nodes.md).
 
 ## Backends
 - Include `core/backend/RaylibUpdateList.cpp` to compile for Raylib
@@ -70,8 +22,9 @@ Updates are run at ~100 per second, with a time delta variable provided for cons
 - List of layers with names and flags
 - Debug information and collision box for individual nodes
 - Stream of latest events and inputs
+- List of textures and other resources
+- Settings and controls
 - Modifyable perlin noise generator
-- Color picker with list of loaded textures
 
 ## Other tools:
 - Json settings file with static/global reading and writing  
@@ -83,7 +36,7 @@ Updates are run at ~100 per second, with a time delta variable provided for cons
 - [Settings.h](https://github.com/stuin/Skyrmion/blob/main/input/Settings.h)
 - [Keylist.cpp](https://github.com/stuin/Skyrmion/blob/main/input/Keylist.cpp)
 - [VertexGraph.hpp](https://github.com/stuin/Skyrmion/blob/main/util/VertexGraph.hpp)
-- [nbnetServer.cpp](https://github.com/stuin/Skyrmion/blob/main/core/backend/nbnetServer.cpp)
+- [Events and Networking](https://github.com/stuin/Skyrmion/blob/main/docs/Events.md)
 
 ## Example games:
 - The engine was originally built with a group as the core systems of [Temple-of-Pele](https://github.com/skyrmiongames/Temple-of-Pele), and later extracted into it's own project. As more game jam type projects were created with it I added more features

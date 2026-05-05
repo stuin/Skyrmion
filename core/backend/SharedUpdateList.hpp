@@ -163,7 +163,7 @@ void UpdateList::addListener(UNode *item, int type) {
 
 //Send custom event
 void UpdateList::queueEvent(Event event) {
-	if(event != event_previous[event.type % EVENT_MAX])
+	if(event.type >= EVENT_MAX || event != event_previous[event.type % EVENT_MAX])
 		event_queue.push_back(event);
 }
 
@@ -185,11 +185,15 @@ void UpdateList::processEvents() {
 		Event event = event_queue.front();
 		event_queue.pop_front();
 
+		int type = event.type;
+		if(type >= EVENT_MAX)
+			type = EVENT_CUSTOM;
+
 		//Skip duplicates
-		if(event != event_previous[event.type % EVENT_MAX]) {
-			for(UNode *node : listeners[event.type % EVENT_MAX])
+		if(event != event_previous[type]) {
+			for(UNode *node : listeners[type])
 				node->recieveEvent(event);
-			event_previous[event.type % EVENT_MAX] = event;
+			event_previous[type] = event;
 		}
 	}
 }

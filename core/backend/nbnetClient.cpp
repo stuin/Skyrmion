@@ -117,7 +117,7 @@ void UpdateList::processNetworkMessage() {
 void UpdateList::sendNetworkEvent(Event event, bool reliable) {
 	//Create the message
 	Event *msg = Event_Create();
-	if(msg == NULL)
+	if(msg == NULL || event.type < EVENT_NETWORK_CONNECT_CLIENT)
 		return;
 
 	//Copy event data

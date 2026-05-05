@@ -167,6 +167,10 @@ void UpdateList::sendUniformValues(sint rIndex) {
 
 	SetShaderValueV(shaderSet[sIndex], uniform.location, uniform.values.data(), SHADER_UNIFORM_IVEC3, uniform.values.size() / 3);
 	std::cout << "INFO: SHADER UNIFORM: " << uniform.location << ": " << uniform.values << "\n";
+
+	//Notify nodes of uniform update
+	event_previous[EVENT_BUFFER] = {};
+	event_queue.emplace_back(EVENT_BUFFER, true, rIndex);
 }
 
 static const std::map<int, int> blendModeMap = {
@@ -346,6 +350,10 @@ void UpdateList::drawBuffer(sint bIndex) {
 	EndShaderMode();
 	EndTextureMode();
 
+	//Notify nodes of buffer update
+	event_previous[EVENT_BUFFER] = {};
+	event_queue.emplace_back(EVENT_BUFFER, true, rIndex);
+
 	DebugTimers::frameBufferTimes.addDelta(GetTime()-lastTime);
 }
 
@@ -425,7 +433,7 @@ void UpdateList::queueEvents() {
 		}
 	}
 
-	//Keyboard remapping
+	//Remapping, check every keycode
 	if(remapKeycode) {
 		for(const auto& [key, code] : Settings::EVENT_KEYMAP) {
 			if(code > 0 && checkKeycode(code, false)) {
@@ -469,7 +477,7 @@ void UpdateList::queueEvents() {
 
 	//Window
 	if(IsWindowResized())
-		event_queue.emplace_back(EVENT_RESIZE, IsWindowResized(), GetRenderWidth()/GetScreenWidth(), GetScreenWidth(), GetScreenHeight());
+		event_queue.emplace_back(EVENT_RESIZE, false, GetRenderWidth()/GetScreenWidth(), GetScreenWidth(), GetScreenHeight());
 	event_queue.emplace_back(EVENT_FOCUS, !IsWindowFocused(), 0);
 	event_queue.emplace_back(EVENT_SUSPEND, IsWindowHidden() || IsWindowMinimized(), 0);
 }
@@ -618,7 +626,7 @@ void UpdateList::startEngine() {
 			finalizeBuffer(i);
 	#endif
 
-	event_queue.emplace_back(EVENT_RESIZE, IsWindowResized(), GetRenderWidth()/GetScreenWidth(), GetScreenWidth(), GetScreenHeight());
+	event_queue.emplace_back(EVENT_RESIZE, true, GetRenderWidth()/GetScreenWidth(), GetScreenWidth(), GetScreenHeight());
 
 	//Initial node update
 	for(int layer = 0; layer <= maxLayer; layer++) {

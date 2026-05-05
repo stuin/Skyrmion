@@ -120,8 +120,10 @@ static void HandleReceivedMessage(void) {
 	switch(msg_info.type) {
 		case MESSAGE_EVENT:
 			sender->events[sender->recievedEvents] = *(Event*)msg_info.data;
-			std::cout << "Recieved event " << sender->recievedEvents << " from client " << sender->client_handle << ": " << *(Event*)msg_info.data << "\n";
-			sender->recievedEvents = (sender->recievedEvents + 1) % EVENTS_PER_CLIENT;
+			if(sender->events[sender->recievedEvents].type > EVENT_NETWORK_CONNECT_SERVER) {
+				std::cout << "Recieved event " << sender->recievedEvents << " from client " << sender->client_handle << ": " << *(Event*)msg_info.data << "\n";
+				sender->recievedEvents = (sender->recievedEvents + 1) % EVENTS_PER_CLIENT;
+			}
 			Event_Destroy((Event*)msg_info.data);
 			break;
 		case MESSAGE_STRING:
