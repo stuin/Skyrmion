@@ -173,3 +173,12 @@ skColor hexColor(std::string hex) {
 		return skColor(hexValue(s), hexValue(s+2), hexValue(s+4), hexValue(s+6));
 	return skColor(hexValue(s), hexValue(s+2), hexValue(s+4));
 }
+
+//Compact int conversion
+unsigned int skColor::compact() const {
+	return r()+256*b()+65536*g()+256*256*256*a();
+}
+
+skColor compactColor(unsigned int value) {
+	return skColor((int)value%256, (int)value/256%256, (int)value/65536%256, (int)value/16777216%256);
+}

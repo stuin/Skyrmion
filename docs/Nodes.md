@@ -46,7 +46,7 @@ A UNode is a simplified Node with no rendering or position, just updates and eve
 Updates are run at ~100 per second, with a time delta variable provided for consistency. Draw calls are done in a separate read-only thread.
 
 ### Other Docs
-- [Event System](https://github.com/stuin/Skyrmion/blob/main/docs/Events.md)
+- [Events System](https://github.com/stuin/Skyrmion/blob/main/docs/Events.md)
 - [TileMaps](https://github.com/stuin/Skyrmion/blob/main/docs/Tiles.md)
 
 ### Sources

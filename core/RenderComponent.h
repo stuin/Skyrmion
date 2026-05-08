@@ -20,6 +20,13 @@ enum SK_RESOURCE_TYPE {
 	SK_JSON = 6
 };
 
+enum SK_UNIFORM_TYPE {
+	SKU_NUMBER,
+	SKU_VECTOR,
+	SKU_COLOR,
+	SKU_TEXTURE
+};
+
 enum SK_RENDER_TYPE {
 	RENDER_NONE,
 	RENDER_TEXTURE_SINGLE,
@@ -28,7 +35,9 @@ enum SK_RENDER_TYPE {
 	RENDER_TEXTURE_MAP,
 	RENDER_COLOR_SINGLE,
 	RENDER_COLOR_RECT,
-	RENDER_COLOR_MAP,
+	RENDER_COLOR_ARRAY,
+	RENDER_GRADIENT_RECT,
+	RENDER_GRADIENT_ARRAY,
 	RENDER_PASSTHROUGH_BUFFER,
 	RENDER_STRING
 };
@@ -62,22 +71,21 @@ public:
 	//Required getters
 	virtual int getBlendMode() = 0;
 	virtual sint getTexture() = 0;
-	virtual skColor getColor() = 0;
+	virtual skColor getColor(int i=0) = 0;
 
 	//Optional getters
-	virtual int getPixelSize() { throw new RENDERCOMPONENTERROR; }
-	virtual skColor getInsideColor() { throw new RENDERCOMPONENTERROR; }
+	virtual int getSize() { throw new RENDERCOMPONENTERROR; }
 	virtual TextureRect getTextureRect() { throw new RENDERCOMPONENTERROR; }
 	virtual std::vector<TextureRect> *getTextureRects() { throw new RENDERCOMPONENTERROR; }
+	virtual std::vector<skColor> *getColors() { throw new RENDERCOMPONENTERROR; }
 	virtual RenderComponent *getSubComponent() { throw new RENDERCOMPONENTERROR; }
 	virtual const char *getString() { throw new RENDERCOMPONENTERROR; }
 
 	//Optional setters
 	virtual void setBlendMode(int blendMode) { throw new RENDERCOMPONENTERROR; }
 	virtual void setTexture(sint texture) { throw new RENDERCOMPONENTERROR; }
-	virtual void setColor(skColor color) { throw new RENDERCOMPONENTERROR; }
-	virtual void setInsideColor(skColor color) { throw new RENDERCOMPONENTERROR; }
-	virtual void setPixelSize(int size) { throw new RENDERCOMPONENTERROR; }
+	virtual void setColor(skColor color, int i=0) { throw new RENDERCOMPONENTERROR; }
+	virtual void setSize(int size) { throw new RENDERCOMPONENTERROR; }
 	virtual void setTextureRect(TextureRect rectangle, sint i=0) { throw new RENDERCOMPONENTERROR; }
 	virtual void setTextureVecRect(Vector2i corner, Vector2i size, sint i=0) { throw new RENDERCOMPONENTERROR; }
 	virtual void setTextureIntRect(IntRect rect, sint i=0) { throw new RENDERCOMPONENTERROR; }

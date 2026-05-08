@@ -19,7 +19,7 @@ public:
 		return texture;
 	}
 
-	skColor getColor() {
+	skColor getColor(int i) {
 		return COLOR_WHITE;
 	}
 
@@ -54,7 +54,7 @@ public:
 		return textureRect;
 	}
 
-	skColor getColor() {
+	skColor getColor(int i) {
 		return COLOR_WHITE;
 	}
 
@@ -102,7 +102,7 @@ public:
 		return &textureRects;
 	}
 
-	skColor getColor() {
+	skColor getColor(int i) {
 		return COLOR_WHITE;
 	}
 
@@ -146,14 +146,14 @@ public:
 	sint getTexture() {
 		return 0;
 	}
-	skColor getColor() {
+	skColor getColor(int i) {
 		return color;
 	}
 
 	void setBlendMode(int _blendMode) {
 		blendMode = _blendMode;
 	}
-	void setColor(skColor _color) {
+	void setColor(skColor _color, int i) {
 		color = _color;
 	}
 };
@@ -178,27 +178,115 @@ public:
 	sint getTexture() {
 		return 0;
 	}
-	skColor getColor() {
-		return outsideColor;
+	skColor getColor(int i) {
+		if(i == 0)
+			return outsideColor;
+		else
+			return insideColor;
 	}
-	skColor getInsideColor() {
-		return insideColor;
-	}
-	int getPixelSize() {
+	int getSize() {
 		return borderWidth;
 	}
 
 	void setBlendMode(int _blendMode) {
 		blendMode = _blendMode;
 	}
-	void setColor(skColor _color) {
-		outsideColor = _color;
+	void setColor(skColor _color, int i) {
+		if(i == 0)
+			outsideColor = _color;
+		else
+			insideColor = _color;
 	}
-	void setInsideColor(skColor _color) {
-		insideColor = _color;
-	}
-	void setPixelSize(int _size) {
+	void setSize(int _size) {
 		borderWidth = _size;
+	}
+};
+
+class ColorArrayRenderComponent : public RenderComponent {
+private:
+	int blendMode = 1;
+	sint texture = 0;
+	int width = 1;
+	std::vector<skColor> colors;
+
+public:
+	ColorArrayRenderComponent(Node *source) : RenderComponent(source) {}
+
+	int getType() {
+		return RENDER_COLOR_ARRAY;
+	}
+
+	int getBlendMode() {
+		return blendMode;
+	}
+	sint getTexture() {
+		return texture;
+	}
+	skColor getColor(int i) {
+		return colors[i];
+	}
+	std::vector<skColor> *getColors() {
+		return &colors;
+	}
+	int getSize() {
+		return width;
+	}
+
+	void setBlendMode(int _blendMode) {
+		blendMode = _blendMode;
+	}
+	void setTexture(sint _texture) {
+		texture = _texture;
+	}
+	void setColor(skColor _color, int i) {
+		colors[i] = _color;
+	}
+	void setSize(int _size) {
+		width = _size;
+	}
+};
+
+class GradientArrayRenderComponent : public RenderComponent {
+private:
+	int blendMode = 1;
+	sint texture = 0;
+	int width = 1;
+	std::vector<skColor> colors;
+
+public:
+	GradientArrayRenderComponent(Node *source) : RenderComponent(source) {}
+
+	int getType() {
+		return RENDER_GRADIENT_ARRAY;
+	}
+
+	int getBlendMode() {
+		return blendMode;
+	}
+	sint getTexture() {
+		return texture;
+	}
+	skColor getColor(int i) {
+		return colors[i];
+	}
+	std::vector<skColor> *getColors() {
+		return &colors;
+	}
+	int getSize() {
+		return width;
+	}
+
+	void setBlendMode(int _blendMode) {
+		blendMode = _blendMode;
+	}
+	void setTexture(sint _texture) {
+		texture = _texture;
+	}
+	void setColor(skColor _color, int i) {
+		colors[i] = _color;
+	}
+	void setSize(int _size) {
+		width = _size;
 	}
 };
 
@@ -223,10 +311,10 @@ public:
 	sint getTexture() {
 		return fontTexture;
 	}
-	skColor getColor() {
+	skColor getColor(int i) {
 		return color;
 	}
-	int getPixelSize() {
+	int getSize() {
 		return fontSize;
 	}
 
@@ -240,10 +328,10 @@ public:
 	void setTexture(sint _texture) {
 		fontTexture = _texture;
 	}
-	void setColor(skColor _color) {
+	void setColor(skColor _color, int i) {
 		color = _color;
 	}
-	void setPixelSize(int _size) {
+	void setSize(int _size) {
 		fontSize = _size;
 	}
 	void setString(const char *_text) {
@@ -278,7 +366,7 @@ public:
 			return this;
 	}
 
-	skColor getColor() {
+	skColor getColor(int i) {
 		return COLOR_WHITE;
 	}
 
@@ -314,6 +402,10 @@ RenderComponent *createRenderComponent(int _type, Node *_source) {
 		return new ColorSingleRenderComponent(_source);
 	case RENDER_COLOR_RECT:
 		return new ColorRectRenderComponent(_source);
+	case RENDER_COLOR_ARRAY:
+		return new ColorArrayRenderComponent(_source);
+	case RENDER_GRADIENT_ARRAY:
+		return new GradientArrayRenderComponent(_source);
 	case RENDER_STRING:
 		return new StringRenderComponent(_source);
 	case RENDER_PASSTHROUGH_BUFFER:

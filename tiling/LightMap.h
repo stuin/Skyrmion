@@ -10,7 +10,7 @@
  * Generate and show a lightmap based on a grid
  */
 
-/*
+
 class LightMap : public Node {
 private:
 	const Vector2f offset = Vector2f(-1,-1);
@@ -23,7 +23,7 @@ private:
 	//Color values
 	float ambientIntensity;
 	float absorb;
-	sf::Color lightColor;
+	skColor lightColor;
 
 	//Tile mapping
 	float **tiles;
@@ -35,20 +35,18 @@ private:
 	unsigned int nextIndex = 0;
 
 	//Graphical storage
-	sf::VertexArray vertices;
-    sf::RenderTexture buffer;
 	bool singular = true;
 	Node *collection = NULL;
 
-	sf::Color applyIntensity(unsigned int x, unsigned int y);
-	sf::Color applyIntensity(float intensity);
+	skColor applyIntensity(unsigned int x, unsigned int y);
+	skColor applyIntensity(float intensity);
 	Vector2f getTilePos(unsigned int x, unsigned int y);
 	Vector2f transformOctant(int row, int col, int octant);
 	void lightOctant(Vector2f light, int octant, float maxIntensity);
 
 public:
 	LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexer *_indexes,
-		Layer layer, bool indexLights=true, sf::Color _lightColor=sf::Color::White);
+		int layer, bool indexLights=true, skColor _lightColor=COLOR_WHITE);
 
 	~LightMap() {
 		for(unsigned int y = 0; y < height; y++)
@@ -57,52 +55,53 @@ public:
 	}
 
 	void reload();
-	void reloadBuffer();
 
 	//Moving lights
 	int addSource(Vector2f light, float intensity);
 	void moveSource(int i, Vector2f light);
 	void deleteSource(int i);
-	void markCollection(Node *node);
+
+	void markCollection(Node *node) {
+		singular = false;
+		collection = node;
+		getRenderComponent(false)->setBlendMode(SK_BLEND_MAX);
+		setOrigin(0, 0);
+		//setHidden(true);
+		reload();
+	}
+
 };
 
 class LightMapCollection : public Node {
 private:
 	std::vector<LightMap*> lightmaps;
-	sf::RenderTexture *buffer;
 
 public:
-	LightMapCollection(int tileX, int tileY, Indexer *indexes, Layer layer) : Node(layer) {
-		int width = tileX * (indexes->getSize().x * indexes->getScale().x + 1);
-		int height = tileY * (indexes->getSize().y * indexes->getScale().y + 1);
-		setBlendMode(sf::BlendMultiply);
+	LightMapCollection(int tileX, int tileY, Indexer *indexes, int layer, int lightLayer) : Node(layer, RENDER_TEXTURE_SINGLE) {
+		int width = tileX * (indexes->getSize().x + 1);
+		int height = tileY * (indexes->getSize().y + 1);
+		setSize(width, height);
+		setOrigin(tileX / 2, tileY / 2);
 
 		//Set up buffer texture
-		buffer = new sf::RenderTexture();
-		if(!buffer->create(width, height))
-			throw std::logic_error("Error creating LightMap buffer");
-		setTexture(buffer->getTexture());
-
-		UpdateList::scheduleReload(this);
+		setTexture(UpdateList::createBuffer(BufferData(0, getSize(), lightLayer, COLOR_BLACK)));
+		setBlendMode(SK_BLEND_MULT);
+		reload();
 	}
 
 	void addLightMap(LightMap *map) {
 		map->markCollection(this);
 		lightmaps.push_back(map);
-		UpdateList::scheduleReload(this);
+		reload();
+	}
+
+	void reload() {
+		UpdateList::scheduleBufferRefresh(getTexture());
 	}
 
 	void reloadAll() {
 		for(unsigned int i = 0; i < lightmaps.size(); i++)
 			lightmaps[i]->reload();
-	}
-
-	void reloadBuffer() {
-		buffer->clear(sf::Color::Black);
-		for(unsigned int i = 0; i < lightmaps.size(); i++)
-			buffer->draw(*(lightmaps[i]), sf::BlendMax);
-		buffer->display();
-		//std::cout << "Redraw lightmap collection\n";
+		reload();
 	}
 };
-*/

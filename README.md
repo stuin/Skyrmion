@@ -5,13 +5,13 @@ Currently built on top of [Raylib](https://github.com/raysan5/raylib), with supp
 Many dependencies included as submodules, including: [Dear ImGui](https://github.com/ocornut/imgui), [nlohmann json](https://json.nlohmann.me/) and [libnoise](https://libnoise.sourceforge.net/).
 
 ## Tilemaps:
-Most of the focus of the engine is on Grids which can be used for collision, lighting, and placing other objects. As well as Tilemaps, which can be animated, offset and layered in different ways to provide many visual effects from one grid. Full information on those [here](https://github.com/stuin/Skyrmion/blob/main/docs/Tiles.md).
+Most of the focus of the engine is on Grids which can be used for collision, lighting, and placing other objects. These can be rendered by Tilemaps, which can be animated, offset and layered in different ways to provide many visual effects from one grid. Full information on those [here](https://github.com/stuin/Skyrmion/blob/main/docs/Tiles.md).
 
 ## Nodes:
 Everything visible in the game is a Node.
 Each node is attached to a specific layer in UpdateList, usually ordered and named by an enum, which decides render, collision, and update order. Full information on those [here](https://github.com/stuin/Skyrmion/blob/main/docs/Nodes.md).
 
-## Backends
+## Backends:
 - Include `core/backend/RaylibUpdateList.cpp` to compile for Raylib
 - Include `core/backend/SokolUpdateList.cpp` and `SokolAudio.cpp` to compile for Sokol
 - Most functionality should be identical between them
@@ -31,12 +31,6 @@ Each node is attached to a specific layer in UpdateList, usually ordered and nam
 - Json customizable controls supporting keyboard/mouse/gamepad buttons, joystick movement, and up to 3 binds for every action
 - N dimensional directed edge-vertex graph
 - Basic networking with a server to pass events between clients
-
-#### Sources
-- [Settings.h](https://github.com/stuin/Skyrmion/blob/main/input/Settings.h)
-- [Keylist.cpp](https://github.com/stuin/Skyrmion/blob/main/input/Keylist.cpp)
-- [VertexGraph.hpp](https://github.com/stuin/Skyrmion/blob/main/util/VertexGraph.hpp)
-- [Events and Networking](https://github.com/stuin/Skyrmion/blob/main/docs/Events.md)
 
 ## Example games:
 - The engine was originally built with a group as the core systems of [Temple-of-Pele](https://github.com/skyrmiongames/Temple-of-Pele), and later extracted into it's own project. As more game jam type projects were created with it I added more features

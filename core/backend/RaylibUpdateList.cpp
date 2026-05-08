@@ -9,6 +9,7 @@
 
 #include "../../include/imgui/imgui.h"//
 #include "../../include/rlImGui/rlImGui.h"//
+#include "../../include/raylib/src/rlgl.h"//
 
 #ifdef PLATFORM_WEB
 	#include <emscripten/emscripten.h>
@@ -165,7 +166,10 @@ void UpdateList::sendUniformValues(sint rIndex) {
 			resourceData[uniform.texture].filename = uniform.name;
 	}
 
-	SetShaderValueV(shaderSet[sIndex], uniform.location, uniform.values.data(), SHADER_UNIFORM_IVEC3, uniform.values.size() / 3);
+	if(uniform.type == SKU_TEXTURE)
+		SetShaderValueTexture(shaderSet[sIndex], uniform.location, textureSet[uniform.values[0]]);
+	else
+		SetShaderValueV(shaderSet[sIndex], uniform.location, uniform.values.data(), SHADER_UNIFORM_IVEC3, uniform.values.size() / 3);
 	std::cout << "INFO: SHADER UNIFORM: " << uniform.location << ": " << uniform.values << "\n";
 
 	//Notify nodes of uniform update
@@ -178,7 +182,12 @@ static const std::map<int, int> blendModeMap = {
 	{SK_BLEND_ALPHA_MULT, BLEND_ALPHA_PREMULTIPLY},
 	{SK_BLEND_ADD, BLEND_ADDITIVE},
 	{SK_BLEND_MULT, BLEND_MULTIPLIED},
+	{SK_BLEND_MAX, BLEND_CUSTOM}
 };
+
+Color rayColor(skColor color) {
+	return {color.r(), color.g(), color.b(), color.a()};
+}
 
 void UpdateList::drawNode(Node *source, sint passthrough) {
 	FloatRect rect = source->getRect();
@@ -192,9 +201,12 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 	if(rendering->getType() == RENDER_PASSTHROUGH_BUFFER && passthrough != 0)
 		rendering = rendering->getSubComponent();
 
+	if(rendering->getBlendMode() == SK_BLEND_MAX)
+		rlSetBlendFactors(1, 1, RL_MAX);
 	BeginBlendMode(blendModeMap.at(rendering->getBlendMode()));
-	skColor color1 = rendering->getColor();
-	Color color = Color{color1.r(), color1.g(), color1.b(), color1.a()};
+
+
+	Color color = rayColor(rendering->getColor());
 	sint texture = rendering->getTexture();
 
 	Vector2f scale = (passthrough != 0) ? Vector2f(1,1) : source->getScale();
@@ -241,18 +253,39 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 		}
 		} break;
 	case RENDER_COLOR_RECT: {
-		skColor color2 = rendering->getInsideColor();
-		Color colorI = Color{color2.r(), color2.g(), color2.b(), color2.a()};
+		Color colorI = rayColor(rendering->getColor(1));
 		Rectangle dst = {rect.left, rect.top, (float)rect.width, (float)rect.height};
-		if(color2 != COLOR_EMPTY)
+		if(rendering->getColor(1) != COLOR_EMPTY)
 			DrawRectangleRec(dst, colorI);
-		DrawRectangleLinesEx(dst, rendering->getPixelSize(), color);
+		DrawRectangleLinesEx(dst, rendering->getSize(), color);
+		} break;
+	case RENDER_COLOR_ARRAY: case RENDER_GRADIENT_ARRAY: {
+		std::vector<skColor> *colors = rendering->getColors();
+		uint width = rendering->getSize();
+		uint height = colors->size() / rendering->getSize();
+		float tWidth = (float)rect.width/(width);
+		float tHeight = (float)rect.height/(height);
+		//std::cout << width << "," << height << ": " << tWidth << "," << tHeight << "\n";
+		for(sint y = 0; y < height-1; y++) {
+			for(sint x = 0; x < width-1; x++) {
+				Rectangle dst = {rect.left + tWidth*x, rect.top + tHeight*y, tWidth, tHeight};
+				Color color1 = rayColor((*colors)[x + y*width]);
+				if(rendering->getType() == RENDER_COLOR_ARRAY)
+					DrawRectangleRec(dst, color1);
+				else {
+					Color color2 = rayColor((*colors)[(x+1) + y*width]);
+					Color color3 = rayColor((*colors)[x + (y+1)*width]);
+					Color color4 = rayColor((*colors)[(x+1) + (y+1)*width]);
+					DrawRectangleGradientEx(dst, color1, color3, color4, color2);
+				}
+			}
+		}
 		} break;
 	case RENDER_STRING:
 		if(source->getString() != NULL && resourceData[texture].type == SK_FONT)
-			DrawTextEx(fontSet[resourceData[texture].index], source->getString(), Vector2{rect.left, rect.top}, rendering->getPixelSize(), 1, color);
+			DrawTextEx(fontSet[resourceData[texture].index], source->getString(), Vector2{rect.left, rect.top}, rendering->getSize(), 1, color);
 		else if(source->getString() != NULL)
-			DrawTextEx(GetFontDefault(), source->getString(), Vector2{rect.left, rect.top}, rendering->getPixelSize(), 1, color);
+			DrawTextEx(GetFontDefault(), source->getString(), Vector2{rect.left, rect.top}, rendering->getSize(), 1, color);
 		break;
 	}
 
@@ -297,7 +330,7 @@ void UpdateList::draw(FloatRect cameraRect) {
 void UpdateList::drawBuffer(sint bIndex) {
 	BufferData data = bufferData[bIndex];
 	sint rIndex = data.texture;
-	std::cout << "INFO: BUFFER: " << rIndex << "\n";
+	//std::cout << "INFO: BUFFER: " << rIndex << "\n";
 
 	//Create buffer object
 	if(resourceData[rIndex].type == SK_INVALID) {

@@ -65,7 +65,8 @@ struct BufferData {
 	BufferData(sint _texture, Vector2i _size, int _layer, skColor _color = COLOR_WHITE) {
 		texture = _texture;
 		size = _size;
-		layers[_layer] = true;
+		if(_layer >= 0)
+			layers[_layer] = true;
 		color = _color;
 	}
 
@@ -82,13 +83,15 @@ struct ShaderUniform {
 	sint shader;
 	std::string name;
 	std::vector<int> values;
+	int type;
 	int location = -1;
 	bool update = true;
 
-	ShaderUniform(sint _shader, std::string _name, std::vector<int> _values) {
+	ShaderUniform(sint _shader, std::string _name, std::vector<int> _values, int _type=SKU_NUMBER) {
 		shader = _shader;
 		name = _name;
 		values = _values;
+		type = _type;
 	}
 };
 

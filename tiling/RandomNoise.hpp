@@ -146,3 +146,30 @@ public:
 		return fallback;
 	}
 };
+
+//Linear math indexer
+class LinearIndexer : public Indexer {
+private:
+	float multiplier = 1;
+	int adder = 0;
+
+public:
+	LinearIndexer(Indexer *previous, float _mult, int _add, int fallback, int scaleX = 1, int scaleY = 1)
+		: Indexer(previous, fallback, Vector2i(scaleX, scaleY)) {
+
+		multiplier = _mult;
+		adder = _add;
+	}
+
+	LinearIndexer(Indexer *previous, float _mult, int _add, int fallback, Vector2i scale)
+		: Indexer(previous, fallback, scale) {
+
+		multiplier = _mult;
+		adder = _add;
+	}
+
+	//Get value of tile from map
+	int mapTile(int c) override {
+		return c * multiplier + adder;
+	}
+};

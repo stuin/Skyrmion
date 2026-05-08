@@ -2,8 +2,6 @@
 
 #include <algorithm>
 
-/*
-
 //Based on http://journal.stuffwithstuff.com/2015/09/07/what-the-hero-sees/
 class Shadow {
 public:
@@ -117,7 +115,7 @@ Shadow projectTile(float row, float col) {
 	return Shadow(topLeft, bottomRight, col);
 }
 
-sf::Color LightMap::applyIntensity(unsigned int x, unsigned int y) {
+skColor LightMap::applyIntensity(unsigned int x, unsigned int y) {
 	float intensity = ambientIntensity;
 	if(x < width && y < height)
 		intensity = tiles[x][y];
@@ -126,16 +124,13 @@ sf::Color LightMap::applyIntensity(unsigned int x, unsigned int y) {
 }
 
 //Create color from light percentage
-sf::Color LightMap::applyIntensity(float intensity) {
+skColor LightMap::applyIntensity(float intensity) {
 	intensity = std::min(intensity, 1.0f);
 
-	sf::Color result;
-	result.a = 255;
-	result.r = (char)(lightColor.r * intensity);
-	result.g = (char)(lightColor.g * intensity);
-	result.b = (char)(lightColor.b * intensity);
-
-	return result;
+	char r = (char)(lightColor.r() * intensity);
+	char g = (char)(lightColor.g() * intensity);
+	char b = (char)(lightColor.b() * intensity);
+	return skColor(r, g, b, 255);
 }
 
 Vector2f LightMap::getTilePos(unsigned int x, unsigned int y) {
@@ -211,31 +206,30 @@ void LightMap::lightOctant(Vector2f light, int octant, float maxIntensity) {
 }
 
 LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexer *_indexes,
-		Layer layer, bool indexLights, sf::Color _lightColor)
-		: Node(layer), indexes(_indexes) {
+		int layer, bool indexLights, skColor _lightColor)
+		: Node(layer, RENDER_GRADIENT_ARRAY) {
 
 	//Set arguments
+	indexes = _indexes;
 	tileX = _tileX / indexes->getScale().x;
 	tileY = _tileY / indexes->getScale().y;
 	tileSize = Vector2f(tileX, tileY);
 	ambientIntensity = _ambient;
 	absorb = _absorb / indexes->getScale().x;
 	lightColor = _lightColor;
-	setBlendMode(sf::BlendMultiply);
 
 	//Set sizing
 	width = (indexes->getSize().x + 1) * indexes->getScale().x;
 	height = (indexes->getSize().y + 1) * indexes->getScale().y;
 	setSize(Vector2i(tileX * width, tileY * height));
-	setOrigin(-_tileX / 2, -_tileY / 2);
+	setOrigin(_tileX / 2, _tileY / 2);
 
-	vertices.setPrimitiveType(sf::Quads);
-	vertices.resize((width + 1) * (height + 1) * 4);
-
-	//Set up buffer texture
-    if(!buffer.create(tileX * width, tileY * height))
-        throw std::logic_error("Error creating LightMap buffer");
-    setTexture(buffer.getTexture());
+	setBlendMode(SK_BLEND_ADD);
+    getRenderComponent()->getColors()->resize(width * height);
+    getRenderComponent()->setSize(width);
+	//setTexture(lightTexture);
+    setupBuffer(applyIntensity(ambientIntensity));
+    getRenderComponent(false)->setBlendMode(SK_BLEND_MULT);
 
 	//Build array
 	tiles = new float*[width];
@@ -274,32 +268,17 @@ void LightMap::reload() {
 	}
 
 	//Draw lighting
-	for(unsigned int x = 0; x < width + 1; ++x)
-		for(unsigned int y = 0; y < height + 1; ++y) {
-			sf::Vertex* quad = &vertices[(x + y * width) * 4];
-
-			quad[0].position = getTilePos(x, y);
-			quad[1].position = getTilePos(x-1, y);
-			quad[2].position = getTilePos(x-1, y-1);
-			quad[3].position = getTilePos(x, y-1);
-
-			quad[0].color = applyIntensity(x, y);
-			quad[1].color = applyIntensity(x-1, y);
-			quad[2].color = applyIntensity(x-1, y-1);
-			quad[3].color = applyIntensity(x, y-1);
+	for(unsigned int x = 0; x < width; ++x)
+		for(unsigned int y = 0; y < height; ++y) {
+			int iy = y;
+			if(singular)
+				iy = height - y - 1;
+			getRenderComponent()->setColor(applyIntensity(x-1, iy-1), x + y * width);
 		}
 
-	UpdateList::scheduleReload(this);
+	scheduleBufferRefresh();
 	if(collection != NULL)
-		UpdateList::scheduleReload(collection);
-}
-
-void LightMap::reloadBuffer() {
-	//Update buffer
-	buffer.clear(applyIntensity(ambientIntensity));
-	buffer.draw(vertices, sf::BlendAdd);
-	buffer.display();
-	//std::cout << "Redraw lightmap\n";
+		UpdateList::scheduleBufferRefresh(collection->getTexture());
 }
 
 int LightMap::addSource(Vector2f light, float intensity) {
@@ -325,10 +304,3 @@ void LightMap::moveSource(int i, Vector2f light) {
 void LightMap::deleteSource(int i) {
 	sourceIntensity[i] = 0;
 }
-
-void LightMap::markCollection(Node *node) {
-	singular = false;
-	collection = node;
-	setHidden(true);
-}
-*/

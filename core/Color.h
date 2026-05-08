@@ -56,7 +56,12 @@ public:
 	float hue() const;
 	float saturation() const;
 	float luminance() const;
+
+	//Color to hex code
 	std::string hex() const;
+
+	//0-256 rgba to 32bit number
+	unsigned int compact() const;
 
 	//Write 4 values back to list
 	void write(int *list, int index=0) {
@@ -124,6 +129,7 @@ skColor HSLColor(float hue, float saturation, float luminance);
 int hexValue(char byte);
 int hexValue(char *byte);
 skColor hexColor(std::string hex);
+skColor compactColor(unsigned int value);
 
 //Color constants
 const static skColor COLOR_NONE = skColor(1.0f,1.0f,1.0f,0.0f);
@@ -138,5 +144,6 @@ enum SK_BLENDMODE {
 	SK_BLEND_ALPHA,
 	SK_BLEND_ALPHA_MULT,
 	SK_BLEND_ADD,
-	SK_BLEND_MULT
+	SK_BLEND_MULT,
+	SK_BLEND_MAX
 };

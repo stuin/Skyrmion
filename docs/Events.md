@@ -13,7 +13,7 @@ MOUSE					| 0=L, 1=R, 2=M, etc.	| Button pressed| Mouse position
 SCROLL					| 						| Downwards		| Wheel movement
 TOUCH					| 0 to number of touches| Touched		| Touch position
 JOYSTICK				| Stick 1-4 + controller| Non-zero		| Stick position
-JOYSTICK_SIM			| Same as Joystick 		| ^^^			| Touchscreen joystick position
+JOYSTICK_SIM			| Same as Joystick 		| In use		| Touchscreen joystick position
 RESIZE					| RenderW / ScreenW 	| First frame	| Screen size
 FOCUS					| 		 				| Unfocused		|
 SUSPEND					| 		 				| Window Hidden	|

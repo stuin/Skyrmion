@@ -31,8 +31,8 @@ public:
      : Node(layer, RENDER_TEXTURE_ARRAY), tileX(_tileX), tileY(_tileY), indexes(_indexes), offset(_offset) {
 
         //Set sizing
-        fullWidth = width = indexes->getSize().x;
-        fullHeight = height = indexes->getSize().y;
+        fullWidth = width = indexes->getSize().x * indexes->getScale().x;
+        fullHeight = height = indexes->getSize().y * indexes->getScale().x;
         startX = border.left;
         startY = border.top;
         if(border.width != 0)

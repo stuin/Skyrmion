@@ -13,6 +13,7 @@ private:
 	Node rectCursor;
 	int currentRect = -1;
 	Node *currentRectNode = NULL;
+	float pickColor[4] = { 1.0f, 0.0f, 0.2f, 1.0f };
 
 public:
 	ImguiNodes(int _pickTexture, int debugLayer) : UNode(debugLayer),
@@ -138,7 +139,8 @@ public:
 			return;
 		}
 
-		ImGui::Text("RenderComponent = %d", source->getRenderComponent()->getType());
+		RenderComponent *renderer = source->getRenderComponent();
+		ImGui::Text("RenderComponent = %d", renderer->getType());
 		ImGui::Text("BlendMode = %d", source->getBlendMode());
 
 		sint texture = source->getTexture();
@@ -147,7 +149,7 @@ public:
 		else
 			ImGui::Text("Texture = %ld", texture);
 
-		if(source->getRenderComponent()->getType() == RENDER_STRING)
+		if(renderer->getType() == RENDER_STRING)
 			ImGui::Text("String = \"%s\"", source->getString());
 
 		bool nodeHidden = source->isHidden();
@@ -156,7 +158,7 @@ public:
 		ImGui::Checkbox("##", &nodeHidden);
 		source->setHidden(nodeHidden);
 
-		if(source->getRenderComponent()->getType() == RENDER_TEXTURE_ARRAY && source->getTextureRects()->size() > 0) {
+		if(renderer->getType() == RENDER_TEXTURE_ARRAY && source->getTextureRects()->size() > 0) {
 			ImGui::Text("Texture Rects = %lu", source->getTextureRects()->size());
 
 			if(ImGui::BeginChild("##", ImVec2(400.0f, 200.0f), ImGuiChildFlags_Borders, 0)) {
@@ -191,6 +193,21 @@ public:
 
 					rectId++;
 					ImGui::PopID();
+				}
+			}
+			ImGui::EndChild();
+		} else if(renderer->getType() == RENDER_COLOR_ARRAY && renderer->getColors()->size() > 0) {
+			ImGui::Text("Colors = %lu", renderer->getColors()->size());
+
+			if(ImGui::BeginChild("##", ImVec2(400.0f, 200.0f), ImGuiChildFlags_Borders, 0)) {
+				focused |= ImGui::IsWindowFocused();
+
+				int colorId = 0;
+				for(skColor color : *renderer->getColors()) {
+					std::string id = "##" + std::to_string(colorId++);
+					color.write(pickColor);
+					if(ImGui::ColorEdit3(id.c_str(), pickColor))
+						renderer->setColor(skColor3(pickColor), colorId);
 				}
 			}
 			ImGui::EndChild();
