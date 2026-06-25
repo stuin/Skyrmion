@@ -228,7 +228,7 @@ LightMap::LightMap(int _tileX, int _tileY, float _ambient, float _absorb, Indexe
     getRenderComponent()->getColors()->resize(width * height);
     getRenderComponent()->setSize(width);
 	//setTexture(lightTexture);
-    setupBuffer(applyIntensity(ambientIntensity));
+    setupBuffer(0, applyIntensity(ambientIntensity));
     getRenderComponent(false)->setBlendMode(SK_BLEND_MULT);
 
 	//Build array

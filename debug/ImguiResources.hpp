@@ -49,17 +49,9 @@ public:
 				int sIndex = UpdateList::getUniform(pickTexture).shader;
 				ImGui::Text("Shader = %d: %s", sIndex, UpdateList::getResourceData(sIndex).filename.c_str());
 				ImGui::SeparatorText("Data");
-				std::vector<int> &values = UpdateList::getUniform(pickTexture).values;
+				if(UpdateList::getUniform(pickTexture).isFloat()) {
+					std::vector<float> &values = UpdateList::getUniform(pickTexture).fValues;
 
-				if(size.x == 3) {
-					//Edit uniform colors
-					for(int y = 0; y < size.y; y++) {
-						std::string id = "##" + std::to_string(y);
-						skColor3(values, y).write(pickColor);
-						if(ImGui::ColorEdit3(id.c_str(), pickColor))
-							skColor3(pickColor).write(values, y);
-					}
-				} else {
 					//Edit uniform numbers
 					ImGui::BeginTable("Data", size.x);
 					for(int y = 0; y < size.y; y++) {
@@ -67,14 +59,41 @@ public:
 						for(int x = 0; x < size.x; x++) {
 							ImGui::TableNextColumn();
 							std::string id = "##" + std::to_string(y) + ":" + std::to_string(x);
-							ImGui::InputInt(id.c_str(), &values[y*size.x+x], 0, 255);
+							ImGui::InputFloat(id.c_str(), &values[y*size.x+x], 0, 1);
 						}
 					}
 					ImGui::EndTable();
-				}
 
-				if(ImGui::Button("Save"))
-					UpdateList::updateUniform(pickTexture, values);
+					if(ImGui::Button("Save"))
+						UpdateList::updateUniform(pickTexture, values);
+				} else {
+					std::vector<int> &values = UpdateList::getUniform(pickTexture).iValues;
+
+					if(size.x == 3) {
+						//Edit uniform colors
+						for(int y = 0; y < size.y; y++) {
+							std::string id = "##" + std::to_string(y);
+							skColor3(values, y).write(pickColor);
+							if(ImGui::ColorEdit3(id.c_str(), pickColor))
+								skColor3(pickColor).write(values, y);
+						}
+					} else {
+						//Edit uniform numbers
+						ImGui::BeginTable("Data", size.x);
+						for(int y = 0; y < size.y; y++) {
+							ImGui::TableNextRow();
+							for(int x = 0; x < size.x; x++) {
+								ImGui::TableNextColumn();
+								std::string id = "##" + std::to_string(y) + ":" + std::to_string(x);
+								ImGui::InputInt(id.c_str(), &values[y*size.x+x], 0, 255);
+							}
+						}
+						ImGui::EndTable();
+					}
+
+					if(ImGui::Button("Save"))
+						UpdateList::updateUniform(pickTexture, values);
+				}
 
 				break; }
 			case SK_FONT:

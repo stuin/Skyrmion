@@ -49,7 +49,7 @@ public:
         setPosition(startX * tileX, startY * tileY);
 
         setTexture(_tileset);
-        setupBuffer(COLOR_EMPTY);
+        setupBuffer(0, COLOR_EMPTY);
 
         //std::cout << " " << startX << "," << startY << ", " << width << "," << height << "\n";
         //std::cout << toString(getGPosition()) << ":" << toString(getGScale()) <<  "\n";

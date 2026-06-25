@@ -124,7 +124,7 @@ public:
 	void setTextureVecRect(Vector2i corner, sint i=0);
 	void setTextureVecRect(int x, int y, sint i=0);
 	void setString(const char *text);
-	void setupBuffer(skColor color=COLOR_WHITE);
+	void setupBuffer(sint rIndex=0, skColor color=COLOR_WHITE);
 	void scheduleBufferRefresh(sint buffer=0);
 
 	//Collision system

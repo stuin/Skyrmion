@@ -116,7 +116,7 @@ int UpdateList::loadResource(std::string filename) {
 }
 
 //Replace blank texture with custom resource
-sint UpdateList::createResource(sint texture, Vector2i size, sint index) {
+sint UpdateList::createResource(sint texture, Vector2i size, sint index, int type) {
 	if(texture == 0)
 		texture = UpdateList::getResourceCount();
 	while(texture >= resourceData.size()) {
@@ -126,12 +126,13 @@ sint UpdateList::createResource(sint texture, Vector2i size, sint index) {
 	}
 	//if(resourceData[texture].type == SK_TEXTURE && resourceData[texture].index != 0)
 	//	return resourceData[texture].index;
-	if(resourceData[texture].type != SK_INVALID)
-		throw new std::invalid_argument(BUFFERERROR);
+	//if(resourceData[texture].type != SK_INVALID)
+	//	throw new std::invalid_argument(BUFFERERROR);
 
 	//Mark resource location
 	resourceData[texture].size = size;
 	resourceData[texture].index = index;
+	resourceData[texture].type = type;
 	return texture;
 }
 
@@ -153,24 +154,51 @@ skColor UpdateList::pickColor(sint texture, Vector2i position) {
 }
 
 //Send values to shader uniform
-void UpdateList::sendUniformValues(sint rIndex) {
-	sint uIndex = resourceData[rIndex].index;
+void UpdateList::sendUniformValues(sint uIndex) {
 	ShaderUniform uniform = shaderUniforms[uIndex];
+	sint rIndex = uniform.texture;
 	sint sIndex = resourceData[uniform.shader].index;
+	//std::cout << rIndex << ":" << uIndex << ":" << sIndex << "\n";
+
+	//Run direct texture replacement
+	if(uniform.type == SKU_DIRECT_TEXTURE) {
+		UpdateTexture(textureSet[sIndex], uniform.iValues.data());
+		std::cout << "INFO: TEXTURE UNIFORM: " << uniform.iValues << "\n";
+		return;
+	}
 
 	//Finalize unknown shader uniform
 	if(uniform.location == -1) {
 		uniform.location = GetShaderLocation(shaderSet[sIndex], uniform.name.c_str());
-		resourceData[uniform.texture].type = SK_SHADER_UNIFORM;
 		if(resourceData[uniform.texture].filename == UNKNOWNRESOURCE)
 			resourceData[uniform.texture].filename = uniform.name;
 	}
 
-	if(uniform.type == SKU_TEXTURE)
-		SetShaderValueTexture(shaderSet[sIndex], uniform.location, textureSet[uniform.values[0]]);
-	else
-		SetShaderValueV(shaderSet[sIndex], uniform.location, uniform.values.data(), SHADER_UNIFORM_IVEC3, uniform.values.size() / 3);
-	std::cout << "INFO: SHADER UNIFORM: " << uniform.location << ": " << uniform.values << "\n";
+	switch(uniform.type) {
+	case SKU_FLOAT:
+		SetShaderValue(shaderSet[sIndex], uniform.location, &(uniform.fValues[0]), SHADER_UNIFORM_FLOAT);
+		break;
+	case SKU_INT:
+		SetShaderValue(shaderSet[sIndex], uniform.location, &(uniform.iValues[0]), SHADER_UNIFORM_INT);
+		break;
+	case SKU_FLOAT3_VECTOR:
+		SetShaderValueV(shaderSet[sIndex], uniform.location, uniform.fValues.data(), SHADER_UNIFORM_VEC3, uniform.fValues.size() / 3);
+		break;
+	case SKU_INT3_VECTOR:
+		SetShaderValueV(shaderSet[sIndex], uniform.location, uniform.iValues.data(), SHADER_UNIFORM_IVEC3, uniform.iValues.size() / 3);
+		break;
+	case SKU_FLOAT2:
+		SetShaderValueV(shaderSet[sIndex], uniform.location, uniform.fValues.data(), SHADER_UNIFORM_VEC2, 1);
+		break;
+	case SKU_TEXTURE:
+		SetShaderValueTexture(shaderSet[sIndex], uniform.location, textureSet[uniform.iValues[0]]);
+		break;
+	}
+
+	//if(uniform.isFloat())
+	//	std::cout << "INFO: SHADER UNIFORM: " << uniform.location << ": " << uniform.fValues << "\n";
+	//else
+	//	std::cout << "INFO: SHADER UNIFORM: " << uniform.location << ": " << uniform.iValues << "\n";
 
 	//Notify nodes of uniform update
 	event_previous[EVENT_BUFFER] = {};

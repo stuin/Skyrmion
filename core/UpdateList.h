@@ -25,14 +25,14 @@ struct ResourceData {
 	std::string filename = "";
 	Vector2i size;
 	sint index = 0;
-	SK_RESOURCE_TYPE type = SK_INVALID;
+	int type = SK_INVALID;
 
-	ResourceData(std::string _filename, SK_RESOURCE_TYPE _type) {
+	ResourceData(std::string _filename, int _type) {
 		filename = _filename;
 		type = _type;
 	}
 
-	ResourceData(std::string _filename, SK_RESOURCE_TYPE _type, Vector2i _size, sint _index=0) {
+	ResourceData(std::string _filename, int _type, Vector2i _size, sint _index=0) {
 		filename = _filename;
 		type = _type;
 		size = _size;
@@ -82,16 +82,27 @@ struct ShaderUniform {
 	sint texture = 0;
 	sint shader;
 	std::string name;
-	std::vector<int> values;
+	std::vector<float> fValues;
+	std::vector<int> iValues;
 	int type;
 	int location = -1;
 	bool update = true;
 
-	ShaderUniform(sint _shader, std::string _name, std::vector<int> _values, int _type=SKU_NUMBER) {
+	ShaderUniform(sint _shader, std::string _name, std::vector<float> _values, int _type) {
 		shader = _shader;
 		name = _name;
-		values = _values;
+		fValues = _values;
 		type = _type;
+	}
+	ShaderUniform(sint _shader, std::string _name, std::vector<int> _values, int _type) {
+		shader = _shader;
+		name = _name;
+		iValues = _values;
+		type = _type;
+	}
+
+	bool isFloat() {
+		return type == SKU_FLOAT || type == SKU_FLOAT3_VECTOR || type == SKU_FLOAT2;
 	}
 };
 
@@ -183,7 +194,7 @@ public:
 	static int getLayerCount();
 
 	//Resource handling
-	static sint createResource(sint texture, Vector2i size, sint index);
+	static sint createResource(sint texture, Vector2i size, sint index, int type);
 	static ResourceData &getResourceData(sint index);
 	static sint getResourceCount();
 	static Vector2i getTextureSize(sint index);
@@ -191,9 +202,20 @@ public:
 	static skColor pickColor(sint texture, Vector2i position);
 	static sint createBuffer(BufferData data);
 	static void scheduleBufferRefresh(sint buffer);
-	static sint createUniform(sint shader, std::string name, std::vector<int> values);
-	static ShaderUniform &getUniform(sint uniform);
+	static BufferData &getBufferData(sint buffer);
+
+	//Shader Uniforms
+	static sint createUniform(sint rIndex, sint shader, std::string name, std::vector<float> values);
+	static sint createUniform(sint rIndex, sint shader, std::string name, std::vector<int> values, int type=SKU_INT3_VECTOR);
+	static sint createUniform(sint rIndex, sint shader, std::string name, float value);
+	static sint createUniform(sint rIndex, sint shader, std::string name, int value);
+	static sint createUniform(sint rIndex, sint shader, std::string name, Vector2f value);
+	static void updateUniform(sint uniform, std::vector<float> values);
 	static void updateUniform(sint uniform, std::vector<int> values);
+	static void updateUniform(sint uniform, float value);
+	static void updateUniform(sint uniform, int value);
+	static void updateUniform(sint uniform, Vector2f value);
+	static ShaderUniform &getUniform(sint uniform);
 
 	//Start engine
 	static void startEngine();

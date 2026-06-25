@@ -17,6 +17,7 @@ struct Keybind {
 	long int combo = -1;
 	long int duplicate = -1;
 	bool pressed = false;
+	bool pressed2 = false;
 	bool held = false;
 	bool query = true;
 
@@ -56,6 +57,10 @@ public:
 	//Key press and unpress
 	void updateKey(int code, bool press);
 	void clearPressed(bool clearHeld=false);
+
+	//Simple key querying
+	bool isPressed(int kIndex);
+	bool isHeld(int kIndex);
 
 	//System updates loop
 	void recieveEvent(Event event);

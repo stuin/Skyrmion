@@ -322,7 +322,7 @@ sint UpdateList::getResourceCount() {
 
 //Create render buffer resource
 sint UpdateList::createBuffer(BufferData data) {
-	data.texture = createResource(data.texture, data.size, bufferData.size());
+	data.texture = createResource(data.texture, data.size, bufferData.size(), SK_INVALID);
 	bufferData.push_back(data);
 	return data.texture;
 }
@@ -332,25 +332,77 @@ void UpdateList::scheduleBufferRefresh(sint texture) {
 	bufferData[resourceData[texture].index].redraw = true;
 }
 
+BufferData &UpdateList::getBufferData(sint texture) {
+	return bufferData[resourceData[texture].index];
+}
+
 //Create uniform object
-sint UpdateList::createUniform(sint shader, std::string name, std::vector<int> values) {
-	ShaderUniform uniform(shader, name, values);
-	uniform.texture = createResource(0, Vector2i(3, values.size()/3), shaderUniforms.size());
+sint UpdateList::createUniform(sint rIndex, sint shader, std::string name, std::vector<float> values) {
+	ShaderUniform uniform(shader, name, values, SKU_FLOAT3_VECTOR);
+	uniform.texture = createResource(rIndex, Vector2i(3, values.size()/3), shaderUniforms.size(), SK_SHADER_UNIFORM);
+	//std::cout << "INFO: SHADER UNIFORM: " << uniform.texture << ": " << shaderUniforms.size() << "\n";
+	shaderUniforms.push_back(uniform);
+	return uniform.texture;
+}
+sint UpdateList::createUniform(sint rIndex, sint shader, std::string name, std::vector<int> values, int type) {
+	ShaderUniform uniform(shader, name, values, type);
+	uniform.texture = createResource(rIndex, Vector2i(3, values.size()/3), shaderUniforms.size(), SK_SHADER_UNIFORM);
+	shaderUniforms.push_back(uniform);
+	return uniform.texture;
+}
+
+sint UpdateList::createUniform(sint rIndex, sint shader, std::string name, float value) {
+	ShaderUniform uniform(shader, name, std::vector<float>({value}), SKU_FLOAT);
+	uniform.texture = createResource(rIndex, Vector2i(1, 1), shaderUniforms.size(), SK_SHADER_UNIFORM);
+	shaderUniforms.push_back(uniform);
+	return uniform.texture;
+}
+sint UpdateList::createUniform(sint rIndex, sint shader, std::string name, int value) {
+	ShaderUniform uniform(shader, name, std::vector<int>({value}), SKU_INT);
+	uniform.texture = createResource(rIndex, Vector2i(1, 1), shaderUniforms.size(), SK_SHADER_UNIFORM);
+	shaderUniforms.push_back(uniform);
+	return uniform.texture;
+}
+sint UpdateList::createUniform(sint rIndex, sint shader, std::string name, Vector2f value) {
+	ShaderUniform uniform(shader, name, std::vector<float>({value.x, value.y}), SKU_FLOAT2);
+	uniform.texture = createResource(rIndex, Vector2i(2, 1), shaderUniforms.size(), SK_SHADER_UNIFORM);
 	shaderUniforms.push_back(uniform);
 	return uniform.texture;
 }
 
 //Store new uniform values
-void UpdateList::updateUniform(sint rIndex, std::vector<int> values) {
+void UpdateList::updateUniform(sint rIndex, std::vector<float> values) {
 	sint uniform = resourceData[rIndex].index;
-	if(values != shaderUniforms[uniform].values)
-		shaderUniforms[uniform].values = values;
+	if(values != shaderUniforms[uniform].fValues)
+		shaderUniforms[uniform].fValues = values;
 	shaderUniforms[uniform].update = true;
 
 	//Check for buffers to redraw
 	for(sint i = 0; i < bufferData.size(); i++)
 		if(bufferData[i].shader == shaderUniforms[uniform].shader)
 			bufferData[i].redraw = true;
+}
+void UpdateList::updateUniform(sint rIndex, std::vector<int> values) {
+	sint uniform = resourceData[rIndex].index;
+	if(values != shaderUniforms[uniform].iValues)
+		shaderUniforms[uniform].iValues = values;
+	shaderUniforms[uniform].update = true;
+
+	//Check for buffers to redraw
+	for(sint i = 0; i < bufferData.size(); i++)
+		if(bufferData[i].shader == shaderUniforms[uniform].shader)
+			bufferData[i].redraw = true;
+}
+
+void UpdateList::updateUniform(sint rIndex, float value) {
+	UpdateList::updateUniform(rIndex, std::vector<float>({value}));
+}
+void UpdateList::updateUniform(sint rIndex, int value) {
+	UpdateList::updateUniform(rIndex, std::vector<int>({value}));
+}
+
+void UpdateList::updateUniform(sint rIndex, Vector2f value) {
+	UpdateList::updateUniform(rIndex, std::vector<float>({value.x, value.y}));
 }
 
 ShaderUniform &UpdateList::getUniform(sint rIndex) {

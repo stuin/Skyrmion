@@ -142,11 +142,13 @@ void InputHandler::updateKey(int code, bool press) {
 	//Update press/held
 	if(i < controls.size() && controls[i].held != press) {
 		controls[i].pressed = press;
+		controls[i].pressed2 = press;
 		controls[i].held = press;
 
 		long int d = controls[i].duplicate;
 		while(d != -1 && d < (long int)controls.size()) {
 			controls[d].pressed = press;
+			controls[d].pressed2 = press;
 			controls[d].held = press;
 			if(controls[d].duplicate != d)
 				d = controls[d].duplicate;
@@ -167,6 +169,7 @@ void InputHandler::updateKey(int code, bool press) {
 			press = controls[k].held && controls[k+1].held;
 			if(controls[j].held != press) {
 				controls[j].pressed = press;
+				controls[j].pressed2 = press;
 				controls[j].held = press;
 			}
 		}
@@ -179,9 +182,23 @@ void InputHandler::clearPressed(bool clearHeld) {
 		controls[i].pressed = false;
 
 		//Mouse wheel special case
-		if(controls[i].key == MOUSE_OFFSET+7 || controls[i].key == MOUSE_OFFSET+8 || clearHeld)
+		if(controls[i].key == MOUSE_OFFSET+7 || controls[i].key == MOUSE_OFFSET+8 || clearHeld) {
 			controls[i].held = false;
+			controls[i].pressed2 = false;
+		}
 	}
+}
+
+bool InputHandler::isPressed(int kIndex) {
+	if(controls[kIndex].pressed2) {
+		controls[kIndex].pressed2 = false;
+		return true;
+	}
+	return false;
+}
+
+bool InputHandler::isHeld(int kIndex) {
+	return controls[kIndex].held;
 }
 
 //Convert input events to key updates

@@ -294,11 +294,11 @@ void Node::setString(const char *_text) {
 }
 
 //Setup RENDER_PASSTHROUGH_BUFFER Component and Buffer Texture
-void Node::setupBuffer(skColor _color) {
+void Node::setupBuffer(sint rIndex, skColor _color) {
 	RenderComponent *buffer = createRenderComponent(RENDER_PASSTHROUGH_BUFFER, this);
 	buffer->setSubComponent(rendering);
 	rendering = buffer;
-	buffer->setTexture(UpdateList::createBuffer(BufferData(0, this, _color)));
+	buffer->setTexture(UpdateList::createBuffer(BufferData(rIndex, this, _color)));
 }
 
 void Node::scheduleBufferRefresh(sint buffer) {
