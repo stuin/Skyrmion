@@ -88,7 +88,7 @@ void IO::writeFile(std::string filename, std::string text) {
 
 //Load texture from file and add to set
 int UpdateList::loadResource(std::string filename) {
-	if(filename.length() > 0 && filename[0] != '#') {
+	if(filename.length() > 0 && filename[0] != '_') {
 		if(filename.substr(filename.length()-4) == ".png") {
 			//Load texture
 			Texture2D texture = LoadTexture(filename.c_str());
@@ -122,7 +122,7 @@ sint UpdateList::createResource(sint texture, Vector2i size, sint index, int typ
 	while(texture >= resourceData.size()) {
 		//throw new std::invalid_argument(TEXTUREERROR);
 		textureSet.emplace_back();
-		resourceData.emplace_back(UNKNOWNRESOURCE, SK_INVALID);
+		resourceData.emplace_back(UNKNOWNSPACE, SK_INVALID);
 	}
 	//if(resourceData[texture].type == SK_TEXTURE && resourceData[texture].index != 0)
 	//	return resourceData[texture].index;
@@ -133,19 +133,20 @@ sint UpdateList::createResource(sint texture, Vector2i size, sint index, int typ
 	resourceData[texture].size = size;
 	resourceData[texture].index = index;
 	resourceData[texture].type = type;
+	resourceData[texture].filename = UNKNOWNRESOURCE;
 	return texture;
 }
 
 //Draw ImGui texture
 void UpdateList::drawImGuiTexture(sint texture, Vector2i size) {
-	if(texture >= resourceData.size() || resourceData[texture].type >= 0)
+	if(texture >= resourceData.size() || !resourceData[texture].isTexture())
 		throw new std::invalid_argument(TEXTUREERROR);
 	rlImGuiImageSize(&(textureSet[texture]), size.x, size.y);
 }
 
 //Pick color from texture
 skColor UpdateList::pickColor(sint texture, Vector2i position) {
-	if(texture >= resourceData.size() || resourceData[texture].type >= 0)
+	if(texture >= resourceData.size() || !resourceData[texture].isTexture())
 		return skColor(0,0,0,0);
 
 	Color color = GetImageColor(LoadImageFromTexture(textureSet[texture]), position.x, position.y);
@@ -243,7 +244,7 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 
 	switch(rendering->getType()) {
 	case RENDER_TEXTURE_SINGLE: case RENDER_PASSTHROUGH_BUFFER:
-		if(resourceData[texture].type < 0) {
+		if(resourceData[texture].isTexture()) {
 			Vector2i size = resourceData[texture].size;
 			Rectangle src = {(float)0, (float)0, size.x*flip.x, size.y*flip.y};
 			Vector2 position = {rect.left, rect.top};
@@ -259,7 +260,7 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 			Vector2 origin = Vector2{abs(tex.pwidth)*scaleA.x/2, abs(tex.pheight)*scaleA.y/2};
 			Rectangle dst = {tex.px*scaleA.x+rect.left+origin.x, tex.py*scaleA.y+rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
 			Rectangle src = {(float)tex.tx, (float)tex.ty, flip.x*tex.twidth, flip.y*tex.theight};
-			if(resourceData[texture].type < 0)
+			if(resourceData[texture].isTexture())
 				DrawTexturePro(textureSet[texture], src, dst, origin, (float)tex.rotation, WHITE);
 			else
 				DrawRectanglePro(dst, origin, (float)tex.rotation, PURPLE);
@@ -273,7 +274,7 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 				Vector2 origin = Vector2{abs(tex.pwidth)*scaleA.x/2, abs(tex.pheight)*scaleA.y/2};
 				Rectangle dst = {tex.px*scaleA.x+rect.left+origin.x, tex.py*scaleA.y+rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
 				Rectangle src = {(float)tex.tx, (float)tex.ty, flip.x*tex.twidth, flip.y*tex.theight};
-				if(resourceData[texture].type < 0)
+				if(resourceData[texture].isTexture())
 					DrawTexturePro(textureSet[texture], src, dst, origin, (float)tex.rotation, WHITE);
 				else
 					DrawRectanglePro(dst, origin, (float)tex.rotation, PURPLE);
@@ -322,8 +323,7 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 
 //Thread safe draw nodes in list
 void UpdateList::draw(FloatRect cameraRect) {
-	skColor color = backgroundColor();
-	ClearBackground(Color{color.r(), color.g(), color.b()});
+	ClearBackground(rayColor(windowConfig().backgroundColor));
 
 	raycamera.target = Vector2{cameraRect.left, cameraRect.top};
 	raycamera.zoom = screenRect.width / cameraRect.width;
@@ -361,7 +361,7 @@ void UpdateList::drawBuffer(sint bIndex) {
 	//std::cout << "INFO: BUFFER: " << rIndex << "\n";
 
 	//Create buffer object
-	if(resourceData[rIndex].type == SK_INVALID) {
+	if(resourceData[rIndex].type == SK_INVALID_BUFFER) {
 		bufferSet.push_back(LoadRenderTexture(data.size.x, data.size.y));
 		textureSet[rIndex] = bufferSet[bIndex].texture;
 		resourceData[rIndex].type = SK_BUFFER;
@@ -487,6 +487,11 @@ void UpdateList::queueEvents() {
 		int code = watchedKeycodes[i];
 		bool down = checkKeycode(code, watchedKeycodesPrevious[i]);
 
+		if(down && ImGui::GetIO().WantCaptureKeyboard && code < MOUSE_OFFSET && !remapKeycode)
+			continue;
+		if(down && ImGui::GetIO().WantCaptureMouse && code >= MOUSE_OFFSET && code < JOYSTICK_OFFSET && !remapKeycode)
+			continue;
+
 		//Only send changed keys
 		if(down != watchedKeycodesPrevious[i]) {
 			event_queue.emplace_back(EVENT_KEYPRESS, down, code);
@@ -507,7 +512,7 @@ void UpdateList::queueEvents() {
 	//Mouse
 	bool pressed = false;
 	for(int button = 0; button < 7; button++) {
-		if(IsMouseButtonDown(button)) {
+		if(IsMouseButtonDown(button) && !ImGui::GetIO().WantCaptureMouse) {
 			event_queue.emplace_back(EVENT_MOUSE, true, button, GetMouseX(), GetMouseY());
 			pressed = true;
 		}
@@ -623,15 +628,19 @@ void testThread() {
 
 void UpdateList::init() {
 	SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
-	InitWindow(1920, 1080, windowTitle()->c_str());
 	SetExitKey(0);
+
+	WindowConfig config = windowConfig();
+	screenRect = FloatRect(0,0, config.windowSize.x, config.windowSize.y);
+
+	InitWindow(config.windowSize.x, config.windowSize.y, config.windowTitle.c_str());
 
 	//initialize imgui
 	rlImGuiSetup(true);
 
 	//Set layer names
-	for(sint layer = 0; layer < layerNames().size(); layer++)
-		layers[layer].name = layerNames()[layer];
+	for(sint layer = 0; layer < config.layerNames.size(); layer++)
+		layers[layer].name = config.layerNames[layer];
 
 	#ifdef _DEBUG
 		addDebugTextures();
@@ -642,13 +651,12 @@ void UpdateList::init() {
 	bufferData.emplace_back();
 	shaderSet.emplace_back();
 	fontSet.emplace_back();
-	for(std::string file : textureFiles())
+	for(std::string file : config.textureFiles)
 		UpdateList::loadResource(file);
 
 	//Show loading screen
 	BeginDrawing();
-	skColor color = backgroundColor();
-	ClearBackground(Color{color.r(), color.g(), color.b()});
+	ClearBackground(rayColor(config.backgroundColor));
 	EndDrawing();
 
 	#ifdef _DEBUG

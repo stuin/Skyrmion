@@ -30,7 +30,7 @@ public:
 		UpdateList::addNode(&rectCursor);
 
 		//Initial nodes and layer names
-		for(sint layer = 0; layer < layerNames().size(); layer++) {
+		for(sint layer = 0; layer < windowConfig().layerNames.size(); layer++) {
 			UNode *source = UpdateList::getNode(layer);
 			while(source != NULL) {
 				sint id = source->getId();
@@ -96,7 +96,7 @@ public:
 
 	void showNodeWindow(Node *source) {
 		sint id = source->getId();
-		std::string nodeName = "Node " + std::to_string(id) + " : " + layerNames()[source->getLayer()];
+		std::string nodeName = "Node " + std::to_string(id) + " : " + windowConfig().layerNames[source->getLayer()];
 		bool window = nodeWindows[id];
 
 		ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
@@ -144,8 +144,8 @@ public:
 		ImGui::Text("BlendMode = %d", source->getBlendMode());
 
 		sint texture = source->getTexture();
-		if(texture < textureFiles().size())
-			ImGui::Text("Texture = %ld (%s)", texture, textureFiles()[texture].c_str());
+		if(texture < windowConfig().textureFiles.size())
+			ImGui::Text("Texture = %ld (%s)", texture, windowConfig().textureFiles[texture].c_str());
 		else
 			ImGui::Text("Texture = %ld", texture);
 

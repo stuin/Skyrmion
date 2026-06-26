@@ -36,10 +36,13 @@ public:
 		Vector2i size = textureData.size;
 		ImGui::Text("Size = (%d, %d)", size.x, size.y);
 
-		if(textureData.type >= 0) {
+		if(!textureData.isTexture()) {
 			switch(textureData.type) {
 			case SK_INVALID:
 				ImGui::Text("Invalid Resource");
+				break;
+			case SK_INVALID_BUFFER:
+				ImGui::Text("Uninitialized Buffer");
 				break;
 			case SK_SHADER:
 				ImGui::Text("Type = Shader");

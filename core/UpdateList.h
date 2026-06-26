@@ -38,6 +38,10 @@ struct ResourceData {
 		size = _size;
 		index = _index;
 	}
+
+	bool isTexture() {
+		return type == SK_TEXTURE || type == SK_BUFFER;
+	}
 };
 
 //Buffer draw data
@@ -180,6 +184,7 @@ public:
 	static Node *setCamera(Node *follow, Vector2f size, Vector2f position=Vector2f(0,0));
 	static FloatRect getCameraRect();
 	static FloatRect getScreenRect();
+	static Vector2i getScreenSize();
 	static Vector2f getScaleFactor();
 
 	//Layer control features
@@ -240,12 +245,18 @@ public:
 	static void sendNetworkString(std::string data, int code=0, bool reliable=true);
 };
 
+//Config options for pre-init setup
+struct WindowConfig {
+	std::string windowTitle;
+	Vector2i windowSize;
+	skColor backgroundColor;
+	std::vector<std::string> &textureFiles;
+	std::vector<std::string> &layerNames;
+};
+
 //System functions to be implemented by the game
+WindowConfig windowConfig();
 void initialize();
-skColor backgroundColor();
-std::string *windowTitle();
-std::vector<std::string> &textureFiles();
-std::vector<std::string> &layerNames();
 
 //Networking functions to be implemented by the game
 void recieveNetworkString(std::string data, int code);

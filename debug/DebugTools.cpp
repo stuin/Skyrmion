@@ -13,22 +13,24 @@
 #include "ImguiNoiseGen.hpp"
 
 void addDebugTextures() {
-	textureFiles().push_back("#DEBUG");
-	textureFiles().push_back("res/debug/heatmapG.png");
-	textureFiles().push_back("res/debug/heatmap.png");
-	textureFiles().push_back("res/debug/colors.png");
+	WindowConfig config = windowConfig();
+	config.textureFiles.push_back("_DEBUG");
+	config.textureFiles.push_back("res/debug/heatmapG.png");
+	config.textureFiles.push_back("res/debug/heatmap.png");
+	config.textureFiles.push_back("res/debug/colors.png");
 }
 
 void setupDebugTools() {
 	Settings::loadSettings("res/debug/debug_settings.json", false);
+	WindowConfig config = windowConfig();
 
-	int debugLayer = layerNames().size();
+	int debugLayer = UpdateList::getLayerCount();
 	LayerData &data = UpdateList::getLayerData(debugLayer);
 	data.name = "DEBUG";
 	data.global = true;
 
-	int debugTextures = std::distance(textureFiles().begin(),
-		std::find(textureFiles().begin(), textureFiles().end(), "#DEBUG"));
+	int debugTextures = std::distance(config.textureFiles.begin(),
+		std::find(config.textureFiles.begin(), config.textureFiles.end(), "_DEBUG"));
 
 	UpdateList::addUNode(new DebugLayers(-debugLayer));
 

@@ -4,8 +4,8 @@
 #define TEXTUREERROR "Texture does not exist"
 #define BUFFERERROR "Cannot replace texture with render buffer"
 #define FILEERROR "Failed to read file"
-#define UNKNOWNRESOURCE "Unknown Resource"
-#define UNKNOWNBUFFER "Unknown Buffer"
+#define UNKNOWNRESOURCE "_UNKNOWN_RESOURCE"
+#define UNKNOWNSPACE "_EMPTY_SPACE"
 
 //Add node to update/draw cycle
 void UpdateList::addNode(Node *next) {
@@ -104,6 +104,9 @@ FloatRect UpdateList::getCameraRect() {
 }
 FloatRect UpdateList::getScreenRect() {
 	return screenRect;
+}
+Vector2i UpdateList::getScreenSize() {
+	return screenRect.size();
 }
 Vector2f UpdateList::getScaleFactor() {
 	return cameraRect.size() / screenRect.size();
@@ -322,7 +325,7 @@ sint UpdateList::getResourceCount() {
 
 //Create render buffer resource
 sint UpdateList::createBuffer(BufferData data) {
-	data.texture = createResource(data.texture, data.size, bufferData.size(), SK_INVALID);
+	data.texture = createResource(data.texture, data.size, bufferData.size(), SK_INVALID_BUFFER);
 	bufferData.push_back(data);
 	return data.texture;
 }
@@ -409,3 +412,10 @@ ShaderUniform &UpdateList::getUniform(sint rIndex) {
 	sint uIndex = resourceData[rIndex].index;
 	return shaderUniforms[uIndex];
 }
+
+#ifndef NETWORK_STRING
+void recieveNetworkString(std::string data, int code) {
+	std::cout << "NETWORK_STRING disabled during compilation\n";
+	std::cout << "NETWORK: Received string " << data << "\n";
+}
+#endif
