@@ -16,6 +16,7 @@ using string_pair = std::pair<std::string, std::string>;
 class Settings {
 private:
 	static std::vector<string_pair> edits;
+	static bool loaded;
 
 public:
 	static const std::map<std::string, int> EVENT_KEYMAP;
@@ -27,12 +28,14 @@ public:
 	//Load settings from file
 	static void loadSettings(std::string _filename, bool saveFile=true);
 	static std::vector<string_pair> listKeys(std::string field="");
+	static bool hasLoaded();
 
 	//Get value functions
 	static bool getBool(const std::string &field);
 	static int getInt(const std::string &field, int def=0);
-	static std::string getString(const std::string &field);
-	static skColor getColor(const std::string &field);
+	static std::string getString(const std::string &field, std::string def="");
+	static skColor getColor(const std::string &field, skColor def=COLOR_BLACK);
+	static Vector2i getVector(const std::string &field, Vector2i def=Vector2i());
 
 	//Control mapping functions
 	static int getControl(const std::string &field);
@@ -45,6 +48,7 @@ public:
 	static void setInt(std::string field, int value);
 	static void setString(std::string field, std::string value);
 	static void setColor(std::string field, skColor value);
+	static void setVector(std::string field, Vector2i value);
 
 	//Save edited values back to file
 	static void save(std::string _filename);

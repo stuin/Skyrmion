@@ -52,23 +52,23 @@ void UpdateList::clearLayer(int layer) {
 //Add UNode to update cycle
 void UpdateList::addUNode(UNode *next) {
 	int layer = next->getLayer();
+	if(layer < 0)
+		throw new std::invalid_argument(DRAWLAYERERROR);
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	if(layer > maxULayer)
 		maxULayer = layer;
-	if(-layer > maxULayer)
-		maxULayer = -layer;
-	if(uLayers[layer+MAXLAYER] == NULL)
-		uLayers[layer+MAXLAYER] = next;
+	if(uLayers[layer] == NULL)
+		uLayers[layer] = next;
 	else
-		uLayers[layer+MAXLAYER]->addNode(next);
+		uLayers[layer]->addNode(next);
 }
 
 //Get UNode in specific layer
 UNode *UpdateList::getUNode(int layer) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
-	return uLayers[layer+MAXLAYER];
+	return uLayers[layer];
 }
 
 //Send signal message to all nodes in layer
@@ -210,12 +210,12 @@ void UpdateList::update(double time) {
 	deleted1.clear();
 
 	//Pre update UNodes
-	for(int layer = -maxULayer; layer < 0; layer++) {
-		UNode *uSource = uLayers[layer+MAXLAYER];
+	for(int layer = 0; layer < maxULayer; layer++) {
+		UNode *uSource = uLayers[layer];
 		if(uSource != NULL && uSource->isDeleted()) {
 			deleted1.push_back(uSource);
 			uSource = uSource->getNext();
-			uLayers[layer+MAXLAYER] = uSource;
+			uLayers[layer] = uSource;
 		}
 
 		//For each node in layer order
@@ -277,30 +277,6 @@ void UpdateList::update(double time) {
 
 				source = (Node*)source->getNext();
 			}
-		}
-	}
-
-	//Post update UNodes
-	for(int layer = 0; layer <= maxULayer; layer++) {
-		UNode *uSource = uLayers[layer+MAXLAYER];
-		if(uSource != NULL && uSource->isDeleted()) {
-			deleted1.push_back(uSource);
-			uSource = uSource->getNext();
-			uLayers[layer+MAXLAYER] = uSource;
-		}
-
-		//For each node in layer order
-		while(uSource != NULL) {
-			//Update each node
-			uSource->update(time);
-
-			//Check next node for removing from list
-			while(uSource->getNext() != NULL && uSource->getNext()->isDeleted()) {
-				deleted1.push_back((Node*)uSource->getNext());
-				uSource->deleteNext();
-			}
-
-			uSource = (Node*)uSource->getNext();
 		}
 	}
 }

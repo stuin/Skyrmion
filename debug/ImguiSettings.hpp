@@ -101,6 +101,10 @@ public:
 				ImGui::TableNextColumn();
 				if(ImGui::Checkbox(id.c_str(), &v))
 					Settings::setBool(key, v);
+			} else {
+				ImGui::Text("%s =", s.first.c_str());
+				ImGui::TableNextColumn();
+				ImGui::Text("Unknown Type");
 			}
 		}
 	}

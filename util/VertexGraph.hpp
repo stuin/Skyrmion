@@ -1,116 +1,97 @@
 #pragma once
 
-using Edge = unsigned short;
-
 /*
  * Directed n-edge node graph/tree
  */
 
-template<Edge size>
+template<int size>
 class Vertex {
 private:
-	Vertex<size> *root;
-	Vertex<size> **selected;
+	Vertex<size> *vParent;
 	Vertex<size> *edges[size] = {NULL};
+	int vID = 0;
 
 public:
-	int count = 0;
 	bool printed = false;
 
-	Vertex(Vertex<size> *_root) {
-		if(_root == NULL) {
-			this->root = this;
-			selected = &root;
-		} else {
-			this->root = _root->getRoot();
-			selected = root->_getSelectPointer();
-			count = root->count++;
-		}
+	Vertex(Vertex<size> *_vParent) {
+		this->vParent = _vParent;
+		if(vParent != NULL)
+			vID = ++getVRoot()->vID;
 	}
 
-	Edge getSize() {
+	int getSize() {
 		return size;
 	}
 
-	int getID() {
-		if(selected == &root)
-			return -1;
-		return count;
+	int getVID() {
+		if(vParent == NULL)
+			return 0;
+		return vID;
 	}
 
-	Vertex<size> *getRoot() {
-		if(selected == &root)
+	Vertex<size> *getVRoot() {
+		if(vParent == NULL)
 			return this;
-		return root;
+		return vParent;
 	}
 
-	Vertex<size> **_getSelectPointer() {
-		return selected;
+	Vertex<size> *getVParent() {
+		return vParent;
 	}
 
-	Vertex<size> *getSelected() {
-		return *selected;
+	bool hasParent(Vertex<size> *vertex) {
+		if(vParent == NULL)
+			return false;
+		if(vParent == vertex)
+			return true;
+		return vParent->hasParent(vertex);
 	}
 
-	bool isSelected() {
-		return *selected == this;
+	bool hasEitherParent(Vertex<size> *vertex) {
+		return this->hasParent(vertex) || vertex->hasParent(this);
 	}
 
-	bool hasEdge(Edge edge) {
+	bool hasEdge(int edge) {
 		return edges[edge % size] != NULL;
 	}
 
-	Vertex<size> *getVertex(Edge edge) {
+	Vertex<size> *getVertex(int edge) {
 		return edges[edge % size];
 	}
 
-	Vertex<size> *select() {
-		if(*selected != this) {
-			(*selected)->onSelect(false);
-			*selected = this;
-			(*selected)->onSelect(true);
-		}
-		//printAddress();
-		return *selected;
+	void setVParent(Vertex<size> *_parent) {
+		vParent = _parent;
 	}
 
-	Vertex<size> *select(Edge edge) {
-		if(edges[edge % size] == NULL)
-			return select();
-		return edges[edge % size]->select();
-	}
-
-	Vertex<size> *setVertex(Edge edge, Vertex<size> *vertex) {
+	Vertex<size> *setVertex(int edge, Vertex<size> *vertex) {
 		edges[edge % size] = vertex;
 		return vertex;
 	}
 
-	Vertex<size> *setVertex(Edge edge, Vertex<size> *vertex, Edge opposite) {
+	Vertex<size> *setVertex(int edge, int opposite, Vertex<size> *vertex) {
 		setVertex(edge, vertex);
 		vertex->setVertex(opposite, this);
 		return vertex;
 	}
 
-	Vertex<size> *addVertex(Edge edge, Vertex<size> *vertex, Edge opposite) {
-		if(vertex == NULL || selected != vertex->selected)
-			return NULL;
+	Vertex<size> *addVertex(int edge, int opposite, Vertex<size> *vertex=NULL) {
+		if(vertex == NULL)
+			vertex = new Vertex<size>(this);
 
 		edge = edge % size;
-		if(edges[edge] == NULL)
-			setVertex(edge, vertex, opposite);
-		else
-			edges[edge]->addVertex(edge, vertex, opposite);
+		if(edges[edge] == NULL) {
+			setVertex(edge, opposite, vertex);
+			//vertex->setVParent(this);
+		} else
+			edges[edge]->addVertex(edge, opposite, vertex);
 		return vertex;
-	}
-
-	Vertex<size> *addVertex(Edge edge, Edge opposite) {
-		return addVertex(edge, new Vertex<size>(root), opposite);
 	}
 
 	void printAddress() {
 		printed = true;
 		std::cout << displayName() << ": [";
-		for(Edge e = 0; e < size; e++) {
+		for(int e = 0; e < size; e++) {
 			if(edges[e] != NULL) {
 				if(!edges[e]->printed)
 					edges[e]->printAddress();
@@ -123,7 +104,7 @@ public:
 		std::cout << "]";
 	}
 
-	void printEdge(Edge edge, Vertex<size> *vertex) {
+	void printEdge(int edge, Vertex<size> *vertex) {
 		std::cout << "\t" << displayName() << "->";
 		std::cout << vertex->displayName();
 		if(edge % 2 == 1)
@@ -132,8 +113,6 @@ public:
 	}
 
 	virtual std::string displayName() {
-		return std::to_string(getID());
+		return std::to_string(getVID());
 	}
-
-	virtual void onSelect(bool selected) {}
 };

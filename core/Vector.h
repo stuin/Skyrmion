@@ -32,6 +32,10 @@ public:
 	skVector2 abs() {
 		return skVector2<T>(std::abs(x), std::abs(y));
 	}
+
+	std::string toString() {
+		return "(" + std::to_string(x) + "," + std::to_string(y) + ")";
+	}
 };
 typedef skVector2<int> Vector2i;
 typedef skVector2<float> Vector2f;
@@ -165,6 +169,16 @@ constexpr skVector2<T> operator*(const skVector2<T>& first, T second) {
 template <typename T>
 constexpr skVector2<T> operator/(const skVector2<T>& first, T second) {
 	return skVector2<T>(first.x / second, first.y / second);
+}
+
+//min and max
+template <typename T>
+skVector2<T> min(const skVector2<T> &first, const skVector2<T> &second) {
+	return skVector2<T>(std::min(first.x, second.x), std::min(first.y, second.y));
+}
+template <typename T>
+skVector2<T> max(const skVector2<T> &first, const skVector2<T> &second) {
+	return skVector2<T>(std::max(first.x, second.x), std::max(first.y, second.y));
 }
 
 //Different type combinations

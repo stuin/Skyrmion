@@ -1,7 +1,8 @@
 #include "InputHandler.h"
 
-#include "Settings.h"
 #include "../core/UpdateList.h"
+#include "Settings.h"
+#include "MovementEnums.h"
 
 //Set controls directly
 InputHandler::InputHandler(std::vector<int> _controls, int layer)
@@ -282,17 +283,17 @@ void DirectionHandler::update(double time) {
 			joystickMovement = false;
 			//Update direction
 			switch(i % count) {
-				case 0: // up
+				case UP: // up
 					direction.y--;
 					break;
-				case 1: // right
-					direction.x++;
-					break;
-				case 2: // down
+				case DOWN: // down
 					direction.y++;
 					break;
-				case 3: // left
+				case LEFT: // left
 					direction.x--;
+					break;
+				case RIGHT: // right
+					direction.x++;
 					break;
 			}
 		}
@@ -338,9 +339,9 @@ Vector2f DirectionHandler::getMovement(double distance) {
 std::vector<std::string> DirectionHandler::listKeys(std::string field) {
 	std::vector<std::string> keys = {
 		field + "/up",
-		field + "/right",
 		field + "/down",
-		field + "/left"
+		field + "/left",
+		field + "/right"
 	};
 	return keys;
 }

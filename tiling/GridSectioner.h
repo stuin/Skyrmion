@@ -120,10 +120,10 @@ public:
 		x = std::min(x, prev->x);
 		y = std::min(y, prev->y);
 
-		if(prev->upId != 0 && !prev->hasEdge(UP/2) && prev->upId < sections.size()) {
+		if(prev->upId != 0 && !prev->hasEdge(UP) && prev->upId < sections.size()) {
 			next = sections[prev->upId];
 			if(next != NULL) {
-				root->addVertex(UP/2, next, DOWN/2);
+				root->addVertex(UP, next, DOWN);
 
 				next->x += prev->x;
 				next->y += prev->y - next->height;
@@ -132,10 +132,10 @@ public:
 				readNeighbors(prev->upId, next);
 			}
 		}
-		if(prev->rightId != 0 && !prev->hasEdge(RIGHT/2) && prev->rightId < sections.size()) {
+		if(prev->rightId != 0 && !prev->hasEdge(RIGHT) && prev->rightId < sections.size()) {
 			next = sections[prev->rightId];
 			if(next != NULL) {
-				root->addVertex(RIGHT/2, next, LEFT/2);
+				root->addVertex(RIGHT, next, LEFT);
 
 				next->x += prev->x + prev->width;
 				next->y += prev->y;
@@ -144,10 +144,10 @@ public:
 				readNeighbors(prev->rightId, next);
 			}
 		}
-		if(prev->downId != 0 && !prev->hasEdge(DOWN/2) && prev->downId < sections.size()) {
+		if(prev->downId != 0 && !prev->hasEdge(DOWN) && prev->downId < sections.size()) {
 			next = sections[prev->downId];
 			if(next != NULL) {
-				root->addVertex(DOWN/2, next, UP/2);
+				root->addVertex(DOWN, next, UP);
 
 				next->x += prev->x;
 				next->y += prev->y + prev->height;
@@ -156,10 +156,10 @@ public:
 				readNeighbors(prev->downId, next);
 			}
 		}
-		if(prev->leftId != 0 && !prev->hasEdge(LEFT/2) && prev->leftId < sections.size()) {
+		if(prev->leftId != 0 && !prev->hasEdge(LEFT) && prev->leftId < sections.size()) {
 			next = sections[prev->leftId];
 			if(next != NULL) {
-				root->addVertex(LEFT/2, next, RIGHT/2);
+				root->addVertex(LEFT, next, RIGHT);
 				std::cout << "left " << next->width << "\n";
 
 				next->x += prev->x - next->width;

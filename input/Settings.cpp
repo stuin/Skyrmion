@@ -6,6 +6,7 @@
 nlohmann::json data({});
 int count = 0;
 
+bool Settings::loaded = false;
 std::vector<string_pair> Settings::edits;
 std::unordered_set<std::string> Settings::markKeycode;
 std::string Settings::filename = "";
@@ -46,6 +47,10 @@ std::vector<string_pair> Settings::listKeys(std::string field) {
 	return out;
 }
 
+bool Settings::hasLoaded() {
+	return loaded;
+}
+
 //Get value functions
 bool Settings::getBool(const std::string &field) {
 	return data.value(json_pointer(field), false);
@@ -53,11 +58,18 @@ bool Settings::getBool(const std::string &field) {
 int Settings::getInt(const std::string &field, int def) {
 	return data.value(json_pointer(field), def);
 }
-std::string Settings::getString(const std::string &field) {
-	return data.value(json_pointer(field), "");
+std::string Settings::getString(const std::string &field, std::string def) {
+	return data.value(json_pointer(field), def);
 }
-skColor Settings::getColor(const std::string &field) {
-	return hexColor(getString(field));
+skColor Settings::getColor(const std::string &field, skColor def) {
+	return hexColor(getString(field, def.hex()));
+}
+Vector2i Settings::getVector(const std::string &field, Vector2i def) {
+	if(data.contains(json_pointer(field))) {
+		nlohmann::json array = data.at(json_pointer(field));
+		return Vector2i(array.at(0), array.at(1));
+	}
+	return def;
 }
 
 //Get key number from settings field
@@ -122,6 +134,19 @@ void Settings::setString(std::string field, std::string value) {
 
 void Settings::setColor(std::string field, skColor value) {
 	setString(field, value.hex());
+}
+
+std::string to_list(Vector2i value) {
+	return '[' + std::to_string(value.x) + ',' + std::to_string(value.y) + ']';
+}
+
+void Settings::setVector(std::string field, Vector2i value) {
+	json_pointer pointer = json_pointer(field);
+	std::string name = '"' + pointer.back() + "\": ";
+	std::string old = to_list(getVector(field));
+	edits.push_back(std::make_pair(name + old, name + to_list(value)));
+	data[pointer] = nlohmann::json::array({value.x, value.y});
+	settingsEvent();
 }
 
 //Save edited values back to file

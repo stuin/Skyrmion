@@ -114,7 +114,7 @@ class UpdateList {
 private:
 	//Node management
 	static LayerData layers[MAXLAYER];
-	static UNode* uLayers[MAXLAYER*2];
+	static UNode* uLayers[MAXLAYER];
 	static int maxLayer;
 	static int maxULayer;
 	static bool running;

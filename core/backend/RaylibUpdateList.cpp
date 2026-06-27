@@ -27,7 +27,7 @@
 
 //Static variables
 LayerData UpdateList::layers[MAXLAYER];
-UNode * UpdateList::uLayers[MAXLAYER*2] = {NULL};
+UNode * UpdateList::uLayers[MAXLAYER] = {NULL};
 int UpdateList::maxLayer = 0;
 int UpdateList::maxULayer = 0;
 bool UpdateList::running = false;
@@ -631,6 +631,7 @@ void UpdateList::init() {
 	SetExitKey(0);
 
 	WindowConfig config = windowConfig();
+	std::cout << config.windowSize << "\n";
 	screenRect = FloatRect(0,0, config.windowSize.x, config.windowSize.y);
 
 	InitWindow(config.windowSize.x, config.windowSize.y, config.windowTitle.c_str());
@@ -641,6 +642,7 @@ void UpdateList::init() {
 	//Set layer names
 	for(sint layer = 0; layer < config.layerNames.size(); layer++)
 		layers[layer].name = config.layerNames[layer];
+	maxLayer = config.layerNames.size()-1;
 
 	#ifdef _DEBUG
 		addDebugTextures();
@@ -698,6 +700,14 @@ void UpdateList::startEngine() {
 	event_queue.emplace_back(EVENT_RESIZE, true, GetRenderWidth()/GetScreenWidth(), GetScreenWidth(), GetScreenHeight());
 
 	//Initial node update
+	for(int layer = 0; layer <= maxULayer; layer++) {
+		UNode *source = uLayers[layer];
+
+		while(source != NULL) {
+			source->update(-1);
+			source = source->getNext();
+		}
+	}
 	for(int layer = 0; layer <= maxLayer; layer++) {
 		UNode *source = layers[layer].root;
 

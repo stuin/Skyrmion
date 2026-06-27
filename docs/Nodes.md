@@ -41,7 +41,7 @@ PASSTHROUGH_BUFFER	| Stores a second RenderComponent to render onto a buffer
 STRING				| Text
 
 ### UNode
-A UNode is a simplified Node with no rendering or position, just updates and events. They are stored in separate layers, either with a negative number to update before the normal Nodes, or a positive layer to update after.
+A UNode is a simplified Node with no rendering or position, just updates and events. They are stored in their own set of layers and update before normal Nodes.
 
 Updates are run at ~100 per second, with a time delta variable provided for consistency. Draw calls are done in a separate read-only thread.
 
