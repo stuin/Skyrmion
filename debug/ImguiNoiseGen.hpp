@@ -1,5 +1,5 @@
 #include "../core/UpdateList.h"
-#include "../tiling/TileMap.hpp"
+#include "../tiling/ColorMap.hpp"
 #include "../tiling/RandomNoise.hpp"
 
 #include "../include/imgui/imgui.h"//
@@ -18,18 +18,18 @@ private:
 	ConstIndexer *limitIndexer;
 	NoiseIndexer *noiseIndexer;
 	RandomIndexer *randomIndexer;
-	TileMap *debugNoise;
+	ColorMap *debugNoise;
 
 public:
-	ImguiNoiseGen(int greyTexture, int debugLayer) : UNode(debugLayer) {
+	ImguiNoiseGen(int debugLayer) : UNode(debugLayer) {
 		zeroIndexer = new ConstIndexer(0, testSize, testSize);
 		limitIndexer = new ConstIndexer(100, testSize, testSize);
 
 		noiseIndexer = new NoiseIndexer(zeroIndexer, limitIndexer, &testNoise, 100 / testDivisions);
 		randomIndexer = new RandomIndexer(zeroIndexer, limitIndexer, 100 / testDivisions);
 
-		debugNoise = new TileMap(greyTexture, 1, 1, noiseIndexer, debugLayer);
-		debugNoise->setScale(0.6,0.6);
+		debugNoise = new ColorMap(noiseIndexer, percentColorFunc(100), debugLayer);
+		//debugNoise->setScale(0.6,0.6);
 		UpdateList::addNode(debugNoise);
 
 		UpdateList::addUNode(this);
@@ -41,7 +41,7 @@ public:
 	    ImGui::Begin("Noise Map Generator", &open);
 
 		float scale = debugNoise->getScale().x;
-		ImGui::SliderFloat("Scale", &scale, 0.0f, 2.0f, "%.3f");
+		ImGui::SliderFloat("Scale", &scale, 1.0f, 10.0f, "%.3f");
 		debugNoise->setScale(scale, scale);
 
 		ImGui::SeparatorText("Random Input");

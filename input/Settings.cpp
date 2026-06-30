@@ -33,6 +33,8 @@ void Settings::loadSettings(std::string _filename, bool saveFile) {
 	for(auto& el : input.items())
 		data[el.key()] = el.value();
 	IO::closeFile(text);
+
+	loaded = true;
 	//settingsEvent();
 }
 

@@ -29,6 +29,11 @@ public:
 		y = (T)_v.y;
 	}
 
+	skVector2(std::vector<T> _v) {
+		x = _v[0];
+		y = _v[1];
+	}
+
 	skVector2 abs() {
 		return skVector2<T>(std::abs(x), std::abs(y));
 	}

@@ -38,6 +38,7 @@ std::vector<UNode *> UpdateList::deleted2;
 Node *UpdateList::camera = NULL;
 FloatRect UpdateList::cameraRect;
 FloatRect UpdateList::screenRect;
+skColor UpdateList::backgroundColor;
 Camera2D raycamera;
 
 //Event handling
@@ -168,6 +169,10 @@ void UpdateList::sendUniformValues(sint uIndex) {
 		return;
 	}
 
+	//To use as global variable
+	if(uniform.shader == 0)
+		return;
+
 	//Finalize unknown shader uniform
 	if(uniform.location == -1) {
 		uniform.location = GetShaderLocation(shaderSet[sIndex], uniform.name.c_str());
@@ -175,6 +180,7 @@ void UpdateList::sendUniformValues(sint uIndex) {
 			resourceData[uniform.texture].filename = uniform.name;
 	}
 
+	//Send values to shader
 	switch(uniform.type) {
 	case SKU_FLOAT:
 		SetShaderValue(shaderSet[sIndex], uniform.location, &(uniform.fValues[0]), SHADER_UNIFORM_FLOAT);
@@ -220,15 +226,21 @@ Color rayColor(skColor color) {
 
 void UpdateList::drawNode(Node *source, sint passthrough) {
 	FloatRect rect = source->getRect();
-
 	RenderComponent *rendering = source->getRenderComponent(false);
+
+	//Check for valid rendering data
 	if(rendering == NULL) {
 		Rectangle dst = {rect.left, rect.top, (float)rect.width, (float)rect.height};
 		DrawRectangleRec(dst, PURPLE);
 		return;
 	}
-	if(rendering->getType() == RENDER_PASSTHROUGH_BUFFER && passthrough != 0)
+
+	//Check if rendering from/to passthrough buffer
+	if(rendering->getType() == RENDER_PASSTHROUGH_BUFFER && passthrough != 0) {
 		rendering = rendering->getSubComponent();
+		rect.width /= source->getScale().x;
+		rect.height /= source->getScale().y;
+	}
 
 	if(rendering->getBlendMode() == SK_BLEND_MAX)
 		rlSetBlendFactors(1, 1, RL_MAX);
@@ -247,8 +259,8 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 		if(resourceData[texture].isTexture()) {
 			Vector2i size = resourceData[texture].size;
 			Rectangle src = {(float)0, (float)0, size.x*flip.x, size.y*flip.y};
-			Vector2 position = {rect.left, rect.top};
-			DrawTextureRec(textureSet[texture], src, position, color);
+			Rectangle dst = {scaleA.x+rect.left, scaleA.y+rect.top, rect.width, rect.height};
+			DrawTexturePro(textureSet[texture], src, dst, Vector2{0, 0}, 0, color);
 			break;
 		}
 	case RENDER_COLOR_SINGLE:
@@ -323,7 +335,7 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 
 //Thread safe draw nodes in list
 void UpdateList::draw(FloatRect cameraRect) {
-	ClearBackground(rayColor(windowConfig().backgroundColor));
+	ClearBackground(rayColor(backgroundColor));
 
 	raycamera.target = Vector2{cameraRect.left, cameraRect.top};
 	raycamera.zoom = screenRect.width / cameraRect.width;
@@ -644,10 +656,6 @@ void UpdateList::init() {
 		layers[layer].name = config.layerNames[layer];
 	maxLayer = config.layerNames.size()-1;
 
-	#ifdef _DEBUG
-		addDebugTextures();
-	#endif
-
 	//Load resources
 	bufferSet.emplace_back();
 	bufferData.emplace_back();
@@ -658,7 +666,8 @@ void UpdateList::init() {
 
 	//Show loading screen
 	BeginDrawing();
-	ClearBackground(rayColor(config.backgroundColor));
+	backgroundColor = config.backgroundColor;
+	ClearBackground(rayColor(backgroundColor));
 	EndDrawing();
 
 	#ifdef _DEBUG

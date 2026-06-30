@@ -9,15 +9,15 @@ private:
 	float pickColor[4] = { 1.0f, 0.0f, 0.2f, 1.0f };
 	Vector2i pickPosition;
 	int pickIndex = 10;
-	int pickTexture = -1;
-	float pickTextureScale = 6;
+	int pickTexture = 0;
+	float pickTextureScale = 2;
 
 public:
-	ImguiResources(int _pickTexture, int debugLayer) : UNode(debugLayer) {
+	ImguiResources(int debugLayer) : UNode(debugLayer) {
 		UpdateList::addUNode(this);
 		UpdateList::addListener(this, EVENT_IMGUI);
 
-		pickTexture = _pickTexture;
+		//pickTexture = UpdateList::getResourceCount() / 2;
 	}
 
 	void showWindow() {
@@ -28,7 +28,7 @@ public:
 
 		int texture = pickTexture;
 		ImGui::SliderInt("Texture", &pickTexture, 0, UpdateList::getResourceCount()-1);
-		ImGui::SliderFloat("Scale", &pickTextureScale, 0.0f, 10.0f, "%.3f");
+		ImGui::SliderFloat("Scale", &pickTextureScale, 0.1f, 10.0f, "%.3f");
 
 		ResourceData &textureData = UpdateList::getResourceData(pickTexture);
 		ImGui::Text("%s : %li", textureData.filename.c_str(), textureData.index);
@@ -162,7 +162,7 @@ public:
 	}
 
 	void recieveEvent(Event event) {
-		if(event.type == EVENT_IMGUI && event.down) {
+		if(event.type == EVENT_IMGUI && event.down && UpdateList::getResourceCount() > 0) {
 			ImGui::MenuItem("Resources", 0, &open);
 		} else if(event.type == EVENT_IMGUI && open) {
 			showWindow();

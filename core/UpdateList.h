@@ -133,6 +133,7 @@ private:
 	static Node *camera;
 	static FloatRect cameraRect;
 	static FloatRect screenRect;
+	static skColor backgroundColor;
 
 	//Skyrmion Resource Data
 	static std::vector<ResourceData> resourceData;
@@ -196,7 +197,7 @@ public:
 	static bool isLayerPaused(int layer);
 	static bool isLayerHidden(int layer);
 	static LayerData &getLayerData(int layer);
-	static int getLayerCount();
+	static sint getLayerCount();
 
 	//Resource handling
 	static sint createResource(sint texture, Vector2i size, sint index, int type);
@@ -263,6 +264,5 @@ void recieveNetworkString(std::string data, int code);
 
 //Debug tool insertions
 void setupDebugTools();
-void addDebugTextures();
 
 void stream_cb(float* buffer, int num_frames, int num_channels);

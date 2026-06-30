@@ -155,7 +155,7 @@ LayerData &UpdateList::getLayerData(int layer) {
 }
 
 //Get number of occupied layers
-int UpdateList::getLayerCount() {
+sint UpdateList::getLayerCount() {
 	return maxLayer + 1;
 }
 

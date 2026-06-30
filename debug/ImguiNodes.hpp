@@ -16,7 +16,7 @@ private:
 	float pickColor[4] = { 1.0f, 0.0f, 0.2f, 1.0f };
 
 public:
-	ImguiNodes(int _pickTexture, int debugLayer) : UNode(debugLayer),
+	ImguiNodes(int debugLayer) : UNode(debugLayer),
 	nodeCursor(debugLayer, RENDER_COLOR_RECT), rectCursor(debugLayer, RENDER_COLOR_RECT) {
 
 		UpdateList::addUNode(this);
@@ -30,7 +30,7 @@ public:
 		UpdateList::addNode(&rectCursor);
 
 		//Initial nodes and layer names
-		for(sint layer = 0; layer < windowConfig().layerNames.size(); layer++) {
+		for(sint layer = 0; layer < UpdateList::getLayerCount(); layer++) {
 			UNode *source = UpdateList::getNode(layer);
 			while(source != NULL) {
 				sint id = source->getId();
@@ -58,7 +58,7 @@ public:
 		ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Layers", &open);
 
-		for(int layer = 0; layer < UpdateList::getLayerCount(); layer++) {
+		for(sint layer = 0; layer < UpdateList::getLayerCount(); layer++) {
 			ImGui::PushID(layer);
 
 			LayerData &layerData = UpdateList::getLayerData(layer);
@@ -96,7 +96,7 @@ public:
 
 	void showNodeWindow(Node *source) {
 		sint id = source->getId();
-		std::string nodeName = "Node " + std::to_string(id) + " : " + windowConfig().layerNames[source->getLayer()];
+		std::string nodeName = "Node " + std::to_string(id) + " : " + UpdateList::getLayerData(source->getLayer()).name;
 		bool window = nodeWindows[id];
 
 		ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
@@ -144,8 +144,8 @@ public:
 		ImGui::Text("BlendMode = %d", source->getBlendMode());
 
 		sint texture = source->getTexture();
-		if(texture < windowConfig().textureFiles.size())
-			ImGui::Text("Texture = %ld (%s)", texture, windowConfig().textureFiles[texture].c_str());
+		if(texture < UpdateList::getResourceCount())
+			ImGui::Text("Texture = %ld (%s)", texture, UpdateList::getResourceData(texture).filename.c_str());
 		else
 			ImGui::Text("Texture = %ld", texture);
 
