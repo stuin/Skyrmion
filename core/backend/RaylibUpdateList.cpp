@@ -236,10 +236,12 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 	}
 
 	//Check if rendering from/to passthrough buffer
+	Vector2f scale = source->getScale();
 	if(rendering->getType() == RENDER_PASSTHROUGH_BUFFER && passthrough != 0) {
 		rendering = rendering->getSubComponent();
-		rect.width /= source->getScale().x;
-		rect.height /= source->getScale().y;
+		rect.width /= scale.x;
+		rect.height /= scale.y;
+		scale = Vector2i(1,1);
 	}
 
 	if(rendering->getBlendMode() == SK_BLEND_MAX)
@@ -250,7 +252,6 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 	Color color = rayColor(rendering->getColor());
 	sint texture = rendering->getTexture();
 
-	Vector2f scale = (passthrough != 0) ? Vector2f(1,1) : source->getScale();
 	Vector2f flip = Vector2f(scale.x < 0 ? -1 : 1, scale.y < 0 ? -1 : 1);
 	Vector2f scaleA = scale.abs();
 
@@ -259,7 +260,7 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 		if(resourceData[texture].isTexture()) {
 			Vector2i size = resourceData[texture].size;
 			Rectangle src = {(float)0, (float)0, size.x*flip.x, size.y*flip.y};
-			Rectangle dst = {scaleA.x+rect.left, scaleA.y+rect.top, rect.width, rect.height};
+			Rectangle dst = {rect.left, rect.top, rect.width, rect.height};
 			DrawTexturePro(textureSet[texture], src, dst, Vector2{0, 0}, 0, color);
 			break;
 		}
@@ -561,12 +562,12 @@ void UpdateList::queueEvents() {
 }
 
 void UpdateList::frame(void) {
+	double delta = GetFrameTime();
+	DebugTimers::frameTimes.addDelta(delta);
+
 	#ifdef PLATFORM_WEB
 		UpdateList::update(delta);
 	#endif
-
-	double delta = GetFrameTime();
-	DebugTimers::frameTimes.addDelta(delta);
 
 	// Get current window size.
 	int width = GetRenderWidth();
@@ -606,19 +607,17 @@ void UpdateList::frame(void) {
 	draw(cameraRect);
 
 	//Render imgui debug
-	#if _DEBUG
-	if(ImGui::BeginMainMenuBar()) {
-		//Render menu bar
-		if(listeners[EVENT_IMGUI].size() > 0) {
+	if(listeners[EVENT_IMGUI].size() > 0) {
+		if(ImGui::BeginMainMenuBar()) {
+			//Render menu bar
 			for(UNode *node : listeners[EVENT_IMGUI])
 				node->recieveEvent(Event(EVENT_IMGUI, true, 0));
+			ImGui::EndMainMenuBar();
 		}
-		ImGui::EndMainMenuBar();
+		//Render individual windows
+		for(UNode *node : listeners[EVENT_IMGUI])
+			node->recieveEvent(Event(EVENT_IMGUI, false, 0));
 	}
-	//Render individual windows
-	for(UNode *node : listeners[EVENT_IMGUI])
-		node->recieveEvent(Event(EVENT_IMGUI, false, 0));
-	#endif
 
 	rlImGuiEnd();
 
@@ -699,12 +698,6 @@ void UpdateList::init() {
 
 void UpdateList::startEngine() {
 	std::cout << "SKYRMION: Update thread starting\n";
-
-	#ifdef PLATFORM_WEB
-		//Prepare buffer textures
-		for(sint i = 0; i < resourceData.size(); i++)
-			finalizeBuffer(i);
-	#endif
 
 	event_queue.emplace_back(EVENT_RESIZE, true, GetRenderWidth()/GetScreenWidth(), GetScreenWidth(), GetScreenHeight());
 

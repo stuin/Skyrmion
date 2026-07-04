@@ -111,6 +111,7 @@ public:
 	void setSPosition(float x, float y);
 	void setScale(Vector2f scale);
 	void setScale(float x, float y);
+	void setScale(float v);
 	void setOrigin(Vector2f origin);
 	void setOrigin(float x, float y);
 

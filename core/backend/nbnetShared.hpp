@@ -88,6 +88,11 @@ std::ostream& operator<<(std::ostream& os, const NetworkString &s) {
     return os << std::to_string(s.code) << ':' << s.data << "\n";
 }
 
+std::ostream& operator<<(std::ostream& os, const Event &e) {
+    return os << std::to_string(e.type) << ':' << std::to_string(e.down) << ':' << std::to_string(e.code) <<
+        "(" << std::to_string(e.x) << ',' << std::to_string(e.y) << ") ";
+}
+
 /*
 //Event struct handling
 Event *Event_Create(void);

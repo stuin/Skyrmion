@@ -5,16 +5,16 @@
 struct FrameTimer {
     int maxFrames = 0;
     int frame = 0;
-    double maxTime = 0;
-    double time = 0;
+    float maxTime = 0;
+    float time = 0;
 
-    FrameTimer(int _maxFrames, double _maxTime) {
+    FrameTimer(int _maxFrames, float _maxTime) {
         maxFrames = _maxFrames;
         maxTime = _maxTime;
         time = maxTime;
     }
 
-    bool next(double delta) {
+    bool next(float delta) {
         if((time -= delta) <= 0 || time > maxTime) {
             time = maxTime;
             frame++;
@@ -39,6 +39,7 @@ class AnimatedNode : public Node {
 
 	Vector2i frameSize;
     bool horizontal;
+
 public:
 	AnimatedNode(sint texture, int _maxFrames, double _maxTime, int layer, Vector2i size, bool _horizontal=true) :
     Node(layer, RENDER_TEXTURE_RECT, size), timer(_maxFrames, _maxTime) {
@@ -53,6 +54,14 @@ public:
         else
             frameSize.y /= _maxFrames;
 	}
+
+    void setPaused(bool _paused=true) {
+        paused = _paused;
+    }
+
+    FrameTimer &getTimer() {
+        return timer;
+    }
 
     void update(double time) {
         updateAnimation(time);

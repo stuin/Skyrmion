@@ -210,6 +210,9 @@ void Node::setScale(Vector2f _scale) {
 void Node::setScale(float x, float y) {
 	this->scale = Vector2f(x, y);
 }
+void Node::setScale(float v) {
+	this->scale = Vector2f(v, v);
+}
 
 //Set origin
 void Node::setOrigin(Vector2f _origin) {
