@@ -170,6 +170,20 @@ void UpdateList::queueEvent(Event event) {
 		event_queue.push_back(event);
 }
 
+void UpdateList::queueEvent(int type, bool down, int code, float x, float y) {
+	queueEvent(Event(type, down, code, x, y));
+}
+
+//Register keycode for polling
+void UpdateList::watchKeycode(int keycode) {
+	watchedKeycodes.push_back(keycode);
+	watchedKeycodesPrevious.push_back(false);
+}
+
+void UpdateList::startRemap() {
+	remapKeycode = true;
+}
+
 //Process window events on update thread
 void UpdateList::processEvents() {
 	//Remove deleted nodes

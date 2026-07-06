@@ -127,7 +127,6 @@ private:
 	static std::array<Event, EVENT_MAX> event_previous;
 	static std::vector<int> watchedKeycodes;
 	static std::vector<bool> watchedKeycodesPrevious;
-	static bool remapKeycode;
 
 	//Viewport variables
 	static Node *camera;
@@ -156,12 +155,11 @@ private:
 	static void drawBuffer(sint buffer);
 	static void sendUniformValues(sint uniform);
 	static void update(double time);
-	static void frame(void);
-	static void cleanup(void);
 	static void processNetworking();
 	static void processNetworkMessage();
 
 public:
+	static bool remapKeycode;
 
 	//Manage node lists
 	static void addNode(Node *next);
@@ -178,6 +176,7 @@ public:
 	static void startRemap();
 	static bool checkKeycode(int keycode, bool down);
 	static void queueEvent(Event event);
+	static void queueEvent(int type, bool down, int code, float x=0, float y=0);
 	static void sendSignal(int layer, int id, Node *sender);
 	static void sendSignal(int id, Node *sender);
 
@@ -231,6 +230,8 @@ public:
 	//Semi private internal functions
 	static void processEvents();
 	static void init(void);
+	static void frame(void);
+	static void cleanup(void);
 
 	//Audio controls
 	static void setVolume(int volume);

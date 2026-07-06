@@ -23,11 +23,13 @@ enum TileCollisionTypes {
 
 enum MovementDirections {
 	UP,
+	RIGHT,
 	DOWN,
 	LEFT,
-	RIGHT,
-	UP_LEFT,
-	DOWN_RIGHT,
 	UP_RIGHT,
-	DOWN_LEFT
+	DOWN_RIGHT,
+	DOWN_LEFT,
+	UP_LEFT
 };
+
+int clockwiseDirection(int dir);

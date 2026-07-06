@@ -55,13 +55,19 @@ bool Settings::hasLoaded() {
 
 //Get value functions
 bool Settings::getBool(const std::string &field) {
-	return data.value(json_pointer(field), false);
+	if(data.contains(json_pointer(field)))
+		return data.at(json_pointer(field));
+	return false;
 }
 int Settings::getInt(const std::string &field, int def) {
-	return data.value(json_pointer(field), def);
+	if(data.contains(json_pointer(field)))
+		return data.at(json_pointer(field));
+	return def;
 }
 std::string Settings::getString(const std::string &field, std::string def) {
-	return data.value(json_pointer(field), def);
+	if(data.contains(json_pointer(field)))
+		return data.at(json_pointer(field));
+	return def;
 }
 skColor Settings::getColor(const std::string &field, skColor def) {
 	return hexColor(getString(field, def.hex()));
@@ -76,7 +82,7 @@ Vector2i Settings::getVector(const std::string &field, Vector2i def) {
 
 //Get key number from settings field
 int Settings::getControl(const std::string &field) {
-	std::string keyname = data.value(json_pointer(field), "");
+	std::string keyname = getString(field, "");
 	markKeycode.insert(field);
 	return mapKeycode(keyname);
 }

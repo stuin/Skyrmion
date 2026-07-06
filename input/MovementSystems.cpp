@@ -1,5 +1,10 @@
 #include "MovementSystems.h"
 
+int CLOCKWISE_DIR[] = {0, 2, 4, 6, 1, 3, 5, 7};
+int clockwiseDirection(int dir) {
+	return CLOCKWISE_DIR[dir];
+}
+
 Vector2f topDownMovement(Vector2f start, Vector2f move, Vector2i size, Indexer *collision) {
 	Vector2f end = start + move;
 

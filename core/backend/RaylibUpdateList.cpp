@@ -97,16 +97,16 @@ int UpdateList::loadResource(std::string filename) {
 			resourceData.emplace_back(filename, SK_TEXTURE, Vector2i(texture.width, texture.height));
 			if(texture.id == 0 && texture.width == 0)
 				resourceData[resourceData.size() - 1].type = SK_INVALID;
-		} else if(filename.substr(filename.length()-4) == ".ttf") {
-			//Load font
-			fontSet.push_back(LoadFont(filename.c_str()));
-			resourceData.emplace_back(filename, SK_FONT, Vector2i(0, 10), fontSet.size()-1);
-			textureSet.emplace_back();
 		} else if(filename.substr(filename.length()-3) == ".fs") {
 			//Load shader
 			filename = TextFormat(filename.c_str(), GLSL_VERSION);
 			shaderSet.push_back(LoadShader(0, filename.c_str()));
 			resourceData.emplace_back(filename, SK_SHADER, Vector2i(0, 0), shaderSet.size()-1);
+			textureSet.emplace_back();
+		} else if(filename.substr(filename.length()-4) == ".ttf") {
+			//Load font
+			fontSet.push_back(LoadFont(filename.c_str()));
+			resourceData.emplace_back(filename, SK_FONT, Vector2i(0, 10), fontSet.size()-1);
 			textureSet.emplace_back();
 		}
 	} else {
@@ -121,14 +121,13 @@ sint UpdateList::createResource(sint texture, Vector2i size, sint index, int typ
 	if(texture == 0)
 		texture = UpdateList::getResourceCount();
 	while(texture >= resourceData.size()) {
-		//throw new std::invalid_argument(TEXTUREERROR);
 		textureSet.emplace_back();
 		resourceData.emplace_back(UNKNOWNSPACE, SK_INVALID);
 	}
 	//if(resourceData[texture].type == SK_TEXTURE && resourceData[texture].index != 0)
 	//	return resourceData[texture].index;
-	//if(resourceData[texture].type != SK_INVALID)
-	//	throw new std::invalid_argument(BUFFERERROR);
+	if(resourceData[texture].type != SK_INVALID)
+		throw new std::invalid_argument(BUFFERERROR);
 
 	//Mark resource location
 	resourceData[texture].size = size;
@@ -456,16 +455,6 @@ void UpdateList::processAudio() {
 		UpdateMusicStream(backgroundMusic);
 }
 
-//Register keycode for polling
-void UpdateList::watchKeycode(int keycode) {
-	watchedKeycodes.push_back(keycode);
-	watchedKeycodesPrevious.push_back(false);
-}
-
-void UpdateList::startRemap() {
-	remapKeycode = true;
-}
-
 bool UpdateList::checkKeycode(int code, bool down) {
 	//Check keypress by input type
 	if(code < MOUSE_OFFSET)
@@ -569,16 +558,8 @@ void UpdateList::frame(void) {
 		UpdateList::update(delta);
 	#endif
 
-	// Get current window size.
-	int width = GetRenderWidth();
-	int height = GetRenderHeight();
-	BeginDrawing();
-
 	UpdateList::queueEvents();
 	UpdateList::processNetworking();
-
-	//Start imgui frame
-	rlImGuiBegin();
 
 	//Update shader uniforms
 	for(sint i = 0; i < shaderUniforms.size(); i++) {
@@ -595,6 +576,14 @@ void UpdateList::frame(void) {
 			bufferData[i].redraw = false;
 		}
 	}
+
+	// Get current window size.
+	int width = GetRenderWidth();
+	int height = GetRenderHeight();
+	BeginDrawing();
+
+	//Start imgui frame
+	rlImGuiBegin();
 
 	//Find camera position
 	screenRect = FloatRect(0,0,width,height);

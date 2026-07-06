@@ -45,7 +45,7 @@ else ifeq ($(platform), web)
 	CXX = em++
 	CFLAGS := ${CFLAGS} -Os -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES2
 	CORE_FILES := ${CORE_FILES} core/backend/nullClient.o
-	LDFLAGS := ${LDFLAGS} -s USE_GLFW=3 -s ASYNCIFY --shell-file src/Skyrmion/include/raylib/src/minshell.html --preload-file res
+	LDFLAGS := ${LDFLAGS} -s USE_GLFW=3 --shell-file src/Skyrmion/include/raylib/src/minshell.html --preload-file res
 
 	EXEC = html
 	PLATFORM = Web
@@ -54,10 +54,17 @@ endif
 
 # Debug addons
 ifdef debug
-	LDFLAGS := ${LDFLAGS} -lbfd
-	CXXFLAGS := ${CXXFLAGS} -g -D _DEBUG -DBACKWARD_HAS_BFD=1
-	CORE_FILES := ${CORE_FILES} include/backward-cpp/backward.o debug/DebugTools.o
-	SERVER_FILES := ${SERVER_FILES} include/backward-cpp/backward.o
+	ifneq ($(platform), web)
+		LDFLAGS := ${LDFLAGS} -lbfd
+		CXXFLAGS := ${CXXFLAGS} -DBACKWARD_HAS_BFD=1
+		CORE_FILES := ${CORE_FILES} include/backward-cpp/backward.o
+		SERVER_FILES := ${SERVER_FILES} include/backward-cpp/backward.o
+	else
+		LDFLAGS := ${LDFLAGS} -sNO_DISABLE_EXCEPTION_CATCHING
+	endif
+
+	CXXFLAGS := ${CXXFLAGS} -g -D_DEBUG=1
+	CORE_FILES := ${CORE_FILES} debug/DebugTools.o
 
 	BUILD_DIR := ${BUILD_DIR}-debug
 	VERSION := ${VERSION}d
@@ -84,37 +91,58 @@ INCLUDE_FILES := include/rlImGui/rlImGui.o $(IMGUI_OBJS) $(RAYLIB_OBJS) $(LIBNOI
 
 INCLUDE_PATHS := ${INCLUDE_PATHS} -I. -Isrc/Skyrmion/include/raylib/src/ -Isrc/Skyrmion/include/imgui -Isrc/Skyrmion/include/libnoise/src/noise
 
-# Compilation
-SKYRMION_OBJS := $(SKYRMION_FILES:%=$(BUILD_DIR)/src/Skyrmion/%) $(INCLUDE_FILES:%=$(BUILD_DIR)/src/Skyrmion/%)
+# Full lists
+SKYRMION_OBJS := $(SKYRMION_FILES:%=$(BUILD_DIR)/src/Skyrmion/%)
 SERVER_OBJS := $(SERVER_FILES:%=$(BUILD_DIR)/src/Skyrmion/%)
 GAME_OBJS := $(GAME_FILES:%=$(BUILD_DIR)/src/%)
-OBJS = $(GAME_OBJS) $(SKYRMION_OBJS)
+INCLUDE_OBJS := $(INCLUDE_FILES:%=$(BUILD_DIR)/src/Skyrmion/%)
+OBJS = $(GAME_OBJS) $(SKYRMION_OBJS) $(INCLUDE_OBJS)
 
-$(BUILD_DIR)/%.o: %.c
-	mkdir -p $(dir $@)
-	$(CC) -c $^ -o $@ $(CFLAGS) $(INCLUDE_PATHS)
+# .h Dependencies
+SKYRMION_DEPENDS := $(patsubst %.o,%.d,$(SKYRMION_OBJS)) $(patsubst %.o,%.d,$(SERVER_OBJS))
+GAME_DEPENDS := $(patsubst %.o,%.d,$(GAME_OBJS))
+DEPENDS := $(SKYRMION_DEPENDS) $(GAME_DEPENDS)
 
-$(BUILD_DIR)/%.o: %.cpp
-	mkdir -p $(dir $@)
-	$(CXX) -c $^ -o $@ $(CFLAGS) $(CXXFLAGS) $(INCLUDE_PATHS)
-
+# Linking execs
 game: $(OBJS)
 	$(CXX) $(OBJS) -o $(BUILD_DIR)/$(GAME_NAME).$(EXEC) $(LDFLAGS) $(INCLUDE_PATHS)
 
 server: $(SERVER_OBJS)
 	$(CXX) $(SERVER_OBJS) -o $(BUILD_DIR)/$(GAME_NAME)-server.$(EXEC) $(LDFLAGS)
 
-# Final targets
+# Compilation
+$(BUILD_DIR)/%.o: %.c
+	mkdir -p $(dir $@)
+	$(CC) -c $< -o $@ $(CFLAGS) -MMD -MP $(INCLUDE_PATHS)
+
+$(BUILD_DIR)/%.o: %.cpp
+	mkdir -p $(dir $@)
+	$(CXX) -c $< -o $@ $(CFLAGS) $(CXXFLAGS) -MMD -MP $(INCLUDE_PATHS)
+
+-include $(DEPENDS)
+
+# Zip Release
 TARGET_NAME = $(GAME_NAME)_$(PLATFORM)_$(VERSION)
 TARGET_DIR = $(BUILD_DIR)/$(TARGET_NAME)
-
-all: game
 
 zip: game
 	mkdir -p $(TARGET_DIR)
 	cp -r res $(TARGET_DIR)
 	cp $(BUILD_DIR)/$(GAME_NAME).* $(TARGET_DIR)
 	cd $(BUILD_DIR) ; zip -r $(TARGET_NAME).zip $(TARGET_NAME)
+
+# Test run
+run: game
+ifeq ($(platform), web)
+	cd $(BUILD_DIR) ; python -m http.server 12345
+else
+	$(BUILD_DIR)/$(GAME_NAME).$(EXEC)
+endif
+
+# Other
+.PHONY: all clean game
+
+all: game
 
 clean:
 	rm -r $(BUILD_DIR)
@@ -124,10 +152,12 @@ clean-all:
 
 # Usage:
 # make zip
-# make all debug=1
-# make all platform=web
+# make debug=1
+# make platform=web
+# make platform=web run
 
 # Example Project Makefile:
 #	GAME_NAME = ShaderToys
 #	GAME_FILES = main.o
+#	VERSION = 1.0
 #	include src/Skyrmion/Makefile

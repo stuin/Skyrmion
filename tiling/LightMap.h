@@ -10,7 +10,6 @@
  * Generate and show a lightmap based on a grid
  */
 
-
 class LightMap : public Node {
 private:
 	const Vector2f offset = Vector2f(-1,-1);

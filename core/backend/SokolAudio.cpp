@@ -26,6 +26,10 @@ void UpdateList::musicStream(std::string filename, int _volume) {
     volume = _volume / 100.0f;
 }
 
+void UpdateList::processAudio() {
+
+}
+
 void stream_cb(float* bufferOut, int num_frames, int num_channels) {
     const unsigned int num_samples = num_frames * num_channels;
     if(bufferIn == NULL && backgroundMusic)

@@ -339,9 +339,9 @@ Vector2f DirectionHandler::getMovement(double distance) {
 std::vector<std::string> DirectionHandler::listKeys(std::string field) {
 	std::vector<std::string> keys = {
 		field + "/up",
+		field + "/right",
 		field + "/down",
-		field + "/left",
-		field + "/right"
+		field + "/left"
 	};
 	return keys;
 }
