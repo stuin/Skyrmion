@@ -23,6 +23,7 @@ void UpdateList::addNode(Node *next) {
 		layers[layer].root->addNode(next);
 		layers[layer].count++;
 	}
+	next->setId(layers[layer].count);
 }
 
 void UpdateList::addNodes(std::vector<Node *> nodes) {
@@ -31,9 +32,11 @@ void UpdateList::addNodes(std::vector<Node *> nodes) {
 }
 
 //Get node in specific layer
-Node *UpdateList::getNode(int layer) {
+Node *UpdateList::getNode(int layer, sint id) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
+	if(id > 0)
+		return (Node*)layers[layer].root->getNext(id);
 	return layers[layer].root;
 }
 

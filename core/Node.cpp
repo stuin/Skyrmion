@@ -5,18 +5,19 @@
  * UNode and Node implementations
  */
 
-unsigned int currentId = 0;
-
 //Base constructor
 UNode::UNode(int layer) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	this->layer = layer;
-	this->id = currentId++;
 }
 
 sint UNode::getId() {
 	return id;
+}
+
+void UNode::setId(sint _id) {
+	id = _id;
 }
 
 //Get layer node is attached to
@@ -25,8 +26,12 @@ int UNode::getLayer() {
 }
 
 //Get next node in list
-UNode *UNode::getNext() {
-	return next;
+UNode *UNode::getNext(sint _id) {
+	if(_id == id)
+		return this;
+	if(_id == 0 || next == NULL)
+		return next;
+	return next->getNext(_id);
 }
 
 //Add new node after this

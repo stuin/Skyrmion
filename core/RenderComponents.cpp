@@ -267,7 +267,9 @@ public:
 		return texture;
 	}
 	skColor getColor(int i) {
-		return colors[i];
+		if(i < colors.size())
+			return colors[i];
+		return COLOR_PURPLE;
 	}
 	std::vector<skColor> *getColors() {
 		return &colors;
@@ -283,10 +285,75 @@ public:
 		texture = _texture;
 	}
 	void setColor(skColor _color, int i) {
+		while(i >= colors.size())
+			colors.emplace_back();
 		colors[i] = _color;
 	}
 	void setSize(int _size) {
 		width = _size;
+	}
+};
+
+class ColorTextureArrayRenderComponent : public RenderComponent {
+private:
+	int blendMode = 1;
+	sint texture = 0;
+	std::vector<TextureRect> textureRects;
+	std::vector<skColor> colors;
+
+public:
+	ColorTextureArrayRenderComponent(Node *source) : RenderComponent(source) {}
+
+	int getType() {
+		return RENDER_COLOR_TEXTURE_ARRAY;
+	}
+
+	int getBlendMode() {
+		return blendMode;
+	}
+	sint getTexture() {
+		return texture;
+	}
+	TextureRect getTextureRect() {
+		return textureRects[0];
+	}
+	std::vector<TextureRect> *getTextureRects() {
+		return &textureRects;
+	}
+
+	skColor getColor(int i) {
+		if(i < colors.size())
+			return colors[i];
+		return COLOR_PURPLE;
+	}
+	std::vector<skColor> *getColors() {
+		return &colors;
+	}
+
+	void setBlendMode(int _blendMode) {
+		blendMode = _blendMode;
+	}
+	void setTexture(sint _texture) {
+		texture = _texture;
+	}
+	void setTextureRect(TextureRect rectangle, sint i=0) {
+		while(i >= textureRects.size())
+			textureRects.emplace_back();
+		textureRects[i] = rectangle;
+	}
+	void setTextureIntRect(IntRect rect, sint i=0) {
+		while(i >= textureRects.size())
+			textureRects.emplace_back();
+		textureRects[i] = {0, 0, (float)rect.width,(float)rect.height, rect.left,rect.top, rect.width,rect.height, 0};
+	}
+	void setTextureVecRect(Vector2i corner, Vector2i size, sint i=0) {
+		setTextureIntRect(IntRect(corner.x, corner.y, size.x, size.y), i);
+	}
+
+	void setColor(skColor _color, int i) {
+		while(i >= colors.size())
+			colors.emplace_back();
+		colors[i] = _color;
 	}
 };
 
@@ -406,6 +473,8 @@ RenderComponent *createRenderComponent(int _type, Node *_source) {
 		return new ColorArrayRenderComponent(_source);
 	case RENDER_GRADIENT_ARRAY:
 		return new GradientArrayRenderComponent(_source);
+	case RENDER_COLOR_TEXTURE_ARRAY:
+		return new ColorTextureArrayRenderComponent(_source);
 	case RENDER_STRING:
 		return new StringRenderComponent(_source);
 	case RENDER_PASSTHROUGH_BUFFER:

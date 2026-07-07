@@ -273,23 +273,25 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 			Rectangle dst = {tex.px*scaleA.x+rect.left+origin.x, tex.py*scaleA.y+rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
 			Rectangle src = {(float)tex.tx, (float)tex.ty, flip.x*tex.twidth, flip.y*tex.theight};
 			if(resourceData[texture].isTexture())
-				DrawTexturePro(textureSet[texture], src, dst, origin, (float)tex.rotation, WHITE);
+				DrawTexturePro(textureSet[texture], src, dst, origin, (float)tex.rotation, color);
 			else
-				DrawRectanglePro(dst, origin, (float)tex.rotation, PURPLE);
+				DrawRectanglePro(dst, origin, (float)tex.rotation, color);
 		}
 		} break;
-	case RENDER_TEXTURE_ARRAY: {
+	case RENDER_TEXTURE_ARRAY: case RENDER_COLOR_TEXTURE_ARRAY: {
 		std::vector<TextureRect> *textureRects = rendering->getTextureRects();
 		for(sint i = 0; i < textureRects->size(); i++) {
 			TextureRect tex = (*textureRects)[i];
-			if(tex.pwidth != 0 && tex.pheight != 0) {
+			if(rendering->getType() == RENDER_COLOR_TEXTURE_ARRAY)
+				color = rayColor(rendering->getColor(i));
+			if(tex.pwidth != 0 && tex.pheight != 0 && color.a != 0) {
 				Vector2 origin = Vector2{abs(tex.pwidth)*scaleA.x/2, abs(tex.pheight)*scaleA.y/2};
 				Rectangle dst = {tex.px*scaleA.x+rect.left+origin.x, tex.py*scaleA.y+rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
 				Rectangle src = {(float)tex.tx, (float)tex.ty, flip.x*tex.twidth, flip.y*tex.theight};
 				if(resourceData[texture].isTexture())
-					DrawTexturePro(textureSet[texture], src, dst, origin, (float)tex.rotation, WHITE);
+					DrawTexturePro(textureSet[texture], src, dst, origin, (float)tex.rotation, color);
 				else
-					DrawRectanglePro(dst, origin, (float)tex.rotation, PURPLE);
+					DrawRectanglePro(dst, origin, (float)tex.rotation, color);
 			}
 		}
 		} break;

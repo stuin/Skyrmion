@@ -164,7 +164,7 @@ public:
 	//Manage node lists
 	static void addNode(Node *next);
 	static void addNodes(std::vector<Node *> nodes);
-	static Node *getNode(int layer);
+	static Node *getNode(int layer, sint id=0);
 	static void clearLayer(int layer);
 
 	static void addUNode(UNode *next);

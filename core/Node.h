@@ -16,7 +16,7 @@
 
 class UNode {
 private:
-	sint id;
+	sint id = 1;
 	int layer;
 
 	//Background system variables
@@ -29,10 +29,11 @@ public:
 
 	//General getters
 	sint getId();
+	void setId(sint _id);
 	int getLayer();
 
 	//Linked list functions
-	UNode *getNext();
+	UNode *getNext(sint id=0);
 	void addNode(UNode *node);
 	void deleteNext();
 

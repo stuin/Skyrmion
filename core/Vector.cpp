@@ -47,6 +47,14 @@ float distance(Vector2f start, Vector2f end) {
 	return std::sqrt(std::pow(end.x - start.x, 2) + std::pow(end.y - start.y, 2));
 }
 
+Vector2f lerp(Vector2f start, Vector2f end, float progress) {
+	if(progress < 0)
+		return start;
+	if(progress > 1)
+		return end;
+	return Vector2f(std::lerp(start.x, end.x, progress), std::lerp(start.y, end.y, progress));
+}
+
 Vector2i round(Vector2f pos) {
 	return Vector2i(round(pos.x), round(pos.y));
 }
