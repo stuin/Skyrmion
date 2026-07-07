@@ -13,40 +13,42 @@
 
 class TileMap : public Node {
 private:
-    const int tileX;
-    const int tileY;
+    Vector2i tileSize;
+
     Indexer *indexes;
-    int offset = 0;
     uint gridUpdates = 0;
 
-    uint fullWidth = 0;
-    uint fullHeight = 0;
-    uint width = 0;
-    uint height = 0;
-    uint startX = 0;
-    uint startY = 0;
+    int offset = 0;
+    Vector2i overlap;
+    bool hexRows;
+
+    Vector2i fullSize;
+    Vector2i rectSize;
+    Vector2i rectPos;
 
 public:
-    TileMap(sint _tileset, int _tileX, int _tileY, Indexer *_indexes, int layer=0, int _offset=0, Rect<uint> border=Rect<uint>())
-     : Node(layer, RENDER_TEXTURE_ARRAY), tileX(_tileX), tileY(_tileY), indexes(_indexes), offset(_offset) {
+
+    TileMap(sint _tileset, int _tileX, int _tileY, Indexer *_indexes, int layer=0, int _offset=0, bool _hexRows=false, Rect<uint> border=Rect<uint>())
+     : Node(layer, RENDER_TEXTURE_ARRAY), tileSize(_tileX, _tileY), indexes(_indexes), offset(_offset), hexRows(_hexRows) {
 
         //Set sizing
-        fullWidth = width = indexes->getSize().x * indexes->getScale().x;
-        fullHeight = height = indexes->getSize().y * indexes->getScale().x;
-        startX = border.left;
-        startY = border.top;
+        fullSize = rectSize = indexes->getSize() * indexes->getScale();
+        rectPos = border.pos();
         if(border.width != 0)
-            width = border.width;
+            rectSize.x = border.width;
         if(border.height != 0)
-            height = border.height;
-        if(width + startX > fullWidth)
-            width = fullWidth - startX;
-        if(height + startY > fullHeight)
-            height = fullHeight - startY;
+            rectSize.y = border.height;
+        if(rectSize.x + rectPos.x > fullSize.x)
+            rectSize.x = fullSize.x - rectPos.x;
+        if(rectSize.y + rectPos.y > fullSize.y)
+            rectSize.y = fullSize.y - rectPos.y;
 
-        setSize(Vector2i(tileX * width, tileY * height));
+        if(_hexRows)
+            overlap = Vector2i(0, _tileY/4);
+
+        setSize((tileSize - overlap) * rectSize);
         setOrigin(0, 0);
-        setPosition(startX * tileX, startY * tileY);
+        setPosition((tileSize - overlap) * rectPos);
 
         setTexture(_tileset);
         setupBuffer(0, COLOR_EMPTY);
@@ -54,7 +56,7 @@ public:
         //std::cout << " " << startX << "," << startY << ", " << width << "," << height << "\n";
         //std::cout << toString(getGPosition()) << ":" << toString(getGScale()) <<  "\n";
 
-        getTextureRects()->reserve(width * height);
+        getTextureRects()->reserve(rectSize.x * rectSize.y);
 
         //Load textures
         reload();
@@ -68,7 +70,7 @@ public:
     }
 
     int countTextures() {
-        return (getTextureSize().x / tileX) * (getTextureSize().y / tileY);
+        return (getTextureSize().x / tileSize.x) * (getTextureSize().y / tileSize.y);
     }
 
     void reload() {
@@ -77,10 +79,10 @@ public:
         bool hasBuffer = true;
 
         // populate the vertex array, with one quad per tile
-        for(unsigned int j = 0; j < height; ++j) {
-            for(unsigned int i = 0; i < width; ++i) {
+        for(int j = 0; j < rectSize.y; ++j) {
+            for(int i = 0; i < rectSize.x; ++i) {
                 // get the current tile number
-                int tileValue = indexes->getTile(Vector2f(i + startX, hasBuffer ? fullHeight - (j + startY + 1) : j + startY));
+                int tileValue = indexes->getTile(Vector2f(i + rectPos.x, hasBuffer ? fullSize.y - (j + rectPos.y + 1) : j + rectPos.y));
                 int tileNumber = (tileValue % numTextures) + offset;
                 int rotations = (tileValue / numTextures);
                 int fliph = rotations / 4 % 2;
@@ -90,19 +92,23 @@ public:
                     flipv = (flipv == 0) ? 1 : 0;
 
                 // find its position in the tileset texture
-                int tu = tileNumber % (getTextureSize().x / tileX);
-                int tv = tileNumber / (getTextureSize().x / tileX);
+                int tu = tileNumber % (getTextureSize().x / tileSize.x);
+                int tv = tileNumber / (getTextureSize().x / tileSize.x);
+
+                int xOffset = 0;
+                if(hexRows && (j + rectPos.y) % 2 == 1)
+                    xOffset = tileSize.x / 2;
 
                 if(tileNumber - offset != -1) {
                     TextureRect quad;
-                    quad.px = i * tileX;
-                    quad.py = j * tileY;
-                    quad.pwidth = fliph ? -tileX : tileX;
-                    quad.pheight = flipv ? -tileY : tileY;
-                    quad.tx = tu * tileX;
-                    quad.ty = tv * tileY;
-                    quad.twidth = fliph ? -tileX : tileX;
-                    quad.theight = flipv ? -tileY : tileY;
+                    quad.px = i * (tileSize.x - overlap.x) + xOffset;
+                    quad.py = j * (tileSize.y - overlap.y);
+                    quad.pwidth = fliph ? -tileSize.x : tileSize.x;
+                    quad.pheight = flipv ? -tileSize.y : tileSize.y;
+                    quad.tx = tu * tileSize.x;
+                    quad.ty = tv * tileSize.y;
+                    quad.twidth = fliph ? -tileSize.x : tileSize.x;
+                    quad.theight = flipv ? -tileSize.y : tileSize.y;
                     quad.rotation = 90*(rotations % 4);
                     setTextureRect(quad, usedRects++);
                 }
@@ -277,7 +283,7 @@ public:
             for(uint y = 0; y < countY; y++) {
                 //Add new tilemap
                 Rect<uint> border(x * sectionWidth, y * sectionHeight, sectionWidth, sectionHeight);
-                TileMap *map = new TileMap(tileset, tileX, tileY, indexes, layer, 0, border);
+                TileMap *map = new TileMap(tileset, tileX, tileY, indexes, layer, 0, false, border);
                 map->setParent(this);
                 tilemaps.push_back(map);
             }
