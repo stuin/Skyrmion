@@ -16,6 +16,7 @@ struct LayerData {
 	bool hidden = false;
 	bool global = false;
 	Node *root = NULL;
+	UNode *uRoot = NULL;
 	int count = 0;
 	sint shader = 0;
 };
@@ -114,7 +115,6 @@ class UpdateList {
 private:
 	//Node management
 	static LayerData layers[MAXLAYER];
-	static UNode* uLayers[MAXLAYER];
 	static int maxLayer;
 	static int maxULayer;
 	static bool running;

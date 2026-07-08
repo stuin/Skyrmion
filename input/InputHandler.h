@@ -65,6 +65,8 @@ public:
 	//System updates loop
 	void recieveEvent(Event event);
 	void update(double time);
+
+	void printKeys();
 };
 
 //Input with built in joystick and directional keyboard support

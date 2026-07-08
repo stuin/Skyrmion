@@ -77,6 +77,7 @@ public:
         int numTextures = countTextures();
         int usedRects = 0;
         bool hasBuffer = true;
+        int rotationCount = (hexRows) ? 6 : 4;
 
         // populate the vertex array, with one quad per tile
         for(int j = 0; j < rectSize.y; ++j) {
@@ -85,8 +86,8 @@ public:
                 int tileValue = indexes->getTile(Vector2f(i + rectPos.x, hasBuffer ? fullSize.y - (j + rectPos.y + 1) : j + rectPos.y));
                 int tileNumber = (tileValue % numTextures) + offset;
                 int rotations = (tileValue / numTextures);
-                int fliph = rotations / 4 % 2;
-                int flipv = rotations / 8;
+                int fliph = rotations / rotationCount % 2;
+                int flipv = rotations / (rotationCount * 2);
 
                 if(hasBuffer)
                     flipv = (flipv == 0) ? 1 : 0;
@@ -109,7 +110,7 @@ public:
                     quad.ty = tv * tileSize.y;
                     quad.twidth = fliph ? -tileSize.x : tileSize.x;
                     quad.theight = flipv ? -tileSize.y : tileSize.y;
-                    quad.rotation = 90*(rotations % 4);
+                    quad.rotation = (360/rotationCount)*(rotations % rotationCount);
                     setTextureRect(quad, usedRects++);
                 }
             }

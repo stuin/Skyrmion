@@ -59,7 +59,7 @@ ifdef debug
 		CXXFLAGS := ${CXXFLAGS} -DBACKWARD_HAS_BFD=1
 		CORE_FILES := ${CORE_FILES} include/backward-cpp/backward.o
 		SERVER_FILES := ${SERVER_FILES} include/backward-cpp/backward.o
-	else
+	else ifeq ($(platform), web)
 		LDFLAGS := ${LDFLAGS} -sNO_DISABLE_EXCEPTION_CATCHING
 	endif
 
@@ -87,7 +87,7 @@ LIBNOISE_FILES2 := $(wildcard src/Skyrmion/include/libnoise/src/module/*.cpp)
 IMGUI_OBJS := $(IMGUI_FILES:%=include/imgui/%)
 RAYLIB_OBJS := $(RAYLIB_FILES:%=include/raylib/src/%)
 LIBNOISE_OBJS := $(LIBNOISE_FILES1:%=include/libnoise/src/%) $(LIBNOISE_FILES2:src/Skyrmion/%.cpp=%.o)
-INCLUDE_FILES := include/rlImGui/rlImGui.o $(IMGUI_OBJS) $(RAYLIB_OBJS) $(LIBNOISE_OBJS)
+INCLUDE_FILES := include/rlImGui/rlImGui.o $(IMGUI_OBJS) $(RAYLIB_OBJS) #$(LIBNOISE_OBJS)
 
 INCLUDE_PATHS := ${INCLUDE_PATHS} -I. -Isrc/Skyrmion/include/raylib/src/ -Isrc/Skyrmion/include/imgui -Isrc/Skyrmion/include/libnoise/src/noise
 

@@ -152,6 +152,9 @@ GridMaker::~GridMaker() {
 }
 
 void GridMaker::reload(std::string file, int offset, Rect<int> border) {
+	if(file == "")
+		return;
+
 	if(border.width == 0 || border.left + border.width > width)
 		border.width = width-border.left;
 	if(border.height == 0 || border.top + border.height > height)
@@ -185,6 +188,9 @@ void GridMaker::reload(std::string file, int offset, Rect<int> border) {
 }
 
 void GridMaker::save(std::string file) {
+	if(file == "")
+		return;
+
 	const int width = getSize().x+1;
 	const int height = getSize().y;
 

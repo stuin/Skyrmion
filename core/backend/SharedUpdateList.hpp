@@ -10,7 +10,7 @@
 //Add node to update/draw cycle
 void UpdateList::addNode(Node *next) {
 	int layer = next->getLayer();
-	if(layer < 0)
+	if(layer < 0 || next == NULL)
 		throw new std::invalid_argument(DRAWLAYERERROR);
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
@@ -55,23 +55,23 @@ void UpdateList::clearLayer(int layer) {
 //Add UNode to update cycle
 void UpdateList::addUNode(UNode *next) {
 	int layer = next->getLayer();
-	if(layer < 0)
+	if(layer < 0 || next == NULL)
 		throw new std::invalid_argument(DRAWLAYERERROR);
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
 	if(layer > maxULayer)
 		maxULayer = layer;
-	if(uLayers[layer] == NULL)
-		uLayers[layer] = next;
+	if(layers[layer].uRoot == NULL)
+		layers[layer].uRoot = next;
 	else
-		uLayers[layer]->addNode(next);
+		layers[layer].uRoot->addNode(next);
 }
 
 //Get UNode in specific layer
 UNode *UpdateList::getUNode(int layer) {
 	if(layer >= MAXLAYER)
 		throw new std::invalid_argument(LAYERERROR);
-	return uLayers[layer];
+	return layers[layer].uRoot;
 }
 
 //Send signal message to all nodes in layer
@@ -227,26 +227,28 @@ void UpdateList::update(double time) {
 	deleted1.clear();
 
 	//Pre update UNodes
-	for(int layer = 0; layer < maxULayer; layer++) {
-		UNode *uSource = uLayers[layer];
+	for(int layer = 0; layer <= maxULayer; layer++) {
+		UNode *uSource = layers[layer].uRoot;
+
 		if(uSource != NULL && uSource->isDeleted()) {
 			deleted1.push_back(uSource);
 			uSource = uSource->getNext();
-			uLayers[layer] = uSource;
+			layers[layer].uRoot = uSource;
 		}
 
 		//For each node in layer order
 		while(uSource != NULL) {
+
 			//Update each node
 			uSource->update(time);
 
 			//Check next node for removing from list
 			while(uSource->getNext() != NULL && uSource->getNext()->isDeleted()) {
-				deleted1.push_back((Node*)uSource->getNext());
+				deleted1.push_back(uSource->getNext());
 				uSource->deleteNext();
 			}
 
-			uSource = (Node*)uSource->getNext();
+			uSource = uSource->getNext();
 		}
 	}
 
@@ -257,6 +259,7 @@ void UpdateList::update(double time) {
 		if(!layers[layer].paused) {
 			//Check first node for deletion
 			if(source != NULL && source->isDeleted()) {
+				std::cout << "Deleted node " << source->getId() << "\n";
 				deleted1.push_back(source);
 				source = (Node*)source->getNext();
 				layers[layer].root = source;
@@ -287,6 +290,7 @@ void UpdateList::update(double time) {
 
 				//Check next node for removing from list
 				while(source->getNext() != NULL && source->getNext()->isDeleted()) {
+					std::cout << "Deleted node " << source->getId() << "\n";
 					deleted1.push_back((Node*)source->getNext());
 					source->deleteNext();
 					layers[source->getLayer()].count--;

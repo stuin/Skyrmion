@@ -20,6 +20,8 @@ public:
 	}
 
 	Node *getNode(int id) {
+		if(id == 0)
+			return NULL;
 		return UpdateList::getNode(layer, id);
 	}
 
@@ -36,9 +38,11 @@ public:
 
 	//Get value of tile from map
 	int mapTile(int c) override {
+		if(!hasFunction)
+			return c;
 		Node *n = getNode(c);
-		if(hasFunction && n != NULL)
+		if(n != NULL)
 			return func(n);
-		return c;
+		return 0;
 	}
 };

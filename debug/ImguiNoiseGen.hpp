@@ -1,6 +1,7 @@
 #include "../core/UpdateList.h"
 #include "../tiling/ColorMap.hpp"
 #include "../tiling/RandomNoise.hpp"
+#include "../tiling/MathIndexers.hpp"
 
 #include "../include/imgui/imgui.h"//
 

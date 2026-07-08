@@ -146,6 +146,8 @@ void InputHandler::updateKey(int code, bool press) {
 		controls[i].pressed2 = press;
 		controls[i].held = press;
 
+		//std::cout << "Key " << code << ": " << press << "\n";
+
 		long int d = controls[i].duplicate;
 		while(d != -1 && d < (long int)controls.size()) {
 			controls[d].pressed = press;
@@ -224,6 +226,13 @@ void InputHandler::update(double time) {
 	}
 
 	clearPressed(false);
+}
+
+void InputHandler::printKeys() {
+	for(sint i = 0; i < controls.size(); i++) {
+		std::string keyname = Settings::reverseKeycode(controls[i].key);
+		std::cout << controls[i].configName << " = " << controls[i].key << "/" << keyname << "\n";
+	}
 }
 
 DirectionHandler::DirectionHandler(std::vector<int> _controls, int layer)
