@@ -93,8 +93,10 @@ std::ostream& operator<<(std::ostream& os, const Event &event);
 class IO {
 public:
 	//Engine compatible file read/write
+	static bool hasFile(std::string filename);
 	static char *openFile(std::string filename);
 	static void closeFile(char *file);
 	static void writeFile(std::string filename, char *text);
 	static void writeFile(std::string filename, std::string text);
+	static void deleteFile(std::string filename);
 };

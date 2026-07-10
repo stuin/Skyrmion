@@ -69,6 +69,9 @@ std::vector<Shader> shaderSet;
 std::thread updates;
 
 //Engine compatible file read/write
+bool IO::hasFile(std::string filename) {
+	return FileExists(filename.c_str());
+}
 char *IO::openFile(std::string filename) {
 	return LoadFileText(filename.c_str());
 }
@@ -84,6 +87,9 @@ void IO::writeFile(std::string filename, std::string text) {
 
 	IO::writeFile(filename, out);
 	free(out);
+}
+void IO::deleteFile(std::string filename) {
+	FileRemove(filename.c_str());
 }
 
 //Load texture from file and add to set
