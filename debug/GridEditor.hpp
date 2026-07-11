@@ -34,6 +34,7 @@ public:
 
 		UpdateList::addListener(this, EVENT_IMGUI);
 		UpdateList::addListener(this, EVENT_MOUSE);
+		setOrigin(0,0);
 
 		current = tiles.begin()->first;
 		tileSize = _tileSize;
@@ -54,7 +55,7 @@ public:
 
 	void setupOffset(int _offsetMax, int _offsetMult, int _offsetSub, std::vector<std::string> _offsetNames) {
 		offsetMax = _offsetMax;
-		offsetMult = _offsetMax;
+		offsetMult = _offsetMult;
 		offsetSub = _offsetSub;
 		offsetNames = _offsetNames;
 	}

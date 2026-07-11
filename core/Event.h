@@ -99,4 +99,5 @@ public:
 	static void writeFile(std::string filename, char *text);
 	static void writeFile(std::string filename, std::string text);
 	static void deleteFile(std::string filename);
+	static void createFolder(std::string filename);
 };

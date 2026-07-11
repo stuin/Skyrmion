@@ -62,7 +62,6 @@ private:
 	noise::module::Module *noise;
 
 public:
-	int seed = 0;
 	int multiplier;
 	int linearPosition = 0;
 	uint noiseUpdateCount = 0;
@@ -109,7 +108,6 @@ private:
 	Vector2i size;
 
 public:
-	int seed = 0;
 	int limit;
 	int multiplier;
 	int linearPosition = 0;

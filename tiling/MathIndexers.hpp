@@ -74,6 +74,32 @@ public:
 	}
 };
 
+//Hexagon offset indexer
+class HexIndexer : public Indexer {
+public:
+	HexIndexer(Indexer *previous, int fallback, int scaleX = 1, int scaleY = 1)
+		: Indexer(previous, fallback, Vector2i(scaleX, scaleY)) {
+
+	}
+
+	HexIndexer(Indexer *previous, float _mult, int _add, int fallback, Vector2i scale)
+		: Indexer(previous, fallback, scale) {
+
+	}
+
+	int getTile(Vector2f position) {
+		if((int)(position.y / getScale().y) % 2 == 1)
+			position.x += getScale().x/2;
+		return getTileI(position.x / getScale().x, position.y / getScale().y);
+	}
+
+	void setTile(Vector2f position, int value) {
+		if((int)(position.y / getScale().y) % 2 == 1)
+			position.x += getScale().x/2;
+		setTileI(position.x / getScale().x, position.y / getScale().y, value);
+	}
+};
+
 //Value in filter
 class FuncIndexer : public Indexer {
 private:

@@ -16,13 +16,13 @@ void UpdateList::addNode(Node *next) {
 		throw new std::invalid_argument(LAYERERROR);
 	if(layer > maxLayer)
 		maxLayer = layer;
-	if(layers[layer].root == NULL) {
+	if(layers[layer].root == NULL)
 		layers[layer].root = next;
-		layers[layer].count = 1;
-	} else {
+	else
 		layers[layer].root->addNode(next);
-		layers[layer].count++;
-	}
+
+	//Set node ID
+	layers[layer].count++;
 	next->setId(layers[layer].count);
 }
 
@@ -65,6 +65,10 @@ void UpdateList::addUNode(UNode *next) {
 		layers[layer].uRoot = next;
 	else
 		layers[layer].uRoot->addNode(next);
+
+	//Set node ID
+	layers[layer].uCount++;
+	next->setId(layers[layer].uCount);
 }
 
 //Get UNode in specific layer
@@ -259,7 +263,6 @@ void UpdateList::update(double time) {
 		if(!layers[layer].paused) {
 			//Check first node for deletion
 			if(source != NULL && source->isDeleted()) {
-				std::cout << "Deleted node " << source->getId() << "\n";
 				deleted1.push_back(source);
 				source = (Node*)source->getNext();
 				layers[layer].root = source;
@@ -290,10 +293,10 @@ void UpdateList::update(double time) {
 
 				//Check next node for removing from list
 				while(source->getNext() != NULL && source->getNext()->isDeleted()) {
-					std::cout << "Deleted node " << source->getId() << "\n";
 					deleted1.push_back((Node*)source->getNext());
 					source->deleteNext();
-					layers[source->getLayer()].count--;
+					//Do not reuse ids
+					//layers[source->getLayer()].count--;
 				}
 
 				source = (Node*)source->getNext();

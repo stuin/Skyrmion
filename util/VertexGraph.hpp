@@ -20,6 +20,12 @@ public:
 			vID = ++getVRoot()->vID;
 	}
 
+	~Vertex() {
+		for(int e = 0; e < size; e++)
+			if(edges[e] != NULL)
+				edges[e]->removeVertex(this);
+	}
+
 	int getSize() {
 		return size;
 	}
@@ -56,6 +62,14 @@ public:
 		return edges[edge % size] != NULL;
 	}
 
+	int countEdges() {
+		int count = 0;
+		for(int e = 0; e < size; e++)
+			if(edges[e] != NULL)
+				count++;
+		return count;
+	}
+
 	Vertex<size> *getVertex(int edge) {
 		return edges[edge % size];
 	}
@@ -88,6 +102,13 @@ public:
 		return vertex;
 	}
 
+	void removeVertex(Vertex<size> *vertex) {
+		for(int e = 0; e < size; e++) {
+			if(edges[e] == vertex)
+				edges[e] = NULL;
+		}
+	}
+
 	void printAddress() {
 		printed = true;
 		std::cout << displayName() << ": [";
@@ -114,5 +135,11 @@ public:
 
 	virtual std::string displayName() {
 		return std::to_string(getVID());
+	}
+
+	virtual int reverseDir(int dir) {
+		if(dir % 2 == 0)
+			return (dir + 1) % size;
+		return (dir - 1) % size;
 	}
 };

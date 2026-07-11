@@ -84,6 +84,8 @@ Vector2i Indexer::getSize() {
 
 //Get indexer scale
 Vector2i Indexer::getScale() {
+	if(previous != NULL)
+		return scale*previous->getScale();
 	return scale;
 }
 

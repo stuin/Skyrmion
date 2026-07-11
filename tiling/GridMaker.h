@@ -28,8 +28,8 @@ public:
 	virtual int mapTile(int c);
 
 	//Indexing access functions
-	int getTile(Vector2f position);
-	void setTile(Vector2f position, int value);
+	virtual int getTile(Vector2f position);
+	virtual void setTile(Vector2f position, int value);
 	virtual int getTileI(int x, int y);
 	virtual void setTileI(int x, int y, int value);
 	bool getTileB(int x, int y, int place);

@@ -18,6 +18,7 @@ struct LayerData {
 	Node *root = NULL;
 	UNode *uRoot = NULL;
 	int count = 0;
+	int uCount = 0;
 	sint shader = 0;
 };
 

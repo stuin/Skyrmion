@@ -89,7 +89,12 @@ void IO::writeFile(std::string filename, std::string text) {
 	free(out);
 }
 void IO::deleteFile(std::string filename) {
-	FileRemove(filename.c_str());
+	if(FileExists(filename.c_str()))
+		FileRemove(filename.c_str());
+}
+void IO::createFolder(std::string filename) {
+	if(!DirectoryExists(filename.c_str()))
+		MakeDirectory(filename.c_str());
 }
 
 //Load texture from file and add to set
