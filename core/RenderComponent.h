@@ -76,11 +76,11 @@ public:
 	//Required getters
 	virtual int getBlendMode() = 0;
 	virtual sint getTexture() = 0;
-	virtual skColor getColor(int i=0) = 0;
+	virtual skColor getColor(sint i=0) = 0;
 
 	//Optional getters
 	virtual int getSize() { throw new RENDERCOMPONENTERROR; }
-	virtual TextureRect getTextureRect() { throw new RENDERCOMPONENTERROR; }
+	virtual TextureRect *getTextureRect(sint i=0) { throw new RENDERCOMPONENTERROR; }
 	virtual std::vector<TextureRect> *getTextureRects() { throw new RENDERCOMPONENTERROR; }
 	virtual std::vector<skColor> *getColors() { throw new RENDERCOMPONENTERROR; }
 	virtual RenderComponent *getSubComponent() { throw new RENDERCOMPONENTERROR; }
@@ -89,7 +89,7 @@ public:
 	//Optional setters
 	virtual void setBlendMode(int blendMode) { throw new RENDERCOMPONENTERROR; }
 	virtual void setTexture(sint texture) { throw new RENDERCOMPONENTERROR; }
-	virtual void setColor(skColor color, int i=0) { throw new RENDERCOMPONENTERROR; }
+	virtual void setColor(skColor color, sint i=0) { throw new RENDERCOMPONENTERROR; }
 	virtual void setSize(int size) { throw new RENDERCOMPONENTERROR; }
 	virtual void setTextureRect(TextureRect rectangle, sint i=0) { throw new RENDERCOMPONENTERROR; }
 	virtual void setTextureVecRect(Vector2i corner, Vector2i size, sint i=0) { throw new RENDERCOMPONENTERROR; }

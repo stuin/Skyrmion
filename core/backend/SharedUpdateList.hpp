@@ -1,5 +1,4 @@
-#define DTOR 0.0174532925199
-#define RTOD 57.2957795131
+
 
 #define TEXTUREERROR "Texture does not exist"
 #define BUFFERERROR "Cannot replace texture with render buffer"
@@ -97,6 +96,7 @@ void UpdateList::sendSignal(int id, Node *sender) {
 Node *UpdateList::setCamera(Node *follow, Vector2f size, Vector2f position) {
 	if(camera != NULL) {
 		camera->setSize(size);
+		camera->setOrigin(size/2.0f);
 		camera->setParent(follow);
 	} else
 		camera = new Node(0, RENDER_NONE, size, follow);

@@ -14,23 +14,21 @@
 struct Keybind {
 	int key;
 	std::string configName = "";
-	long int combo = -1;
-	long int duplicate = -1;
+	int comboKey = -1;
+	int avoidKey = -1;
 	bool pressed = false;
 	bool pressed2 = false;
 	bool held = false;
-	bool query = true;
+	bool comboHeld[3] = {false};
 
 	Keybind(int _key) {
 		key = _key;
 	}
-	Keybind(int _key, const std::string& _configName, long int _combo=-1) {
+	Keybind(int _key, const std::string& _configName, int _combo=-1, int _avoid=-1) {
 		key = _key;
 		configName = _configName;
-		combo = _combo;
-		duplicate = -1;
-		if(combo >= 0)
-			query = false;
+		comboKey = _combo;
+		avoidKey = _avoid;
 	}
 };
 
@@ -56,6 +54,7 @@ public:
 
 	//Key press and unpress
 	void updateKey(int code, bool press);
+	void updateCombo(sint i);
 	void clearPressed(bool clearHeld=false);
 
 	//Simple key querying
@@ -66,6 +65,7 @@ public:
 	void recieveEvent(Event event);
 	void update(double time);
 
+	void printKey(sint i);
 	void printKeys();
 };
 

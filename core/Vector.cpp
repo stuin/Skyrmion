@@ -47,6 +47,11 @@ float distance(Vector2f start, Vector2f end) {
 	return std::sqrt(std::pow(end.x - start.x, 2) + std::pow(end.y - start.y, 2));
 }
 
+//Get angle between 2 points in clockwise radians
+float angle(Vector2f point, Vector2f origin) {
+	return 90*DTOR-std::atan2(origin.y-point.y, origin.x-point.x);
+}
+
 Vector2f lerp(Vector2f start, Vector2f end, float progress) {
 	if(progress < 0)
 		return start;

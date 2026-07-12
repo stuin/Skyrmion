@@ -34,9 +34,12 @@ public:
 	virtual void setTileI(int x, int y, int value);
 	bool getTileB(int x, int y, int place);
 	void setTileB(int x, int y, int place, bool value);
+
+	//Full grid access
 	void mapGrid(std::function<void(int, Vector2f)> func);
-	virtual uint getUpdateCount();
+	void setGrid(int *values);
 	void printGrid();
+	virtual uint getUpdateCount();
 
 	//Check grid size
 	virtual Vector2i getSize();

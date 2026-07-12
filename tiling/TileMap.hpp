@@ -43,10 +43,12 @@ public:
         if(rectSize.y + rectPos.y > fullSize.y)
             rectSize.y = fullSize.y - rectPos.y;
 
-        if(_hexRows)
+        if(_hexRows) {
             overlap = Vector2i(0, _tileY/4);
+            setSize((tileSize - overlap) * rectSize);
+        } else
+            setSize((tileSize - overlap) * rectSize);
 
-        setSize((tileSize - overlap) * rectSize);
         setOrigin(0, 0);
         setPosition((tileSize - overlap) * rectPos);
 

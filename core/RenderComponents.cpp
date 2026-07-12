@@ -4,6 +4,7 @@ class TextureSingleRenderComponent : public RenderComponent {
 private:
 	int blendMode = 1;
 	sint texture = 0;
+	skColor color = COLOR_WHITE;
 
 public:
 	TextureSingleRenderComponent(Node *source) : RenderComponent(source) {}
@@ -19,8 +20,8 @@ public:
 		return texture;
 	}
 
-	skColor getColor(int i) {
-		return COLOR_WHITE;
+	skColor getColor(sint i=0) {
+		return color;
 	}
 
 	void setBlendMode(int _blendMode) {
@@ -29,12 +30,16 @@ public:
 	void setTexture(sint _texture) {
 		texture = _texture;
 	}
+	void setColor(skColor _color, sint i=0) {
+		color = _color;
+	}
 };
 
 class TextureRectRenderComponent : public RenderComponent {
 private:
 	int blendMode = 1;
 	sint texture = 0;
+	skColor color = COLOR_WHITE;
 	TextureRect textureRect;
 
 public:
@@ -50,12 +55,12 @@ public:
 	sint getTexture() {
 		return texture;
 	}
-	TextureRect getTextureRect() {
-		return textureRect;
+	TextureRect *getTextureRect(sint i=0) {
+		return &textureRect;
 	}
 
-	skColor getColor(int i) {
-		return COLOR_WHITE;
+	skColor getColor(sint i=0) {
+		return color;
 	}
 
 	void setBlendMode(int _blendMode) {
@@ -72,6 +77,9 @@ public:
 	}
 	void setTextureVecRect(Vector2i corner, Vector2i size, sint i=0) {
 		setTextureIntRect(IntRect(corner.x, corner.y, size.x, size.y), i);
+	}
+	void setColor(skColor _color, sint i=0) {
+		color = _color;
 	}
 };
 
@@ -94,15 +102,15 @@ public:
 	sint getTexture() {
 		return texture;
 	}
-	TextureRect getTextureRect() {
-		return textureRects[0];
+	TextureRect *getTextureRect(sint i=0) {
+		return &textureRects[i];
 	}
 
 	std::vector<TextureRect> *getTextureRects() {
 		return &textureRects;
 	}
 
-	skColor getColor(int i) {
+	skColor getColor(sint i=0) {
 		return COLOR_WHITE;
 	}
 
@@ -146,14 +154,14 @@ public:
 	sint getTexture() {
 		return 0;
 	}
-	skColor getColor(int i) {
+	skColor getColor(sint i=0) {
 		return color;
 	}
 
 	void setBlendMode(int _blendMode) {
 		blendMode = _blendMode;
 	}
-	void setColor(skColor _color, int i) {
+	void setColor(skColor _color, sint i=0) {
 		color = _color;
 	}
 };
@@ -178,7 +186,7 @@ public:
 	sint getTexture() {
 		return 0;
 	}
-	skColor getColor(int i) {
+	skColor getColor(sint i=0) {
 		if(i == 0)
 			return outsideColor;
 		else
@@ -191,7 +199,7 @@ public:
 	void setBlendMode(int _blendMode) {
 		blendMode = _blendMode;
 	}
-	void setColor(skColor _color, int i) {
+	void setColor(skColor _color, sint i=0) {
 		if(i == 0)
 			outsideColor = _color;
 		else
@@ -222,7 +230,7 @@ public:
 	sint getTexture() {
 		return texture;
 	}
-	skColor getColor(int i) {
+	skColor getColor(sint i=0) {
 		return colors[i];
 	}
 	std::vector<skColor> *getColors() {
@@ -238,7 +246,7 @@ public:
 	void setTexture(sint _texture) {
 		texture = _texture;
 	}
-	void setColor(skColor _color, int i) {
+	void setColor(skColor _color, sint i=0) {
 		colors[i] = _color;
 	}
 	void setSize(int _size) {
@@ -266,7 +274,7 @@ public:
 	sint getTexture() {
 		return texture;
 	}
-	skColor getColor(int i) {
+	skColor getColor(sint i=0) {
 		if(i < colors.size())
 			return colors[i];
 		return COLOR_PURPLE;
@@ -284,7 +292,7 @@ public:
 	void setTexture(sint _texture) {
 		texture = _texture;
 	}
-	void setColor(skColor _color, int i) {
+	void setColor(skColor _color, sint i=0) {
 		while(i >= colors.size())
 			colors.emplace_back();
 		colors[i] = _color;
@@ -314,14 +322,14 @@ public:
 	sint getTexture() {
 		return texture;
 	}
-	TextureRect getTextureRect() {
-		return textureRects[0];
+	TextureRect *getTextureRect(sint i=0) {
+		return &textureRects[i];
 	}
 	std::vector<TextureRect> *getTextureRects() {
 		return &textureRects;
 	}
 
-	skColor getColor(int i) {
+	skColor getColor(sint i=0) {
 		if(i < colors.size())
 			return colors[i];
 		return COLOR_PURPLE;
@@ -350,7 +358,7 @@ public:
 		setTextureIntRect(IntRect(corner.x, corner.y, size.x, size.y), i);
 	}
 
-	void setColor(skColor _color, int i) {
+	void setColor(skColor _color, sint i=0) {
 		while(i >= colors.size())
 			colors.emplace_back();
 		colors[i] = _color;
@@ -378,7 +386,7 @@ public:
 	sint getTexture() {
 		return fontTexture;
 	}
-	skColor getColor(int i) {
+	skColor getColor(sint i=0) {
 		return color;
 	}
 	int getSize() {
@@ -395,7 +403,7 @@ public:
 	void setTexture(sint _texture) {
 		fontTexture = _texture;
 	}
-	void setColor(skColor _color, int i) {
+	void setColor(skColor _color, sint i=0) {
 		color = _color;
 	}
 	void setSize(int _size) {
@@ -433,7 +441,7 @@ public:
 			return this;
 	}
 
-	skColor getColor(int i) {
+	skColor getColor(sint i=0) {
 		return COLOR_WHITE;
 	}
 

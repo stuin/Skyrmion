@@ -7,6 +7,9 @@
 #define RT2O2 sqrt(2) / 2.0
 #define PIO2 1.570796
 
+#define DTOR 0.0174532925199
+#define RTOD 57.2957795131
+
 using uint = unsigned int;
 using sint = long unsigned int;
 
@@ -205,6 +208,7 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T> &v) {
 //Other assorted helpers
 Vector2f vectorLength(Vector2f dir, double distance);
 float distance(Vector2f start, Vector2f end=Vector2f(0,0));
+float angle(Vector2f point, Vector2f origin=Vector2f(0,0));
 Vector2f lerp(Vector2f start, Vector2f end, float progress);
 Vector2i round(Vector2f pos);
 Vector2f screenToGlobal(float x, float y);

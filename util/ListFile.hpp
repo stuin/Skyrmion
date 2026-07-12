@@ -51,6 +51,10 @@ public:
 		node->setString(contents[l].c_str());
 	}
 
+	sint size() {
+		return contents.size();
+	}
+
 	void load(std::string file="") {
 		if(file == "")
 			file = filename;

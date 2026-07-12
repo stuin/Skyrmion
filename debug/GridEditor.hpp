@@ -127,9 +127,10 @@ public:
 				if(event.down && !ImGui::GetIO().WantCaptureMouse) {
 					if(event.code == 0) {
 						int c = current + offset*offsetMult;
-						grid->setTileI(tilePos.x, tilePos.y, c);
 						if(useFunction)
 							writeFunc(c, tilePos);
+						else
+							grid->setTileI(tilePos.x, tilePos.y, c);
 					} else if(event.code == 2) {
 						current = grid->getTileI(tilePos.x, tilePos.y);
 						if(offsetMax != 0) {

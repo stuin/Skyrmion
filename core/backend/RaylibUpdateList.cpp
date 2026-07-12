@@ -277,7 +277,7 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 		DrawRectangleRec({rect.left, rect.top, (float)rect.width, (float)rect.height}, color);
 		break;
 	case RENDER_TEXTURE_RECT: {
-		TextureRect tex = rendering->getTextureRect();
+		TextureRect tex = *rendering->getTextureRect();
 		if(tex.pwidth != 0 && tex.pheight != 0) {
 			Vector2 origin = Vector2{abs(tex.pwidth)*scaleA.x/2, abs(tex.pheight)*scaleA.y/2};
 			Rectangle dst = {tex.px*scaleA.x+rect.left+origin.x, tex.py*scaleA.y+rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
@@ -500,6 +500,7 @@ void UpdateList::queueEvents() {
 	for(sint i = 0; i < watchedKeycodes.size(); i++) {
 		int code = watchedKeycodes[i];
 		bool down = checkKeycode(code, watchedKeycodesPrevious[i]);
+		bool mouseWheel = down && (code == MOUSE_OFFSET+7 || code == MOUSE_OFFSET+8);
 
 		if(down && ImGui::GetIO().WantCaptureKeyboard && code < MOUSE_OFFSET && !remapKeycode)
 			continue;
@@ -507,7 +508,7 @@ void UpdateList::queueEvents() {
 			continue;
 
 		//Only send changed keys
-		if(down != watchedKeycodesPrevious[i]) {
+		if(down != watchedKeycodesPrevious[i] || mouseWheel) {
 			//std::cout << "Key " << code << ": " << down << "\n";
 			event_queue.emplace_back(EVENT_KEYPRESS, down, code);
 			watchedKeycodesPrevious[i] = down;
@@ -534,8 +535,10 @@ void UpdateList::queueEvents() {
 	}
 	if(!pressed)
 		event_queue.emplace_back(EVENT_MOUSE, false, 0, GetMouseX(), GetMouseY());
-	if(GetMouseWheelMoveV().y != 0 || GetMouseWheelMoveV().x != 0)
+	if(GetMouseWheelMoveV().y != 0 || GetMouseWheelMoveV().x != 0) {
+		event_previous[EVENT_SCROLL] = {};
 		event_queue.emplace_back(EVENT_SCROLL, GetMouseWheelMoveV().y<0, 0, GetMouseWheelMoveV().x, GetMouseWheelMoveV().y);
+	}
 
 	//Touch
 	for(int touch = 0; touch < GetTouchPointCount(); touch++)

@@ -58,6 +58,12 @@ void Indexer::mapGrid(std::function<void(int, Vector2f)> func) {
 		}
 }
 
+void Indexer::setGrid(int *values) {
+	for(int y = 0; y < getSize().y; y++)
+		for(int x = 0; x < getSize().x; x++)
+			setTileI(x, y, values[y*getSize().x+x]);
+}
+
 uint Indexer::getUpdateCount() {
 	return previous->getUpdateCount();
 }

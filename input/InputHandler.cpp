@@ -19,56 +19,45 @@ InputHandler::InputHandler(std::vector<int> _controls, int layer)
 InputHandler::InputHandler(std::vector<std::string> keys, int layer)
 : UNode(layer) {
 	//Base keys
-	sint startSize = keys.size();
 	for(sint i = 0; i < keys.size(); i++) {
-		if(i >= startSize) {
-			//Part of key combination
-			controls.push_back(Keybind(Settings::mapKeycode(keys[i]), keys[i], -3));
+		std::string keyname = Settings::getString(keys[i]);
+		sint splitPlus = keyname.find('+');
+		sint splitMinus = keyname.find('-');
+		sint splitJoystick = keyname.find('%');
+		if(splitPlus != std::string::npos) {
+			//Split key combination
+			std::string key1 = keyname.substr(0, splitPlus);
+			std::string key2 = keyname.substr(splitPlus+1);
+			controls.push_back(Keybind(Settings::mapKeycode(key1), keys[i], Settings::mapKeycode(key2)));
+			UpdateList::watchKeycode(controls[i].key);
+			UpdateList::watchKeycode(controls[i].comboKey);
+			Settings::markKeycode.insert(key1);
+			Settings::markKeycode.insert(key2);
+		} else if(splitMinus != std::string::npos) {
+			std::string key1 = keyname.substr(0, splitMinus);
+			std::string key2 = keyname.substr(splitMinus+1);
+			controls.push_back(Keybind(Settings::mapKeycode(key1), keys[i], -1, Settings::mapKeycode(key2)));
+			UpdateList::watchKeycode(controls[i].key);
+			UpdateList::watchKeycode(controls[i].avoidKey);
+			Settings::markKeycode.insert(key1);
+			Settings::markKeycode.insert(key2);
+		} else if(splitJoystick != std::string::npos) {
+			//Specific joystick/gamepad
+			int player = std::stoi(keyname.substr(splitJoystick+1))*JOYSTICK_NEXT;
+			controls.push_back(Keybind(Settings::getControl(keyname.substr(0, splitJoystick))+player, keys[i]));
 		} else {
-			std::string keyname = Settings::getString(keys[i]);
-			sint splitI = keyname.find('+');
-			if(splitI != std::string::npos) {
-				//Split key combination
-				controls.push_back(Keybind(-3, keys[i], keys.size()));
-				keys.push_back(keyname.substr(0, splitI));
-				keys.push_back(keyname.substr(splitI+1));
-				Settings::markKeycode.insert(keys[i]);
-			} else {
-				splitI = keyname.find('%');
-				if(splitI != std::string::npos) {
-					//Specific joystick/gamepad
-					int player = std::stoi(keyname.substr(splitI+1))*JOYSTICK_NEXT;
-					controls.push_back(Keybind(Settings::getControl(keyname.substr(0, splitI))+player, keys[i]));
-				} else {
-					//Single key
-					controls.push_back(Keybind(Settings::getControl(keys[i]), keys[i]));
-				}
-			}
+			//Single key
+			controls.push_back(Keybind(Settings::getControl(keys[i]), keys[i]));
+			UpdateList::watchKeycode(controls[i].key);
 		}
 	}
-	count = keys.size();
+	count = controls.size();
 
 	//Alternate keys
 	for(int i = 1; i <= MAXALTS; i++) {
 		for(sint j = 0; j < keys.size(); j++) {
 			std::string s = controls[j].configName + "&" + std::to_string(i);
-			if(j >= startSize)
-				controls.push_back(Keybind(0, s));
-			else
-				controls.push_back(Keybind(Settings::getControl(s), s));
-		}
-	}
-
-	//Mark duplicates
-	for(sint i = 0; i < controls.size(); i++) {
-		if(controls[i].key > 0) {
-			for(sint j = i + 1; j < controls.size() && controls[i].duplicate == -1; j++) {
-				if(controls[i].key == controls[j].key) {
-					controls[i].duplicate = j;
-					controls[j].query = false;
-				}
-			}
-			UpdateList::watchKeycode(controls[i].key);
+			controls.push_back(Keybind(Settings::getControl(s), s));
 		}
 	}
 
@@ -100,14 +89,6 @@ int InputHandler::addKey(int code, int alt) {
 	for(int i = 2; i <= MAXALTS; i++)
 		controls.insert(controls.begin() + count * i, Keybind(alt));
 
-	//Correct stored indexes
-	for(sint i = 0; i < controls.size(); i++) {
-		if(controls[i].combo > -1 && (sint)controls[i].combo > count)
-			controls[i].combo += controls[i].combo / count;
-		if(controls[i].duplicate > -1 && (sint)controls[i].duplicate > count)
-			controls[i].duplicate += controls[i].duplicate / count;
-	}
-
 	return count++;
 }
 
@@ -115,7 +96,7 @@ int InputHandler::addKey(int code, int alt) {
 void InputHandler::refreshSettings() {
 	for(sint i = 0; i < controls.size(); i++) {
 		std::string name = controls[i].configName;
-		if(name != "" && name[0] == '/' && controls[i].combo == -1 && controls[i].key != Settings::getControl(name)) {
+		if(name != "" && name[0] == '/' && controls[i].key != Settings::getControl(name)) {
 			int code = Settings::getControl(name);
 			//std::cout << name << code << "\n";
 			if(code > 0) {
@@ -135,47 +116,38 @@ void InputHandler::updateKey(int code, bool press) {
 		return;
 	}
 
+	//std::cout << Settings::reverseKeycode(code) << " " << press << "\n";
+
 	//Find key in controls
-	sint i = 0;
-	while(i < controls.size() && code != controls[i].key)
-		i++;
-
-	//Update press/held
-	if(i < controls.size() && controls[i].held != press) {
-		controls[i].pressed = press;
-		controls[i].pressed2 = press;
-		controls[i].held = press;
-
-		//std::cout << "Key " << code << ": " << press << "\n";
-
-		long int d = controls[i].duplicate;
-		while(d != -1 && d < (long int)controls.size()) {
-			controls[d].pressed = press;
-			controls[d].pressed2 = press;
-			controls[d].held = press;
-			if(controls[d].duplicate != d)
-				d = controls[d].duplicate;
-			else
-				d = -1;
+	for(sint i = 0; i < controls.size(); i++) {
+		if(controls[i].key == code) {
+			if(controls[i].comboKey == -1 && controls[i].avoidKey == -1) {
+				if(controls[i].held != press) {
+					controls[i].pressed = press;
+					controls[i].pressed2 = press;
+					controls[i].held = press;
+				}
+			} else if(controls[i].comboHeld[0] != press) {
+				controls[i].comboHeld[0] = press;
+				updateCombo(i);
+			}
+		} else if(controls[i].comboKey == code && controls[i].comboHeld[1] != press) {
+			controls[i].comboHeld[1] = press;
+			updateCombo(i);
+		} else if(controls[i].avoidKey == code && controls[i].comboHeld[2] != press) {
+			controls[i].comboHeld[2] = press;
+			updateCombo(i);
 		}
 	}
+}
 
-	//Check for combo key
-	if(i < controls.size() && controls[i].combo == -3) {
-		sint j = 0;
-		while(j < controls.size() && (long int)i/2 != controls[j].combo/2)
-			j++;
-
-		//Update press/held
-		if(j < controls.size()) {
-			int k = controls[j].combo;
-			press = controls[k].held && controls[k+1].held;
-			if(controls[j].held != press) {
-				controls[j].pressed = press;
-				controls[j].pressed2 = press;
-				controls[j].held = press;
-			}
-		}
+void InputHandler::updateCombo(sint i) {
+	bool comboPress = controls[i].comboHeld[0] && (controls[i].comboHeld[1] || controls[i].comboKey == -1)
+	 && !controls[i].comboHeld[2];
+	if(controls[i].held != comboPress) {
+		controls[i].pressed = comboPress;
+		controls[i].pressed2 = comboPress;
+		controls[i].held = comboPress;
 	}
 }
 
@@ -187,8 +159,13 @@ void InputHandler::clearPressed(bool clearHeld) {
 		//Mouse wheel special case
 		if(controls[i].key == MOUSE_OFFSET+7 || controls[i].key == MOUSE_OFFSET+8 || clearHeld) {
 			controls[i].held = false;
+			controls[i].comboHeld[0] = false;
 			controls[i].pressed2 = false;
 		}
+		if(controls[i].comboKey == MOUSE_OFFSET+7 || controls[i].comboKey == MOUSE_OFFSET+8 || clearHeld)
+			controls[i].comboHeld[1] = false;
+		if(controls[i].avoidKey == MOUSE_OFFSET+7 || controls[i].avoidKey == MOUSE_OFFSET+8 || clearHeld)
+			controls[i].comboHeld[2] = false;
 	}
 }
 
@@ -217,7 +194,7 @@ void InputHandler::recieveEvent(Event event) {
 //Run key press functions
 void InputHandler::update(double time) {
 	for(sint i = 0; i < controls.size(); i++) {
-		if(controls[i].held && controls[i].combo != -3) {
+		if(controls[i].held) {
 			if(heldFunc != NULL)
 				heldFunc(i % count);
 			if(controls[i].pressed && pressedFunc != NULL)
@@ -228,11 +205,18 @@ void InputHandler::update(double time) {
 	clearPressed(false);
 }
 
+void InputHandler::printKey(sint i) {
+	std::string keyName = Settings::reverseKeycode(controls[i].key);
+	std::string comboName = Settings::reverseKeycode(controls[i].comboKey);
+	std::string avoidName = Settings::reverseKeycode(controls[i].avoidKey);
+	std::cout << controls[i].configName << " = " << controls[i].key << "/" << keyName << " ";
+	std::cout << controls[i].comboKey << "/" << comboName << " -";
+	std::cout << controls[i].avoidKey << "/" << avoidName << "\n";
+}
+
 void InputHandler::printKeys() {
-	for(sint i = 0; i < controls.size(); i++) {
-		std::string keyname = Settings::reverseKeycode(controls[i].key);
-		std::cout << controls[i].configName << " = " << controls[i].key << "/" << keyname << "\n";
-	}
+	for(sint i = 0; i < controls.size(); i++)
+		printKey(i);
 }
 
 DirectionHandler::DirectionHandler(std::vector<int> _controls, int layer)
