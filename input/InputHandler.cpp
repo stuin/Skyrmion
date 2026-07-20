@@ -58,6 +58,7 @@ InputHandler::InputHandler(std::vector<std::string> keys, int layer)
 		for(sint j = 0; j < keys.size(); j++) {
 			std::string s = controls[j].configName + "&" + std::to_string(i);
 			controls.push_back(Keybind(Settings::getControl(s), s));
+			UpdateList::watchKeycode(controls[controls.size()-1].key);
 		}
 	}
 
@@ -209,7 +210,7 @@ void InputHandler::printKey(sint i) {
 	std::string keyName = Settings::reverseKeycode(controls[i].key);
 	std::string comboName = Settings::reverseKeycode(controls[i].comboKey);
 	std::string avoidName = Settings::reverseKeycode(controls[i].avoidKey);
-	std::cout << controls[i].configName << " = " << controls[i].key << "/" << keyName << " ";
+	std::cout << i%count << ":" << controls[i].configName << " = " << controls[i].key << "/" << keyName << " ";
 	std::cout << controls[i].comboKey << "/" << comboName << " -";
 	std::cout << controls[i].avoidKey << "/" << avoidName << "\n";
 }

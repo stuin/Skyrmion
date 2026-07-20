@@ -41,6 +41,7 @@ public:
 			int limit = limits->getTileI(x, y);
 			double input = IntegerNoise(x + y*getSize().x + seed*getSize().y*getSize().x);
 			rOffset = (int)floor(input * limit);
+			rOffset = limitRange(rOffset, 0, limit);
 			return getPrevious()->getTileI(x, y) + rOffset * multiplier;
 		}
 		return fallback;
@@ -52,6 +53,7 @@ public:
 		int limit = limits->mapTile(c);
 		double input = IntegerNoise(linearPosition++);
 		rOffset = (int)floor(input * limit);
+		rOffset = limitRange(rOffset, 0, limit);
 		return getPrevious()->mapTile(c) + rOffset * multiplier;
 	}
 };
@@ -83,6 +85,7 @@ public:
 			int limit = limits->getTileI(x, y);
 			double input = noise->GetValue((double)x/getSize().x, (double)y/getSize().y, 0);
 			rOffset = (int)floor(fmod(input+1, 1.0) * limit);
+			rOffset = limitRange(rOffset, 0, limit);
 			return getPrevious()->getTileI(x, y) + rOffset * multiplier;
 		}
 		return fallback;
@@ -94,6 +97,7 @@ public:
 		int limit = limits->mapTile(c);
 		double input = noise->GetValue(linearPosition++/100.0, 0, 0);
 		rOffset = (int)floor(fmod(input+1, 1.0) * limit);
+		rOffset = limitRange(rOffset, 0, limit);
 		return getPrevious()->mapTile(c) + rOffset * multiplier;
 	}
 
@@ -132,6 +136,7 @@ public:
 		if(inBounds(x, y)) {
 			double input = noise->GetValue((double)x/getSize().x, (double)y/getSize().y, 0);
 			int rOffset = (int)floor(fmod(input+1, 1.0) * limit);
+			rOffset = limitRange(rOffset, 0, limit);
 			return rOffset * multiplier;
 		}
 		return fallback;
@@ -141,6 +146,7 @@ public:
 	int mapTile(int c) override {
 		double input = noise->GetValue(linearPosition++/100.0, 0, 0);
 		int rOffset = (int)floor(fmod(input+1, 1.0) * limit);
+		rOffset = limitRange(rOffset, 0, limit);
 		return rOffset * multiplier;
 	}
 

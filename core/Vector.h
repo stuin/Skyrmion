@@ -212,5 +212,6 @@ float angle(Vector2f point, Vector2f origin=Vector2f(0,0));
 Vector2f lerp(Vector2f start, Vector2f end, float progress);
 Vector2i round(Vector2f pos);
 Vector2f screenToGlobal(float x, float y);
+int limitRange(int value, int min, int max);
 
 bool operator==(const TextureRect &first, const TextureRect &second);

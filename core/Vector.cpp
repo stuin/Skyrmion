@@ -64,6 +64,10 @@ Vector2i round(Vector2f pos) {
 	return Vector2i(round(pos.x), round(pos.y));
 }
 
+int limitRange(int value, int min, int max) {
+	return std::max(min, std::min(value, max));
+}
+
 bool operator==(const TextureRect &first, const TextureRect &second) {
 	return first.px == second.px && first.py == second.py && first.tx == second.tx && first.ty == second.ty;
 }
