@@ -25,7 +25,7 @@ public:
 		UpdateList::addListener(this, EVENT_MOUSE);
 	}
 
-	TouchscreenJoystick(uint texture, std::string _joystick, int layer) : TouchscreenJoystick(texture, Settings::getInt(_joystick), layer) {
+	TouchscreenJoystick(uint texture, std::string _joystick, int layer) : TouchscreenJoystick(texture, SETTINGS.getInt(_joystick), layer) {
 		joystickConfig = _joystick;
 	}
 
@@ -33,7 +33,7 @@ public:
 		if(event.type == EVENT_TOUCH && event.down)
 			UpdateList::hideLayer(getLayer(), false);
 		if(event.type == EVENT_SETTINGS && joystickConfig != "")
-			joystick = Settings::getInt(joystickConfig);
+			joystick = SETTINGS.getInt(joystickConfig);
 		if(isHidden())
 			return;
 

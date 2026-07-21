@@ -13,7 +13,7 @@
 #include "ImguiNoiseGen.hpp"
 
 void setupDebugTools() {
-	Settings::loadSettings("res/debug/debug_settings.json", false);
+	SETTINGS.loadSettings("res/debug/debug_settings.json", false);
 
 	int debugLayer = UpdateList::getLayerCount();
 	LayerData &data = UpdateList::getLayerData(debugLayer);

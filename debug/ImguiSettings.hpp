@@ -24,12 +24,12 @@ public:
 		std::string key = field + "/" + first;
 		std::string id = "##" + first;
 		char str[128];
-		std::strcpy(str, Settings::getString(key).c_str());
+		std::strcpy(str, SETTINGS.getString(key).c_str());
 		ImGui::Text("%s =", first.c_str());
 		ImGui::TableNextColumn();
 		ImGui::PushItemWidth(-ImGui::GetFontSize()*3.9);
 		if(ImGui::InputText(id.c_str(), str, 128))
-			Settings::setString(key, str);
+			SETTINGS.setString(key, str);
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 		id = "Remap" + id;
@@ -41,7 +41,7 @@ public:
 	}
 
 	void showObject(std::string field) {
-		for(string_pair s : Settings::listKeys(field)) {
+		for(string_pair s : SETTINGS.listKeys(field)) {
 			ImGui::TableNextRow();
 			ImGui::TableNextColumn();
 			std::string key = field + "/" + s.first;
@@ -52,55 +52,55 @@ public:
 					ImGui::TreePop();
 				}
 			} else if(s.second == "string") {
-				if(Settings::isKeycode(key)) {
+				if(SETTINGS.isKeycode(key)) {
 					showKeyinput(field, s.first);
 					if(forceAlts && key.find('&') == std::string::npos) {
 						for(int i = 1; i <= MAXALTS; i++) {
-							if(Settings::getString(key + "&" + std::to_string(i)) == "") {
+							if(SETTINGS.getString(key + "&" + std::to_string(i)) == "") {
 								ImGui::TableNextRow();
 								ImGui::TableNextColumn();
 								showKeyinput(field, s.first + "&" + std::to_string(i));
 							}
 						}
 					}
-				} else if(Settings::getString(key)[0] == '#') {
+				} else if(SETTINGS.getString(key)[0] == '#') {
 					float color[4];
-					Settings::getColor(key).write(color);
+					SETTINGS.getColor(key).write(color);
 					ImGui::Text("%s =", s.first.c_str());
 					ImGui::TableNextColumn();
 					ImGui::PushItemWidth(-FLT_MIN);
-					if(Settings::getString(key).size() > 7) {
+					if(SETTINGS.getString(key).size() > 7) {
 						if(ImGui::ColorEdit4(id.c_str(), color))
-							Settings::setColor(key, skColor(color));
+							SETTINGS.setColor(key, skColor(color));
 					} else {
 						if(ImGui::ColorEdit3(id.c_str(), color))
-							Settings::setColor(key, skColor3(color));
+							SETTINGS.setColor(key, skColor3(color));
 					}
 					ImGui::PopItemWidth();
 				} else {
 					char str[128];
-					std::strcpy(str, Settings::getString(key).c_str());
+					std::strcpy(str, SETTINGS.getString(key).c_str());
 					ImGui::Text("%s =", s.first.c_str());
 					ImGui::TableNextColumn();
 					ImGui::PushItemWidth(-FLT_MIN);
 					if(ImGui::InputText(id.c_str(), str, 128))
-						Settings::setString(key, str);
+						SETTINGS.setString(key, str);
 					ImGui::PopItemWidth();
 				}
 			} else if(s.second == "number") {
-				int v = Settings::getInt(key);
+				int v = SETTINGS.getInt(key);
 				ImGui::Text("%s =", s.first.c_str());
 				ImGui::TableNextColumn();
 				ImGui::PushItemWidth(-FLT_MIN);
 				if(ImGui::InputInt(id.c_str(), &v))
-					Settings::setInt(key, v);
+					SETTINGS.setInt(key, v);
 				ImGui::PopItemWidth();
 			} else if(s.second == "boolean") {
-				bool v = Settings::getBool(key);
+				bool v = SETTINGS.getBool(key);
 				ImGui::Text("%s =", s.first.c_str());
 				ImGui::TableNextColumn();
 				if(ImGui::Checkbox(id.c_str(), &v))
-					Settings::setBool(key, v);
+					SETTINGS.setBool(key, v);
 			} else {
 				ImGui::Text("%s =", s.first.c_str());
 				ImGui::TableNextColumn();
@@ -125,27 +125,27 @@ public:
 			case 0:
 				ImGui::InputText("String", str, 128);
 				if(ImGui::Button("Add"))
-					Settings::setString(key, str);
+					SETTINGS.setString(key, str);
 				break;
 			case 1:
 				ImGui::InputInt("Number", &v);
 				if(ImGui::Button("Add"))
-					Settings::setInt(key, v);
+					SETTINGS.setInt(key, v);
 				break;
 			case 2:
 				ImGui::Checkbox("Boolean", &b);
 				if(ImGui::Button("Add"))
-					Settings::setBool(key, b);
+					SETTINGS.setBool(key, b);
 				break;
 			case 3:
 				ImGui::ColorEdit4("Color", color);
 				if(ImGui::Button("Add"))
-					Settings::setColor(key, skColor(color));
+					SETTINGS.setColor(key, skColor(color));
 				break;
 			case 4:
 				ImGui::InputText("Keybind", str, 128);
 				if(ImGui::Button("Add"))
-					Settings::setString(key, str);
+					SETTINGS.setString(key, str);
 				break;
 			}
 			ImGui::EndPopup();
@@ -173,7 +173,7 @@ public:
 		showPopup();
 
 	    if(ImGui::Button("Save"))
-	    	Settings::save("");
+	    	SETTINGS.save("");
 
 
 	    ImGui::End();
@@ -185,8 +185,8 @@ public:
 		} else if(event.type == EVENT_IMGUI && open) {
 			showWindow();
 		} else if(remapping != "" && event.type == EVENT_KEYPRESS && event.down) {
-			//std::cout << "Set key " << remapping << " to " << Settings::reverseKeycode(event.code) << "\n";
-			Settings::setString(remapping, Settings::reverseKeycode(event.code));
+			//std::cout << "Set key " << remapping << " to " << SETTINGS.reverseKeycode(event.code) << "\n";
+			SETTINGS.setString(remapping, SETTINGS.reverseKeycode(event.code));
 			remapping = "";
 		}
 	}

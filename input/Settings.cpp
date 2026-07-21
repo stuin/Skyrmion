@@ -6,11 +6,6 @@
 nlohmann::json data({});
 int count = 0;
 
-bool Settings::loaded = false;
-std::vector<string_pair> Settings::edits;
-std::unordered_set<std::string> Settings::markKeycode;
-std::string Settings::filename = "";
-
 using json_pointer = nlohmann::json::json_pointer;
 
 /*
