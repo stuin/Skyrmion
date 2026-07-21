@@ -83,15 +83,12 @@ SERVER_FILES := ${SERVER_FILES} core/backend/nbnetServer.o
 # Dependency File Lists
 IMGUI_FILES := imgui.o imgui_demo.o imgui_draw.o imgui_tables.o imgui_widgets.o
 RAYLIB_FILES := rcore.o rshapes.o rtextures.o rtext.o rmodels.o raudio.o
-LIBNOISE_FILES1 := ${LIBNOISE_FILES1} noisegen.o latlon.o model/line.o model/plane.o model/sphere.o model/cylinder.o
-LIBNOISE_FILES2 := $(wildcard src/Skyrmion/include/libnoise/src/module/*.cpp)
 
 IMGUI_OBJS := $(IMGUI_FILES:%=include/imgui/%)
 RAYLIB_OBJS := $(RAYLIB_FILES:%=include/raylib/src/%)
-LIBNOISE_OBJS := $(LIBNOISE_FILES1:%=include/libnoise/src/%) $(LIBNOISE_FILES2:src/Skyrmion/%.cpp=%.o)
-INCLUDE_FILES := include/rlImGui/rlImGui.o $(IMGUI_OBJS) $(RAYLIB_OBJS) $(LIBNOISE_OBJS)
+INCLUDE_FILES := include/rlImGui/rlImGui.o $(IMGUI_OBJS) $(RAYLIB_OBJS)
 
-INCLUDE_PATHS := ${INCLUDE_PATHS} -I. -Isrc/Skyrmion/include/raylib/src/ -Isrc/Skyrmion/include/imgui -Isrc/Skyrmion/include/libnoise/src/noise
+INCLUDE_PATHS := ${INCLUDE_PATHS} -I. -Isrc/Skyrmion/include/raylib/src/ -Isrc/Skyrmion/include/imgui
 
 # Full lists
 SKYRMION_OBJS := $(SKYRMION_FILES:%=$(BUILD_DIR)/src/Skyrmion/%)

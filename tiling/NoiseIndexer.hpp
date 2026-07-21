@@ -1,6 +1,7 @@
 #include "GridMaker.h"
 
-#include "../include/libnoise/src/noise/noise.h"
+//#include "../include/libnoise/src/noise/noise.h"
+#include "../include/PerlinNoise.hpp"
 
 /*
  * Random noise tiling
@@ -61,21 +62,36 @@ public:
 class NoiseIndexer : public Indexer {
 private:
 	Indexer *limits = NULL;
-	noise::module::Module *noise;
 
 public:
+	siv::PerlinNoise::seed_type seed;
+	siv::PerlinNoise noise;
+
+	float frequency = 1;
+	int octaves = 1;
+	float persistence = 0.5;
+
 	int multiplier;
 	int linearPosition = 0;
 	uint noiseUpdateCount = 0;
 
-	NoiseIndexer(Indexer *previous, std::map<int, int> _limits, noise::module::Module *_noise, int _multiplier=1, Vector2i scale=Vector2i(1,1))
-		: Indexer(previous, previous->fallback, scale), limits(new MapIndexer(previous, _limits, 0)), noise(_noise), multiplier(_multiplier) {
+	NoiseIndexer(Indexer *previous, std::map<int, int> _limits, sint _seed, int _multiplier=1, Vector2i scale=Vector2i(1,1))
+		: Indexer(previous, previous->fallback, scale), limits(new MapIndexer(previous, _limits, 0)), seed(_seed), noise(seed), multiplier(_multiplier) {
 
 	}
 
-	NoiseIndexer(Indexer *previous, Indexer *_limits, noise::module::Module *_noise, int _multiplier=1, Vector2i scale=Vector2i(1,1))
-		: Indexer(previous, previous->fallback, scale), limits(_limits), noise(_noise), multiplier(_multiplier) {
+	NoiseIndexer(Indexer *previous, Indexer *_limits, sint _seed, int _multiplier=1, Vector2i scale=Vector2i(1,1))
+		: Indexer(previous, previous->fallback, scale), limits(_limits), seed(_seed), noise(seed), multiplier(_multiplier) {
 
+	}
+
+	void setFrequency(float _frequency) {
+		frequency = _frequency;
+	}
+
+	void setOctaves(int _octaves, float _persistence) {
+		octaves = _octaves;
+		persistence = _persistence;
 	}
 
 	//Correct locational randomness
@@ -83,7 +99,7 @@ public:
 		if(inBounds(x, y)) {
 			int rOffset = 0;
 			int limit = limits->getTileI(x, y);
-			double input = noise->GetValue((double)x/getSize().x, (double)y/getSize().y, 0);
+			double input = noise.octave2D_11((double)x/getSize().x*frequency, (double)y/getSize().y*frequency, octaves, persistence);
 			rOffset = (int)floor(fmod(input+1, 1.0) * limit);
 			rOffset = limitRange(rOffset, 0, limit);
 			return getPrevious()->getTileI(x, y) + rOffset * multiplier;
@@ -95,7 +111,7 @@ public:
 	int mapTile(int c) override {
 		int rOffset = 0;
 		int limit = limits->mapTile(c);
-		double input = noise->GetValue(linearPosition++/100.0, 0, 0);
+		double input = noise.octave1D_11(linearPosition++/100.0*frequency, octaves, persistence);
 		rOffset = (int)floor(fmod(input+1, 1.0) * limit);
 		rOffset = limitRange(rOffset, 0, limit);
 		return getPrevious()->mapTile(c) + rOffset * multiplier;
@@ -108,18 +124,33 @@ public:
 
 class NoiseGrid : public Indexer {
 private:
-	noise::module::Module *noise;
 	Vector2i size;
 
 public:
+	siv::PerlinNoise::seed_type seed;
+	siv::PerlinNoise noise;
+
+	float frequency = 1;
+	int octaves = 1;
+	float persistence = 0.5;
+
 	int limit;
 	int multiplier;
 	int linearPosition = 0;
 	int noiseUpdateCount = 0;
 
-	NoiseGrid(noise::module::Module *_noise, Vector2i _size, int _limit, int _multiplier=1, Vector2i scale=Vector2i(1,1))
-		: Indexer(NULL, 0, scale), noise(_noise), size(_size), limit(_limit), multiplier(_multiplier) {
+	NoiseGrid(sint _seed, Vector2i _size, int _limit, int _multiplier=1, Vector2i scale=Vector2i(1,1))
+		: Indexer(NULL, 0, scale), size(_size), seed(_seed), noise(seed), limit(_limit), multiplier(_multiplier) {
 
+	}
+
+	void setFrequency(float _frequency) {
+		frequency = _frequency;
+	}
+
+	void setOctaves(int _octaves, float _persistence) {
+		octaves = _octaves;
+		persistence = _persistence;
 	}
 
 	uint getUpdateCount() {
@@ -134,7 +165,7 @@ public:
 	//Correct locational randomness
 	int getTileI(int x, int y) override {
 		if(inBounds(x, y)) {
-			double input = noise->GetValue((double)x/getSize().x, (double)y/getSize().y, 0);
+			double input = noise.octave2D_11((double)x/getSize().x*frequency, (double)y/getSize().y*frequency, octaves, persistence);
 			int rOffset = (int)floor(fmod(input+1, 1.0) * limit);
 			rOffset = limitRange(rOffset, 0, limit);
 			return rOffset * multiplier;
@@ -144,7 +175,7 @@ public:
 
 	//Backup linear random function
 	int mapTile(int c) override {
-		double input = noise->GetValue(linearPosition++/100.0, 0, 0);
+		double input = noise.octave1D_11(linearPosition++/100.0*frequency, octaves, persistence);
 		int rOffset = (int)floor(fmod(input+1, 1.0) * limit);
 		rOffset = limitRange(rOffset, 0, limit);
 		return rOffset * multiplier;
