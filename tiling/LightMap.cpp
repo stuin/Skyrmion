@@ -278,7 +278,7 @@ void LightMap::reload() {
 
 	scheduleBufferRefresh();
 	if(collection != NULL)
-		UpdateList::scheduleBufferRefresh(collection->getTexture());
+		collection->scheduleBufferRefresh();
 }
 
 int LightMap::addSource(Vector2f light, float intensity) {

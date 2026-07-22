@@ -103,9 +103,6 @@ public:
 				ImGui::Text("Type = Font");
 				ImGui::Text("Font size = %d", size.y);
 				break;
-			case SK_AUDIO:
-				ImGui::Text("Type = Audio");
-				break;
 			case SK_TEXT:
 				ImGui::Text("Type = Text");
 				break;

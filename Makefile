@@ -4,7 +4,7 @@ CXXFLAGS := -std=c++20
 # Backend Files
 backend ?= raylib
 ifeq ($(backend), raylib)
-	CORE_FILES := ${CORE_FILES} core/backend/RaylibUpdateList.o
+	CORE_FILES := ${CORE_FILES} core/backend/RaylibUpdateList.o core/backend/RaylibAudio.o
 	LDFLAGS := ${LDFLAGS} -lglfw -lGL -ldl -lm -lpthread -lX11 -ldl -lrt
 	WLDFLAGS := --static -lglfw3 -lgdi32 -lwinmm -lws2_32 -static-libstdc++ -static-libgcc
 else ifeq ($(backend), sokol)

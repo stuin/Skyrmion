@@ -1,5 +1,5 @@
 #include "Settings.h"
-#include "../core/UpdateList.h"
+#include "../core/Event.h"
 
 #include "../include/json.hpp"
 
@@ -170,9 +170,9 @@ void Settings::save(std::string _filename) {
 
 	IO::closeFile(inFile);
 	IO::writeFile(filename, outFile);
-	UpdateList::queueEvent(Event(EVENT_SETTINGS, true, count++));
+	IO::queueEvent(Event(EVENT_SETTINGS, true, count++));
 }
 
 void Settings::settingsEvent() {
-	UpdateList::queueEvent(Event(EVENT_SETTINGS, false, count++));
+	IO::queueEvent(Event(EVENT_SETTINGS, false, count++));
 }

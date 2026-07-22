@@ -1,15 +1,15 @@
-#include "../UpdateList.h"
+#include "../NetworkList.h"
 
 #define NBNET_IMPL
 #include "nbnetShared.hpp"
 
-bool UpdateList::networkInitialized = false;
-bool UpdateList::networkClient = false;
-bool UpdateList::networkConnected = false;
-int UpdateList::networkId = 0;
-unsigned int UpdateList::networkTimer = 0;
+bool NetworkList::networkInitialized = false;
+bool NetworkList::networkClient = false;
+bool NetworkList::networkConnected = false;
+int NetworkList::networkId = 0;
+unsigned int NetworkList::networkTimer = 0;
 
-void UpdateList::connectServer(std::string ip, int port) {
+void NetworkList::connectServer(std::string ip, int port) {
 	std::cout << "NETWORK: Creating client for server " << ip << ":" << port << "\n";
 	if(!networkInitialized) {
 		#ifdef PLATFORM_WEB
@@ -35,26 +35,26 @@ void UpdateList::connectServer(std::string ip, int port) {
 		std::cout << "NETWORK: Started client\n";
 	}
 }
-void UpdateList::disconnectServer() {
+void NetworkList::disconnectServer() {
 	std::cout << "NETWORK: Destroying client\n";
 	networkConnected = false;
 	networkClient = false;
 	NBN_GameClient_Stop();
 }
 
-bool UpdateList::isConnected() {
+bool NetworkList::isConnected() {
 	return networkInitialized && networkClient && networkConnected;
 }
 
-int UpdateList::getNetworkId() {
+int NetworkList::getNetworkId() {
 	return networkId;
 }
 
-bool UpdateList::isNetworkTick() {
+bool NetworkList::isNetworkTick() {
 	return networkTimer % 20 == 0;
 }
 
-void UpdateList::processNetworking() {
+void NetworkList::processNetworking() {
 	if(!networkInitialized || !networkClient)
 		return;
 	networkTimer++;
@@ -76,7 +76,7 @@ void UpdateList::processNetworking() {
 				std::cout << "NETWORK: Disconnected from server\n";
 				networkConnected = false;
 				networkId = 0;
-				UpdateList::queueEvent(Event(EVENT_NETWORK_CONNECT_SERVER, true, 0));
+				IO::queueEvent(Event(EVENT_NETWORK_CONNECT_SERVER, true, 0));
 				break;
 			case NBN_MESSAGE_RECEIVED:
 				processNetworkMessage();
@@ -88,7 +88,7 @@ void UpdateList::processNetworking() {
 		Log("ERROR", "NETWORK: An occured while flushing the send queue");
 }
 
-void UpdateList::processNetworkMessage() {
+void NetworkList::processNetworkMessage() {
 	//Get info about the received message
 	NBN_MessageInfo msg_info = NBN_GameClient_GetMessageInfo();
 
@@ -96,7 +96,7 @@ void UpdateList::processNetworkMessage() {
 		//Convert message to Event
 		Event *msg = (Event*)msg_info.data;
 		Event event = *msg;
-		UpdateList::queueEvent(event);
+		IO::queueEvent(event);
 		std::cout << "NETWORK: Received event from server: " << event << "\n";
 		Event_Destroy(msg);
 
@@ -114,7 +114,7 @@ void UpdateList::processNetworkMessage() {
 	}
 }
 
-void UpdateList::sendNetworkEvent(Event event, bool reliable) {
+void NetworkList::sendNetworkEvent(Event event, bool reliable) {
 	//Create the message
 	Event *msg = Event_Create();
 	if(msg == NULL || event.type < EVENT_NETWORK_CONNECT_CLIENT)
@@ -134,7 +134,7 @@ void UpdateList::sendNetworkEvent(Event event, bool reliable) {
 	}
 }
 
-void UpdateList::sendNetworkString(std::string data, int code, bool reliable) {
+void NetworkList::sendNetworkString(std::string data, int code, bool reliable) {
 	unsigned int length = data.length()+1;
 	if(length > NETWORK_STRING_LENGTH) {
 		std::cout << "NETWORK: String too long to send\n";

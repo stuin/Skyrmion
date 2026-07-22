@@ -1,5 +1,3 @@
-
-
 #define TEXTUREERROR "Texture does not exist"
 #define BUFFERERROR "Cannot replace texture with render buffer"
 #define FILEERROR "Failed to read file"
@@ -181,6 +179,14 @@ void UpdateList::queueEvent(int type, bool down, int code, float x, float y) {
 	queueEvent(Event(type, down, code, x, y));
 }
 
+//IO alias functions
+void IO::queueEvent(Event event) {
+	UpdateList::queueEvent(event);
+}
+void IO::queueEvent(int type, bool down, int code, float x, float y) {
+	UpdateList::queueEvent(type, down, code, x, y);
+}
+
 //Register keycode for polling
 void UpdateList::watchKeycode(int keycode) {
 	watchedKeycodes.push_back(keycode);
@@ -225,7 +231,7 @@ void UpdateList::processEvents() {
 //Update all nodes in list
 void UpdateList::update(double time) {
 	UpdateList::processEvents();
-	UpdateList::processAudio();
+	AudioList::processAudio();
 
 	deleted2.insert(deleted2.end(), deleted1.begin(), deleted1.end());
 	deleted1.clear();

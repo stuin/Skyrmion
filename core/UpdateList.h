@@ -140,24 +140,14 @@ private:
 	static std::vector<BufferData> bufferData;
 	static std::vector<ShaderUniform> shaderUniforms;
 
-	//Networking
-	static bool networkInitialized;
-	static bool networkClient;
-	static bool networkConnected;
-	static int networkId;
-	static unsigned int networkTimer;
-
 	//Private internal functions
 	static int loadResource(std::string filename);
 	static void queueEvents();
-	static void processAudio();
 	static void drawNode(Node *source, sint passthrough=0);
 	static void draw(FloatRect cameraRect);
 	static void drawBuffer(sint buffer);
 	static void sendUniformValues(sint uniform);
 	static void update(double time);
-	static void processNetworking();
-	static void processNetworkMessage();
 
 public:
 	static bool remapKeycode;
@@ -233,19 +223,6 @@ public:
 	static void init(void);
 	static void frame(void);
 	static void cleanup(void);
-
-	//Audio controls
-	static void setVolume(int volume);
-	static void musicStream(std::string filename, int volume=100);
-
-	//Networking client functions
-	static void connectServer(std::string ip, int port);
-	static void disconnectServer();
-	static bool isConnected();
-	static int getNetworkId();
-	static bool isNetworkTick();
-	static void sendNetworkEvent(Event event, bool reliable=false);
-	static void sendNetworkString(std::string data, int code=0, bool reliable=true);
 };
 
 //Config options for pre-init setup
@@ -254,6 +231,7 @@ struct WindowConfig {
 	Vector2i windowSize;
 	skColor backgroundColor;
 	std::vector<std::string> &textureFiles;
+	std::vector<std::string> &audioFiles;
 	std::vector<std::string> &layerNames;
 };
 
@@ -261,10 +239,5 @@ struct WindowConfig {
 WindowConfig windowConfig();
 void initialize();
 
-//Networking functions to be implemented by the game
-void recieveNetworkString(std::string data, int code);
-
 //Debug tool insertions
 void setupDebugTools();
-
-void stream_cb(float* buffer, int num_frames, int num_channels);

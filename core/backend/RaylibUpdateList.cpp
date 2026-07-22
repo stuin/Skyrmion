@@ -3,6 +3,8 @@
 #include <thread>
 
 #include "../UpdateList.h"
+#include "../AudioList.h"
+#include "../NetworkList.h"
 #include "../../input/Settings.h"
 #include "../../util/TimingStats.hpp"
 #include "SharedUpdateList.hpp"
@@ -69,9 +71,6 @@ std::vector<Shader> shaderSet;
 std::thread updates;
 
 //Engine compatible file read/write
-bool IO::hasFile(std::string filename) {
-	return FileExists(filename.c_str());
-}
 char *IO::openFile(std::string filename) {
 	return LoadFileText(filename.c_str());
 }
@@ -91,6 +90,12 @@ void IO::writeFile(std::string filename, std::string text) {
 void IO::deleteFile(std::string filename) {
 	if(FileExists(filename.c_str()))
 		FileRemove(filename.c_str());
+}
+bool IO::hasFile(std::string filename) {
+	return FileExists(filename.c_str());
+}
+int IO::fileSize(std::string filename) {
+	return GetFileLength(filename.c_str());
 }
 void IO::createFolder(std::string filename) {
 	if(!DirectoryExists(filename.c_str()))
@@ -442,31 +447,6 @@ void UpdateList::drawBuffer(sint bIndex) {
 	DebugTimers::frameBufferTimes.addDelta(GetTime()-lastTime);
 }
 
-//Audio systems
-void UpdateList::setVolume(int volume) {
-	if(!IsAudioDeviceReady())
-		InitAudioDevice();
-
-	SetMasterVolume(volume/100.0);
-}
-
-//Background music
-Music backgroundMusic;
-void UpdateList::musicStream(std::string filename, int volume) {
-	if(!IsAudioDeviceReady())
-		InitAudioDevice();
-
-	backgroundMusic = LoadMusicStream(filename.c_str());
-	SetMusicVolume(backgroundMusic, volume/100.0);
-	PlayMusicStream(backgroundMusic);
-}
-
-void UpdateList::processAudio() {
-	//Play audio
-	if(IsAudioDeviceReady() && IsMusicStreamPlaying(backgroundMusic))
-		UpdateMusicStream(backgroundMusic);
-}
-
 bool UpdateList::checkKeycode(int code, bool down) {
 	//Check keypress by input type
 	if(code < MOUSE_OFFSET)
@@ -575,7 +555,7 @@ void UpdateList::frame(void) {
 	#endif
 
 	UpdateList::queueEvents();
-	UpdateList::processNetworking();
+	NetworkList::processNetworking();
 
 	//Update shader uniforms
 	for(sint i = 0; i < shaderUniforms.size(); i++) {
@@ -649,6 +629,8 @@ void UpdateList::init() {
 	WindowConfig config = windowConfig();
 	std::cout << config.windowSize << "\n";
 	screenRect = FloatRect(0,0, config.windowSize.x, config.windowSize.y);
+
+	AudioList::initAudio();
 
 	InitWindow(config.windowSize.x, config.windowSize.y, config.windowTitle.c_str());
 
@@ -752,6 +734,8 @@ void UpdateList::cleanup() {
 	std::cout << "SKYRMION: Cleanup Rendering\n";
 	running = false;
 	updates.join();
+
+	AudioList::cleanupAudio();
 
 	//Unload resources
 	for(Texture2D texture : textureSet)

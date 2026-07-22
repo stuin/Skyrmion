@@ -1,4 +1,5 @@
-#include "../UpdateList.h"
+#include "../AudioList.h"
+#include "../Event.h"
 
 #include <cstring>
 
@@ -13,12 +14,12 @@ float *bufferIn = NULL;
 float volume = 1.0f;
 
 //Audio systems
-void UpdateList::setVolume(int _volume) {
+void AudioList::setVolume(int _volume) {
     volume = _volume / 100.0f;
 }
 
 //Background music
-void UpdateList::musicStream(std::string filename, int _volume) {
+void AudioList::musicStream(std::string filename, int _volume) {
 	if(!drmp3_init_file(&mp3, filename.c_str(), NULL))
         throw new std::invalid_argument(MUSICERROR);
 
@@ -26,11 +27,11 @@ void UpdateList::musicStream(std::string filename, int _volume) {
     volume = _volume / 100.0f;
 }
 
-void UpdateList::processAudio() {
+void AudioList::processAudio() {
 
 }
 
-void stream_cb(float* bufferOut, int num_frames, int num_channels) {
+void AudioList::stream_cb(float* bufferOut, int num_frames, int num_channels) {
     const unsigned int num_samples = num_frames * num_channels;
     if(bufferIn == NULL && backgroundMusic)
         bufferIn = (float*)malloc(num_samples);
@@ -46,4 +47,12 @@ void stream_cb(float* bufferOut, int num_frames, int num_channels) {
         for(unsigned int i = 0; i < num_samples; i++)
             bufferOut[i] = bufferIn[i] * volume;
     }
+}
+
+void AudioList::initAudio() {
+
+}
+
+void AudioList::cleanupAudio() {
+
 }

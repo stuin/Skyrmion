@@ -18,6 +18,8 @@
 #define NAMED_ENUM(ENUM) enum ENUM##_TYPES { ENUM##_FOREACH(GENERATE_TYPE) }; static std::vector<std::string> ENUM##_NAMES = { ENUM##_FOREACH(GENERATE_STRING) };
 #define FILE_ENUM(ENUM) enum ENUM##_TYPES { ENUM##_FOREACH(GENERATE_TYPE, GENERATE_TYPE2) }; static std::vector<std::string> ENUM##_FILES = { ENUM##_FOREACH(GENERATE_STRING1, GENERATE_STRING2) };
 
+static std::vector<std::string> BLANK_NAMES;
+
 //List of event types
 //Overflow types are sorted into EVENT_CUSTOM
 #define EVENT_FOREACH(E) \
@@ -33,6 +35,7 @@
 	E(EVENT_SETTINGS) \
 	E(EVENT_BUFFER) \
 	E(EVENT_IMGUI) \
+	E(EVENT_AUDIO) \
 	E(EVENT_NETWORK_CONNECT_SERVER) \
 	E(EVENT_NETWORK_CONNECT_CLIENT) \
 	E(EVENT_NETWORK_POSITION1) \
@@ -93,11 +96,16 @@ std::ostream& operator<<(std::ostream& os, const Event &event);
 class IO {
 public:
 	//Engine compatible file read/write
-	static bool hasFile(std::string filename);
 	static char *openFile(std::string filename);
 	static void closeFile(char *file);
 	static void writeFile(std::string filename, char *text);
 	static void writeFile(std::string filename, std::string text);
 	static void deleteFile(std::string filename);
+	static bool hasFile(std::string filename);
+	static int fileSize(std::string filename);
 	static void createFolder(std::string filename);
+
+	//Add event to UpdateList queue
+	static void queueEvent(Event event);
+	static void queueEvent(int type, bool down, int code, float x=0, float y=0);
 };

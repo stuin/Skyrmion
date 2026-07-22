@@ -2,7 +2,6 @@
 
 #include "GridMaker.h"
 #include "../core/Node.h"
-#include "../core/UpdateList.h"
 
 #include <vector>
 
@@ -83,7 +82,8 @@ public:
 		setOrigin(tileX / 2, tileY / 2);
 
 		//Set up buffer texture
-		setTexture(UpdateList::createBuffer(BufferData(0, getSize(), lightLayer, COLOR_BLACK)));
+		setupBuffer(0, COLOR_BLACK);
+		//setTexture(UpdateList::createBuffer(BufferData(0, getSize(), lightLayer, COLOR_BLACK)));
 		setBlendMode(SK_BLEND_MULT);
 		reload();
 	}
@@ -95,7 +95,8 @@ public:
 	}
 
 	void reload() {
-		UpdateList::scheduleBufferRefresh(getTexture());
+		scheduleBufferRefresh();
+		//UpdateList::scheduleBufferRefresh(getTexture());
 	}
 
 	void reloadAll() {

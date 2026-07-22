@@ -1,16 +1,15 @@
 #include <array>
 #include <deque>
-#include <fstream>
 #include <map>
 #include <thread>
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "../UpdateList.h"
+#include "../AudioList.h"
+#include "../NetworkList.h"
 #include "../../input/Settings.h"
 #include "../../util/TimingStats.hpp"
 #include "SharedUpdateList.hpp"
+#include "DirectFileIO.hpp"
 
 #define SOKOL_IMPL
 #define SOKOL_GLCORE
@@ -51,7 +50,6 @@
 
 //Static variables
 LayerData UpdateList::layers[MAXLAYER];
-UNode * UpdateList::uLayers[MAXLAYER] = {NULL};
 int UpdateList::maxLayer = 0;
 int UpdateList::maxULayer = 0;
 bool UpdateList::running = false;
@@ -89,50 +87,7 @@ std::vector<sg_image> textureSet;
 std::vector<sg_view> bufferSet;
 std::vector<sg_shader> shaderSet;
 
-
 std::thread updates;
-
-//Engine compatible file read/write
-char *IO::openFile(std::string filename) {
-	char *source = NULL;
-	FILE *fp = fopen(filename.c_str(), "r");
-	if(fp != NULL) {
-	    //Go to the end of the file
-	    if(fseek(fp, 0L, SEEK_END) == 0) {
-	        //Get the size of the file and go back to the start
-	        long bufsize = ftell(fp);
-	        if(bufsize == -1 || fseek(fp, 0L, SEEK_SET) != 0)
-	        	throw new std::invalid_argument(FILEERROR);
-
-	        //Allocate our buffer to that size
-	        source = (char*)malloc(sizeof(char) * (bufsize + 1));
-
-	        //Read the entire file into memory
-	        size_t newLen = fread(source, sizeof(char), bufsize, fp);
-	        if(ferror(fp) != 0)
-	            throw new std::invalid_argument(FILEERROR);
-	        source[newLen++] = '\0';
-	    }
-	    fclose(fp);
-	}
-	return source;
-}
-void IO::closeFile(char *file) {
-	free(file);
-}
-
-void IO::writeFile(std::string filename, char *text) {
-	std::ofstream file;
-	file.open(filename);
-	file << text;
-	file.close();
-}
-void IO::writeFile(std::string filename, std::string text) {
-	std::ofstream file;
-	file.open(filename);
-	file << text;
-	file.close();
-}
 
 //Load image from file
 static Vector2i load_image(std::string filename) {
@@ -339,7 +294,7 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 		sgp_draw_filled_rect(rect.left, rect.top, rect.width, rect.height);
 		break;
 	case RENDER_TEXTURE_RECT: {
-		TextureRect tex = rendering->getTextureRect();
+		TextureRect tex = *rendering->getTextureRect();
 		if(tex.pwidth != 0 && tex.pheight != 0) {
 			Vector2i origin = Vector2i(abs(tex.pwidth)*scaleA.x/2, abs(tex.pheight)*scaleA.y/2);
 			sgp_rect dst = {tex.px*scaleA.x+rect.left+origin.x, tex.py*scaleA.y+rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
@@ -358,16 +313,18 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 				sgp_reset_image(0);
 		}
 		} break;
-	case RENDER_TEXTURE_ARRAY: {
+	case RENDER_TEXTURE_ARRAY: case RENDER_COLOR_TEXTURE_ARRAY: {
 		std::vector<TextureRect> *textureRects = rendering->getTextureRects();
+		if(resourceData[texture].isTexture())
+			sgp_set_image(0, textureSet[texture]);
 		for(sint i = 0; i < textureRects->size(); i++) {
 			TextureRect tex = (*textureRects)[i];
 			if(tex.pwidth != 0 && tex.pheight != 0) {
 				Vector2i origin = Vector2i(abs(tex.pwidth)*scaleA.x/2, abs(tex.pheight)*scaleA.y/2);
 				sgp_rect dst = {tex.px*scaleA.x+rect.left+origin.x, tex.py*scaleA.y+rect.top+origin.y, tex.pwidth*scale.x, tex.pheight*scale.y};
 				sgp_rect src = {(float)tex.tx, (float)tex.ty, flip.x*tex.twidth, flip.y*tex.theight};
-				if(resourceData[texture].isTexture())
-					sgp_set_image(0, textureSet[texture]);
+				if(rendering->getType() == RENDER_COLOR_TEXTURE_ARRAY)
+					sgp_set_color(rendering->getColor(i));
 				if(tex.rotation != 0) {
 					sgp_push_transform();
 					sgp_rotate_at(DTOR*tex.rotation, dst.x + dst.w/2.0, dst.y + dst.h/2.0);
@@ -376,10 +333,12 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 				} else {
 					sgp_draw_textured_rect(0, dst, src);
 				}
-				if(resourceData[texture].isTexture())
-					sgp_reset_image(0);
+				if(rendering->getType() == RENDER_COLOR_TEXTURE_ARRAY)
+					sgp_set_color(rendering->getColor());
 			}
 		}
+		if(resourceData[texture].isTexture())
+			sgp_reset_image(0);
 		} break;
 	case RENDER_COLOR_RECT: {
 		sgp_point points[] = {
@@ -405,10 +364,9 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 		for(sint y = 0; y < height-1; y++) {
 			for(sint x = 0; x < width-1; x++) {
 				sgp_rect dst = {rect.left + tWidth*x, rect.top + tHeight*y, tWidth, tHeight};
-				skColor color1 = (*colors)[x + y*width];
-				sgp_set_color(color1.red, color1.green, color1.blue, color1.alpha);
+				sgp_set_color((*colors)[x + y*width]);
 				if(rendering->getType() == RENDER_COLOR_ARRAY)
-					sgp_draw_filled_rect(rect.left, rect.top, rect.width, rect.height);
+					sgp_draw_filled_rect(dst.x, dst.y, dst.w, dst.h);
 				else {
 					//Color color2 = rayColor((*colors)[(x+1) + y*width]);
 					//Color color3 = rayColor((*colors)[x + (y+1)*width]);
@@ -575,7 +533,7 @@ void event(const sapp_event* event) {
 		//Keyboard
 		down = event->type == SAPP_EVENTTYPE_KEY_DOWN;
 		if(down && ImGui::GetIO().WantCaptureKeyboard && !UpdateList::remapKeycode)
-			return;
+			break;
 		UpdateList::queueEvent(EVENT_KEYPRESS, down,
 			event->key_code, event->frame_count, 0);
 		if(down)
@@ -585,7 +543,7 @@ void event(const sapp_event* event) {
 		//Mouse button
 		down = event->type == SAPP_EVENTTYPE_MOUSE_DOWN;
 		if(down && ImGui::GetIO().WantCaptureMouse && !UpdateList::remapKeycode)
-			return;
+			break;
 		UpdateList::queueEvent(EVENT_KEYPRESS, down,
 			event->mouse_button + MOUSE_OFFSET);
 		UpdateList::queueEvent(EVENT_MOUSE, event->type == SAPP_EVENTTYPE_MOUSE_DOWN,
@@ -688,7 +646,7 @@ void UpdateList::frame(void) {
 	#endif
 
     UpdateList::queueEvents();
-	UpdateList::processNetworking();
+	NetworkList::processNetworking();
 
 	//Update shader uniforms
 	for(sint i = 0; i < shaderUniforms.size(); i++) {
@@ -736,10 +694,8 @@ void UpdateList::frame(void) {
 	        sgimgui_draw_menu("sokol-gfx");
 
 	        //Render menu bar
-	        if(listeners[EVENT_IMGUI].size() > 0) {
-	        	for(UNode *node : listeners[EVENT_IMGUI])
-					node->recieveEvent(Event(EVENT_IMGUI, true, 0));
-	        }
+        	for(UNode *node : listeners[EVENT_IMGUI])
+				node->recieveEvent(Event(EVENT_IMGUI, true, 0));
 	        ImGui::EndMainMenuBar();
 	    }
 	    //Render individual windows
@@ -757,6 +713,7 @@ void UpdateList::frame(void) {
 
     //imgui render
     simgui_render();
+
     // End render pass.
     sg_end_pass();
     // Commit Sokol render.
@@ -798,7 +755,7 @@ void UpdateList::init(void) {
 
     // init sokol-audio
     saudio_desc saudiodesc = { };
-    saudiodesc.stream_cb = stream_cb;
+    saudiodesc.stream_cb = AudioList::stream_cb;
     saudiodesc.logger.func = slog_func;
     saudiodesc.num_channels = 2;
     saudio_setup(saudiodesc);
@@ -889,6 +846,9 @@ void UpdateList::cleanup(void) {
 	std::cout << "Cleanup Rendering\n";
 	running = false;
 	updates.join();
+
+	AudioList::cleanupAudio();
+
 	sgimgui_shutdown();
 	simgui_shutdown();
 	saudio_shutdown();
