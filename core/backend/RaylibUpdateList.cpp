@@ -629,16 +629,21 @@ void testThread() {
 }
 
 void UpdateList::init() {
-	SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
+	//SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
+	SetConfigFlags(FLAG_VSYNC_HINT);
 	SetExitKey(0);
 
 	WindowConfig config = windowConfig();
 	std::cout << config.windowSize << "\n";
 	screenRect = FloatRect(0,0, config.windowSize.x, config.windowSize.y);
 
-	AudioList::initAudio();
-
 	InitWindow(config.windowSize.x, config.windowSize.y, config.windowTitle.c_str());
+
+	//Show loading screen
+	BeginDrawing();
+	backgroundColor = config.backgroundColor;
+	ClearBackground(rayColor(backgroundColor));
+	EndDrawing();
 
 	//initialize imgui
 	rlImGuiSetup(true);
@@ -655,12 +660,6 @@ void UpdateList::init() {
 	fontSet.emplace_back();
 	for(std::string file : config.textureFiles)
 		UpdateList::loadResource(file);
-
-	//Show loading screen
-	BeginDrawing();
-	backgroundColor = config.backgroundColor;
-	ClearBackground(rayColor(backgroundColor));
-	EndDrawing();
 
 	#ifdef _DEBUG
 		setupDebugTools();

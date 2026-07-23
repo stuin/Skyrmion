@@ -6,11 +6,12 @@ backend ?= raylib
 ifeq ($(backend), raylib)
 	CORE_FILES := ${CORE_FILES} core/backend/RaylibUpdateList.o core/backend/RaylibAudio.o
 	LDFLAGS := ${LDFLAGS} -lglfw -lGL -ldl -lm -lpthread -lX11 -ldl -lrt
-	WLDFLAGS := --static -lglfw3 -lgdi32 -lwinmm -lws2_32 -static-libstdc++ -static-libgcc
+	WLDFLAGS := --static -lglfw3 -lgdi32 -lwinmm -lcomdlg32 -lole32 -lws2_32 -static-libstdc++ -static-libgcc
+	WLDFLAGS += src/Skyrmion/include/raylib/src/raylib.rc.data
 else ifeq ($(backend), sokol)
 	CORE_FILES := ${CORE_FILES} core/backend/SokolUpdateList.o core/backend/SokolAudio.o
 	LDFLAGS := ${LDFLAGS} -lglfw -lGL -ldl -lm -lpthread -lX11 -ldl -lasound -lXi -lXcursor
-	WLDFLAGS := --static -lglfw3 -lgdi32 -lwinmm -lws2_32 -static-libstdc++ -static-libgcc
+	WLDFLAGS := --static -lglfw3 -lgdi32 -lwinmm -lcomdlg32 -lole32 -lws2_32 -static-libstdc++ -static-libgcc
 endif
 
 # Platform Args
@@ -25,7 +26,6 @@ ifndef platform
 		EXEC = exe
 		PLATFORM = Windows
 		BUILD_DIR = build/windows
-		LIBNOISE_FILES1 := win32/dllmain.o
 	else
 		EXEC = out
 		PLATFORM = Linux
@@ -37,7 +37,10 @@ else ifeq ($(platform), windows)
 	CFLAGS := ${CFLAGS} -O3 -DPLATFORM_DESKTOP
 	CORE_FILES := ${CORE_FILES} core/backend/nbnetClient.o
 	LDFLAGS = $(WLDFLAGS)
-	LIBNOISE_FILES1 := win32/dllmain.o
+
+	ifndef debug
+		LDFLAGS += -Wl,--subsystem,windows
+	endif
 
 	EXEC = exe
 	PLATFORM = Windows
@@ -56,7 +59,7 @@ endif
 
 # Debug addons
 ifdef debug
-	ifneq ($(platform), web)
+	ifeq ($(platform), linux)
 		LDFLAGS := ${LDFLAGS} -lbfd
 		CXXFLAGS := ${CXXFLAGS} -DBACKWARD_HAS_BFD=1
 		CORE_FILES := ${CORE_FILES} include/backward-cpp/backward.o

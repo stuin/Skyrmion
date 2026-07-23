@@ -3,7 +3,10 @@
 #include "../input/Settings.h"
 
 #include "DebugLayers.hpp"
-#include "DebugBreakpoints.hpp"
+
+#ifdef BACKWARD_HAS_BFD
+	#include "DebugBreakpoints.hpp"
+#endif
 
 #include "ImguiFPS.hpp"
 #include "ImguiNodes.hpp"
@@ -22,8 +25,10 @@ void setupDebugTools() {
 
 	UpdateList::addUNode(new DebugLayers(debugLayer));
 
-	debugBreakpoints = new DebugBreakpoints(debugLayer);
-	UpdateList::addUNode(debugBreakpoints);
+	#ifdef BACKWARD_HAS_BFD
+		debugBreakpoints = new DebugBreakpoints(debugLayer);
+		UpdateList::addUNode(debugBreakpoints);
+	#endif
 
 	new ImguiFPS(debugLayer);
 	new ImguiNodes(debugLayer);

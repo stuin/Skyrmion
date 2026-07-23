@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "../core/UpdateList.h"
 #include "../input/Settings.h"
 
