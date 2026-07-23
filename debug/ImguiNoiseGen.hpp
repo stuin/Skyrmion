@@ -25,7 +25,7 @@ public:
 		zeroIndexer = new ConstIndexer(0, testSize, testSize);
 		limitIndexer = new ConstIndexer(100, testSize, testSize);
 
-		noiseIndexer = new NoiseIndexer(zeroIndexer, limitIndexer, 0, 100 / testDivisions);
+		noiseIndexer = new NoiseIndexer(zeroIndexer, limitIndexer, 0, NOISEPerlin, 100 / testDivisions);
 		randomIndexer = new RandomIndexer(zeroIndexer, limitIndexer, 100 / testDivisions);
 
 		debugNoise = new ColorMap(noiseIndexer, percentColorFunc(100), debugLayer);
@@ -49,7 +49,7 @@ public:
 		bool redraw = false;
 
 		bool _perlin = perlin;
-		ImGui::Checkbox("Perlin Noise", &perlin);
+		ImGui::Checkbox("FastNoiseLite", &perlin);
 		if(_perlin != perlin) {
 			debugNoise->setIndexer(perlin ? (Indexer*)noiseIndexer : (Indexer*)randomIndexer);
 			redraw = true;
@@ -64,31 +64,39 @@ public:
 			redraw = true;
 		}
 
-		//int seed = testNoise.GetSeed();
-		//ImGui::SliderInt("Seed", &seed, 0, 100);
-		//if((int)testNoise.GetSeed()!=seed) {
-		//	testNoise.SetSeed(seed);
-		//	randomIndexer->seed = seed;
-		//	redraw = true;
-		//}
+		int seed = noiseIndexer->getSeed();
+		ImGui::SliderInt("Seed", &seed, 0, 100);
+		if((int)noiseIndexer->getSeed()!=seed) {
+			noiseIndexer->setSeed(seed);
+			randomIndexer->setSeed(seed);
+			redraw = true;
+		}
 
 		if(!perlin)
 			ImGui::BeginDisabled();
 
-		ImGui::SeparatorText("Perlin Noise");
+		ImGui::SeparatorText("FastNoiseLite");
 
-		float frequency = noiseIndexer->frequency;
-		float persistence = noiseIndexer->persistence;
-		int octaveCount = noiseIndexer->octaves;
+		const char* types[] = { "OpenSimplex2", "OpenSimplex2S", "Cellular", "Perlin", "ValueCubic", "Value" };
+		int noiseType = noiseIndexer->getNoiseType();
+		ImGui::Combo("Noise Type", &noiseType, types, NOISEMAX);
+
+		float frequency = noiseIndexer->getFrequency();
+		float persistence = noiseIndexer->getPersistence();
+		int octaveCount = noiseIndexer->getOctaveCount();
 		//float lacunarity = noiseIndexer->GetLacunarity();
 
-		ImGui::SliderFloat("Frequency", &noiseIndexer->frequency, 1, 50);
-		ImGui::SliderFloat("Persistence", &noiseIndexer->persistence, 0, 1);
-		ImGui::SliderInt("OctaveCount", &noiseIndexer->octaves, 1, 30);
+		ImGui::SliderFloat("Frequency", &frequency, 0, 10);
+		ImGui::SliderFloat("Persistence", &persistence, 0, 1);
+		ImGui::SliderInt("OctaveCount", &octaveCount, 1, 30);
 		//ImGui::SliderFloat("Lacunarity", &lacunarity, 0, 10);
 
-		if((float)noiseIndexer->frequency!=frequency  || (float)noiseIndexer->persistence!=persistence
-			|| noiseIndexer->octaves!=octaveCount) {
+		if(noiseIndexer->getFrequency()!=frequency  || noiseIndexer->getPersistence()!=persistence
+			|| noiseIndexer->getOctaveCount()!=octaveCount || noiseIndexer->getNoiseType()!=noiseType) {
+
+			noiseIndexer->setFrequency(frequency);
+			noiseIndexer->setOctaves(octaveCount, persistence);
+			noiseIndexer->setNoiseType(noiseType);
 
 			//libnoise test map
 			redraw = true;

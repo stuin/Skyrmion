@@ -72,7 +72,7 @@ public:
                 // get the current tile number
                 int tileValue = indexes->getTile(Vector2f(i + startX, hasBuffer ? fullHeight - (j + startY + 1) : j + startY));
                 skColor tileColor = func(tileValue);
-                (*getRenderComponent()->getColors())[usedRects++] = tileColor;
+                getRenderComponent()->setColor(tileColor, usedRects++);
                 //std::cout << tileValue << tileColor << ' ';
             }
             //std::cout << "\n";
@@ -96,9 +96,20 @@ public:
     }
 };
 
-std::function<skColor(int)> percentColorFunc(int max=100) {
-    return [max](int v) {
-        float c = v*1.0f/max;
-        return skColor(c,c,c);
+static std::function<skColor(int)> percentColorFunc(float max=100, bool alpha=false, skColor base=COLOR_WHITE) {
+    return [max, alpha, base](int v) {
+        float c = v/max;
+        //std::cout << v << "/" << c << " ";
+        if(alpha)
+            return skColor(base.red, base.green, base.blue, base.alpha*c);
+        return skColor(base.red*c, base.green*c, base.blue*c);
+    };
+}
+
+static std::function<skColor(int)> cutoffColorFunc(int max=50, skColor high=COLOR_WHITE, skColor low=COLOR_EMPTY) {
+    return [max, high, low](int v) {
+        if(v > max)
+            return high;
+        return low;
     };
 }

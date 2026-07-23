@@ -247,6 +247,8 @@ public:
 		texture = _texture;
 	}
 	void setColor(skColor _color, sint i=0) {
+		while(i >= colors.size())
+			colors.emplace_back();
 		colors[i] = _color;
 	}
 	void setSize(int _size) {

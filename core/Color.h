@@ -27,6 +27,10 @@ public:
 		alpha = _alpha / 255.0;
 	}
 
+	skColor(float _alpha) {
+		alpha = _alpha;
+	}
+
 	//Read 4 values from list
 	skColor(unsigned char *data) : skColor(data[0], data[1], data[2], data[3]) {}
 	skColor(int *data) : skColor(data[0], data[1], data[2], data[3]) {}

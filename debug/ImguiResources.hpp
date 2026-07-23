@@ -149,10 +149,14 @@ public:
 			}
 		}
 
-		if(textureData.type == SK_TEXTURE)
-			ImGui::SeparatorText("Texture");
-		else
+		if(textureData.type == SK_BUFFER) {
+			int sIndex = UpdateList::getBufferData(pickTexture).shader;
+			if(sIndex != 0)
+				ImGui::Text("Shader = %d: %s", sIndex, UpdateList::getResourceData(sIndex).filename.c_str());
 			ImGui::SeparatorText("Buffer");
+		} else
+			ImGui::SeparatorText("Texture");
+
 		UpdateList::drawImGuiTexture(pickTexture, Vector2i(size.x*pickTextureScale, size.y*pickTextureScale));
 
 		ImGui::End();

@@ -221,6 +221,11 @@ void UpdateList::sendUniformValues(sint uIndex) {
 	//else
 	//	std::cout << "INFO: SHADER UNIFORM: " << uniform.location << ": " << uniform.iValues << "\n";
 
+	//Mark buffers for redraw
+	for(sint i = 0; i < bufferData.size(); i++)
+		if(bufferData[i].shader == uniform.shader)
+			bufferData[i].redraw = true;
+
 	//Notify nodes of uniform update
 	event_previous[EVENT_BUFFER] = {};
 	event_queue.emplace_back(EVENT_BUFFER, true, rIndex);
@@ -261,7 +266,6 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 	if(rendering->getBlendMode() == SK_BLEND_MAX)
 		rlSetBlendFactors(1, 1, RL_MAX);
 	BeginBlendMode(blendModeMap.at(rendering->getBlendMode()));
-
 
 	Color color = rayColor(rendering->getColor());
 	sint texture = rendering->getTexture();
@@ -403,8 +407,10 @@ void UpdateList::drawBuffer(sint bIndex) {
 	if(data.color != COLOR_NONE)
 		ClearBackground(Color{data.color.r(), data.color.g(),
 			data.color.b(), data.color.a()});
-	if(data.shader != 0)
+	if(data.shader != 0) {
+		//std::cout << data.shader << "\n";
 		BeginShaderMode(shaderSet[resourceData[data.shader].index]);
+	}
 
 	//Render specific linked node
 	if(data.source != NULL) {
