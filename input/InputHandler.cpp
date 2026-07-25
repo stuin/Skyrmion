@@ -296,8 +296,8 @@ void DirectionHandler::update(double time) {
 	//Read from joystick
 	if(joystickDirection != Vector2f(0,0))
 		direction += joystickDirection;
-	if(distance(direction) > 1)
-		direction = vectorLength(direction, 1);
+	if(vectorLength(direction) > 1)
+		direction = lengthVector(direction, 1);
 
 	//Update moving placeholder key
 	bool moved = direction != Vector2f(0, 0);
@@ -326,7 +326,7 @@ Vector2f DirectionHandler::getDirection() {
 Vector2f DirectionHandler::getMovement(double distance) {
 	if(joystickMovement)
 		return Vector2f(direction.x * distance, direction.y * distance);
-	return vectorLength(direction, distance);
+	return lengthVector(direction, distance);
 }
 
 //List field names for json settings

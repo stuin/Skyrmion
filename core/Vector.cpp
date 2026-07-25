@@ -21,7 +21,7 @@ std::ostream& operator<<(std::ostream& os, const Vector2i &pos) {
 }
 
 //Create a vector with fixed length in any direction
-Vector2f vectorLength(Vector2f dir, double distance) {
+Vector2f lengthVector(Vector2f dir, double distance) {
 	float xOffset = 0;
 	float yOffset = 0;
 	if(dir.x == 0 && dir.y == 0)
@@ -42,13 +42,19 @@ Vector2f vectorLength(Vector2f dir, double distance) {
 	return Vector2f(xOffset, yOffset);
 }
 
+Vector2f angleVector(float angle, double distance) {
+	float xOffset = cos(angle) * distance;
+	float yOffset = sin(angle) * distance;
+	return Vector2f(xOffset, yOffset);
+}
+
 //Get length of a vector or distance between points
-float distance(Vector2f start, Vector2f end) {
+float vectorLength(Vector2f start, Vector2f end) {
 	return std::sqrt(std::pow(end.x - start.x, 2) + std::pow(end.y - start.y, 2));
 }
 
 //Get angle between 2 points in clockwise degrees
-float angle(Vector2f point, Vector2f origin) {
+float vectorAngle(Vector2f point, Vector2f origin) {
 	return std::atan2(origin.x-point.x, origin.y-point.y)*RTOD;
 }
 
@@ -66,6 +72,10 @@ Vector2i round(Vector2f pos) {
 
 int limitRange(int value, int min, int max) {
 	return std::max(min, std::min(value, max));
+}
+
+Vector2i limitRange(Vector2i value, Vector2i min, Vector2i max) {
+	return Vector2i(limitRange(value.x, min.x, max.x), limitRange(value.y, min.y, max.y));
 }
 
 bool operator==(const TextureRect &first, const TextureRect &second) {

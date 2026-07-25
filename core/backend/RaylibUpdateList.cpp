@@ -321,6 +321,13 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 			DrawRectangleRec(dst, colorI);
 		DrawRectangleLinesEx(dst, rendering->getSize(), color);
 		} break;
+	case RENDER_COLOR_CIRCLE: {
+		Color colorI = rayColor(rendering->getColor(1));
+		Vector2 center = Vector2{rect.left+rect.width/2, rect.top+rect.height/2};
+		if(rendering->getColor(1) != COLOR_EMPTY)
+			DrawEllipseV(center, rect.width/2, rect.height/2, colorI);
+		DrawEllipseLinesV(center, rect.width/2, rect.height/2, color);
+		} break;
 	case RENDER_COLOR_ARRAY: case RENDER_GRADIENT_ARRAY: {
 		std::vector<skColor> *colors = rendering->getColors();
 		uint width = rendering->getSize();

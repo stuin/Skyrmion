@@ -1,6 +1,11 @@
 #include "GridMaker.h"
-
 #include "../core/Event.h"
+
+#include <cstring>
+#include <deque>
+
+#include <limits>
+#define FLT_MAX std::numeric_limits<float>::max()
 
 /*
  * Generates and stores main tilemap
@@ -64,8 +69,136 @@ void Indexer::setGrid(int *values) {
 			setTileI(x, y, values[y*getSize().x+x]);
 }
 
+//Set all tiles
+void Indexer::clearGrid(int value) {
+	for(int y = 0; y < getSize().y; y++)
+		for(int x = 0; x < getSize().x; x++)
+			setTileI(x, y, value);
+}
+
 uint Indexer::getUpdateCount() {
 	return previous->getUpdateCount();
+}
+
+static const Vector2i NEIGHBORS[] = {
+	Vector2i(1,0), Vector2i(0,1),
+	Vector2i(-1,0), Vector2i(0,-1)
+};
+
+int Indexer::setTileRecursive(int x, int y, int value) {
+	int prev = getTileI(x, y);
+	int count = 1;
+	setTileI(x,y, value);
+
+	if(inBounds(x+1,y) && getTileI(x+1, y) == prev)
+		count += setTileRecursive(x+1,y, value);
+	if(inBounds(x-1,y) && getTileI(x-1, y) == prev)
+		count += setTileRecursive(x-1,y, value);
+	if(inBounds(x,y+1) && getTileI(x, y+1) == prev)
+		count += setTileRecursive(x,y+1, value);
+	if(inBounds(x,y-1) && getTileI(x, y-1) == prev)
+		count += setTileRecursive(x,y-1, value);
+	return count;
+}
+
+Vector2i Indexer::getNearest(Vector2i start, int target) {
+	if(getTileI(start.x, start.y) == target)
+		return start;
+
+	int distance = 1;
+	while(distance/2 - start.x >= 0 || distance/2 + start.x < getSize().x ||
+		distance/2 - start.y >= 0 || distance/2 + start.y < getSize().y) {
+
+		for(int i = 0; i < distance; i++) {
+			Vector2i next = Vector2i(start.x+distance-i, start.y+i);
+			if(inBounds(next.x, next.y) && getTileI(next.x, next.y) == target)
+				return next;
+			next = Vector2i(start.x-distance+i, start.y-i);
+			if(inBounds(next.x, next.y) && getTileI(next.x, next.y) == target)
+				return next;
+			next = Vector2i(start.x-i, start.y+distance-i);
+			if(inBounds(next.x, next.y) && getTileI(next.x, next.y) == target)
+				return next;
+			next = Vector2i(start.x+i, start.y-distance+i);
+			if(inBounds(next.x, next.y) && getTileI(next.x, next.y) == target)
+				return next;
+		}
+
+		distance++;
+	}
+	return Vector2i(-1,-1);
+}
+
+struct Cell {
+	Vector2i parent = Vector2i(-1,-1);
+	double f = FLT_MAX;
+	double g = FLT_MAX;
+	double h = FLT_MAX;
+};
+
+//A* pathfinding
+std::vector<Vector2i> Indexer::getPath(Vector2i start, Vector2i target, Indexer *debug) {
+	std::vector<Vector2i> out;
+	if(!inBounds(start) || !inBounds(target))
+		return out;
+
+	if(start == target) {
+		out.push_back(start);
+		return out;
+	}
+
+	//std::cout << start << " to " << target << "\n";
+
+	bool closed[getSize().x][getSize().y];
+	memset(closed, false, sizeof(closed));
+
+	Cell cells[getSize().x][getSize().y];
+	cells[start.x][start.y] = {start, 0,0,0};
+
+	std::deque<Cell> open;
+	open.push_back({start, 0,0,0});
+
+	while(open.size() > 0) {
+		Cell p = open.front();
+		open.pop_front();
+
+		closed[p.parent.x][p.parent.y] = true;
+
+		for(int i = 0; i < 4; i++) {
+			Vector2i next = p.parent + NEIGHBORS[i];
+			if(inBounds(next)) {
+				if(next == target) {
+					cells[next.x][next.y].parent = p.parent;
+					out.push_back(next);
+					while(cells[next.x][next.y].parent != start) {
+						next = cells[next.x][next.y].parent;
+						out.push_back(next);
+					}
+					out.push_back(start);
+					return out;
+				}
+
+				if(!closed[next.x][next.y] && getTileI(next.x, next.y) == 0) {
+					double g = cells[p.parent.x][p.parent.y].g + 1.0;
+					double h = vectorLength(p.parent, target);
+					double f = g + h;
+
+					if(cells[next.x][next.y].f > f) {
+						if(debug != NULL)
+							debug->setTileI(next.x, next.y, h);
+						open.push_back({next, f});
+						cells[next.x][next.y] = {p.parent, f,g,h};
+					}
+				}
+			}
+		}
+	}
+	return out;
+}
+
+void Indexer::drawPath(std::vector<Vector2i> path, int value) {
+	for(Vector2i p : path)
+		setTileI(p.x, p.y, value);
 }
 
 bool Indexer::inBounds(Vector2f pos) {
@@ -98,6 +231,10 @@ Vector2i Indexer::getScale() {
 //Get previous indexer in stack
 Indexer *Indexer::getPrevious() {
 	return previous;
+}
+
+int Indexer::getFallback() {
+	return fallback;
 }
 
 void Indexer::printGrid() {
@@ -153,6 +290,19 @@ GridMaker::GridMaker(int width, int height, int fallback) : Indexer(NULL, fallba
 	}
 }
 
+GridMaker::GridMaker(Indexer *copy) : Indexer(NULL, copy->getFallback(), Vector2i(1, 1)) {
+	this->width = copy->getSize().x;
+	this->height = copy->getSize().y;
+
+	//Build array
+	this->tiles = new int*[height];
+	for(int i = 0; i < height; i++) {
+		tiles[i] = new int[width];
+		for(int j = 0; j < width; j++)
+			tiles[i][j] = copy->getTileI(j, i);
+	}
+}
+
 GridMaker::~GridMaker() {
 	for(int y = 0; y < height; y++)
 		delete[] tiles[y];
@@ -195,6 +345,13 @@ void GridMaker::reload(std::string file, int offset, Rect<int> border) {
 	updates++;
 }
 
+void GridMaker::reload(Indexer *copy) {
+	for(int y = 0; y < height; y++)
+		for(int x = 0; x < width; x++)
+			tiles[y][x] = copy->getTileI(x,y);
+	updates++;
+}
+
 void GridMaker::save(std::string file) {
 	if(file == "")
 		return;
@@ -230,14 +387,6 @@ void GridMaker::setTileI(int x, int y, int value) {
 		tiles[y][x] = value;
 		updates++;
 	}
-}
-
-//Set all tiles
-void GridMaker::clearTiles() {
-	for(int y = 0; y < height; y++)
-		for(int x = 0; x < width; x++)
-			tiles[y][x] = fallback;
-	updates++;
 }
 
 uint GridMaker::getUpdateCount() {

@@ -93,7 +93,8 @@ public:
 	int getBlendMode();
 	sint getTexture();
 	Vector2i getTextureSize();
-	skColor getColor();
+	skColor getColor(sint i=0);
+	TextureRect *getTextureRect(sint i=0);
 	std::vector<TextureRect> *getTextureRects();
 	const char *getString();
 
@@ -120,7 +121,7 @@ public:
 	void setRenderComponent(int type);
 	void setBlendMode(int blendMode);
 	void setTexture(sint textureChannel);
-	void setColor(skColor color);
+	void setColor(skColor color, sint i=0);
 	void setTextureRect(TextureRect rectangle, sint i=0);
 	void setTextureIntRect(IntRect rect, sint i=0);
 	void setTextureVecRect(Vector2i corner, sint i=0);

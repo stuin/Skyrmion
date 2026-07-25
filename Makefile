@@ -50,7 +50,7 @@ else ifeq ($(platform), web)
 	CXX = em++
 	CFLAGS := ${CFLAGS} -Os -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES2
 	CORE_FILES := ${CORE_FILES} core/backend/nullClient.o
-	LDFLAGS := ${LDFLAGS} -s USE_GLFW=3 --shell-file src/Skyrmion/include/raylib/src/minshell.html --preload-file res
+	LDFLAGS := ${LDFLAGS} -sALLOW_MEMORY_GROWTH -s USE_GLFW=3 --shell-file src/Skyrmion/include/raylib/src/minshell.html --preload-file res
 
 	EXEC = html
 	PLATFORM = Web

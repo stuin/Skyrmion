@@ -4,6 +4,9 @@
 #include "../include/FastNoiseLite.h"
 //#include "../include/PerlinNoise.hpp"
 
+#include <limits>
+#define INT_MAX std::numeric_limits<int>::max()
+
 #define NOISE_FOREACH(E) \
     E(NOISEOpenSimplex2) \
 	E(NOISEOpenSimplex2S) \
@@ -27,6 +30,18 @@ static const FastNoiseLite::NoiseType NOISE_TYPES[] = {
 /*
  * Random noise tiling
  */
+
+//Function copied from https://libnoise.sourceforge.net/noisegen/index.html
+//Modified for range 0.0 - 1.0
+static double stableNoise(int n) {
+	n = (n >> 13) ^ n;
+	int nn = (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
+	return ((double)nn / 1073741824.0) / 2.0;
+}
+
+static int intNoise(int n, int max=INT_MAX) {
+	return stableNoise(n)*max;
+}
 
 //Add a pure random value to each tile, with a range of 0 to limit index
 class RandomIndexer : public Indexer {
@@ -67,14 +82,6 @@ public:
 		return seed;
 	}
 
-	//Function copied from https://libnoise.sourceforge.net/noisegen/index.html
-	//Modified for range 0.0 - 1.0
-	static double IntegerNoise(int n) {
-		n = (n >> 13) ^ n;
-		int nn = (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
-		return ((double)nn / 1073741824.0) / 2.0;
-	}
-
 	//Consistant locational randomness
 	int getTileI(int x, int y) override {
 		if(inBounds(x, y)) {
@@ -85,7 +92,7 @@ public:
 				previous = getPrevious()->getTileI(x, y);
 			}
 
-			double input = IntegerNoise(x + y*getSize().x + seed*getSize().y*getSize().x);
+			double input = stableNoise(x + y*getSize().x + seed*getSize().y*getSize().x);
 			int rOffset = (int)floor(input * limit);
 			rOffset = limitRange(rOffset, 0, limit);
 			return previous + rOffset * multiplier;
@@ -102,7 +109,7 @@ public:
 			previous = getPrevious()->mapTile(c);
 		}
 
-		double input = IntegerNoise(linearPosition++ + seed);
+		double input = stableNoise(linearPosition++ + seed);
 		int rOffset = (int)floor(input * limit);
 		rOffset = limitRange(rOffset, 0, limit);
 		return previous + rOffset * multiplier;
@@ -289,3 +296,9 @@ public:
 		IO::writeFile(file, text);
 	}
 };
+
+static std::function<skColor(int)> randomColorFunc(float mult=10) {
+    return [mult](int v) {
+        return skColor(intNoise(v, 255/mult)*mult, intNoise(v+1, 255/mult)*mult, intNoise(v+2, 255/mult)*mult);
+    };
+}

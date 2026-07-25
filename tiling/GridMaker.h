@@ -38,8 +38,15 @@ public:
 	//Full grid access
 	void mapGrid(std::function<void(int, Vector2f)> func);
 	void setGrid(int *values);
+	void clearGrid(int value);
 	void printGrid();
 	virtual uint getUpdateCount();
+
+	//Area/path finding
+	int setTileRecursive(int x, int y, int value);
+	Vector2i getNearest(Vector2i start, int target);
+	std::vector<Vector2i> getPath(Vector2i start, Vector2i target, Indexer *debug=NULL);
+	void drawPath(std::vector<Vector2i> path, int value);
 
 	//Check grid size
 	virtual Vector2i getSize();
@@ -47,7 +54,10 @@ public:
 	bool inBounds(int x, int y);
 	Vector2f snapPosition(Vector2f position);
 	Vector2i getScale();
+
+	//Other getters
 	Indexer *getPrevious();
+	int getFallback();
 };
 
 //Lowest level indexer to store the actual grid
@@ -63,14 +73,15 @@ public:
 	//Build and convert grid
 	GridMaker(std::string file, int fallback=' ');
 	GridMaker(int width, int height, int fallback=' ');
+	GridMaker(Indexer *copy);
 	~GridMaker();
 	void reload(std::string file, int offset=0, Rect<int> border=Rect<int>());
+	void reload(Indexer *copy);
 	void save(std::string file);
 
 	//Set or get tiles
 	int getTileI(int x, int y) override;
 	void setTileI(int x, int y, int value) override;
-	void clearTiles();
 	uint getUpdateCount() override;
 
 	//Check grid size

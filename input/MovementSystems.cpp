@@ -31,7 +31,7 @@ Vector2f topDownMovement(Node *node, Vector2f move, Indexer *collision) {
 }
 
 Vector2f topDownMovement(Node *node, Vector2f move, Indexer *collision, double distance) {
-	return topDownMovement(node->getGPosition(), vectorLength(move, distance), node->getSize(), collision);
+	return topDownMovement(node->getGPosition(), lengthVector(move, distance), node->getSize(), collision);
 }
 
 int topDownDirection(Vector2f movement) {

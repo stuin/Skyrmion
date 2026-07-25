@@ -141,6 +141,9 @@ const static skColor COLOR_EMPTY = skColor(0.0f,0.0f,0.0f,0.0f);
 const static skColor COLOR_HALF = skColor(1.0f,1.0f,1.0f,0.5f);
 const static skColor COLOR_WHITE = skColor(1.0f,1.0f,1.0f,1.0f);
 const static skColor COLOR_BLACK = skColor(0.0f,0.0f,0.0f,1.0f);
+const static skColor COLOR_RED = skColor(1.0f,0.0f,0.0f,1.0f);
+const static skColor COLOR_GREEN = skColor(0.0f,1.0f,0.0f,1.0f);
+const static skColor COLOR_BLUE = skColor(0.0f,0.0f,1.0f,1.0f);
 const static skColor COLOR_PURPLE = skColor(200, 122, 255, 255);
 
 //BlendModes

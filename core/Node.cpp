@@ -139,14 +139,20 @@ Vector2i Node::getTextureSize() {
 	return UpdateList::getTextureSize(getTexture());
 }
 
-skColor Node::getColor() {
+skColor Node::getColor(sint i) {
 	if(rendering != NULL)
-		return getRenderComponent()->getColor();
+		return getRenderComponent()->getColor(i);
 	else
 		throw new RENDERCOMPONENTNULL;
 }
 
 //Get sections of texture to render
+TextureRect *Node::getTextureRect(sint i) {
+	if(rendering != NULL)
+		return getRenderComponent()->getTextureRect(i);
+	else
+		throw new RENDERCOMPONENTNULL;
+}
 std::vector<TextureRect> *Node::getTextureRects() {
 	if(rendering != NULL)
 		return getRenderComponent()->getTextureRects();
@@ -257,9 +263,9 @@ void Node::setTexture(sint _texture) {
 		throw new RENDERCOMPONENTNULL;
 }
 
-void Node::setColor(skColor _color) {
+void Node::setColor(skColor _color, sint i) {
 	if(rendering != NULL)
-		getRenderComponent()->setColor(_color);
+		getRenderComponent()->setColor(_color, i);
 	else
 		throw new RENDERCOMPONENTNULL;
 }

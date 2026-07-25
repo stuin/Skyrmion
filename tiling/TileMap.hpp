@@ -28,7 +28,7 @@ private:
 
 public:
 
-    TileMap(sint _tileset, int _tileX, int _tileY, Indexer *_indexes, int layer=0, int _offset=0, bool _hexRows=false, Rect<uint> border=Rect<uint>())
+    TileMap(sint _tileset, int _tileX, int _tileY, Indexer *_indexes, int layer=0, int buffer=0, int _offset=0, bool _hexRows=false, Rect<uint> border=Rect<uint>())
      : Node(layer, RENDER_TEXTURE_ARRAY), tileSize(_tileX, _tileY), indexes(_indexes), offset(_offset), hexRows(_hexRows) {
 
         //Set sizing
@@ -53,7 +53,7 @@ public:
         setPosition((tileSize - overlap) * rectPos);
 
         setTexture(_tileset);
-        setupBuffer(0, COLOR_EMPTY);
+        setupBuffer(buffer, COLOR_EMPTY);
 
         //std::cout << " " << startX << "," << startY << ", " << width << "," << height << "\n";
         //std::cout << toString(getGPosition()) << ":" << toString(getGScale()) <<  "\n";
@@ -162,7 +162,7 @@ public:
         //Build each frame
         for(int i = 0; i < frames; i++) {
             //Load new tilemap
-            TileMap *map = new TileMap(tileset, tileX, tileY, indexes, layer, i * numTiles);
+            TileMap *map = new TileMap(tileset, tileX, tileY, indexes, layer, 0, i * numTiles);
             map->setParent(this);
             tilemaps.push_back(map);
 
@@ -255,7 +255,7 @@ public:
 };
 
 //Split up tilemaps that are too large for one buffer
-class LargeTileMap : public Node {
+/*class LargeTileMap : public Node {
 private:
     std::vector<TileMap *> tilemaps;
 
@@ -306,4 +306,4 @@ public:
             nodes.push_back(map);
         return nodes;
     }
-};
+};*/

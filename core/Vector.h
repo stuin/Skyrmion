@@ -206,12 +206,16 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T> &v) {
 }
 
 //Other assorted helpers
-Vector2f vectorLength(Vector2f dir, double distance);
-float distance(Vector2f start, Vector2f end=Vector2f(0,0));
-float angle(Vector2f point, Vector2f origin=Vector2f(0,0));
+Vector2f lengthVector(Vector2f dir, double distance);
+Vector2f angleVector(float angle, double distance);
+float vectorLength(Vector2f start, Vector2f end=Vector2f(0,0));
+float vectorAngle(Vector2f point, Vector2f origin=Vector2f(0,0));
+
 Vector2f lerp(Vector2f start, Vector2f end, float progress);
 Vector2i round(Vector2f pos);
 Vector2f screenToGlobal(float x, float y);
+
 int limitRange(int value, int min, int max);
+Vector2i limitRange(Vector2i value, Vector2i min, Vector2i max);
 
 bool operator==(const TextureRect &first, const TextureRect &second);

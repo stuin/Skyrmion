@@ -1,22 +1,22 @@
-#include "../AudioList.h"
+#include "../NetworkList.h"
 //#include "nbnetShared.hpp"
 
-void AudioList::connectServer(std::string ip, int port) {}
-void AudioList::disconnectServer() {}
+void NetworkList::connectServer(std::string ip, int port) {}
+void NetworkList::disconnectServer() {}
 
-bool AudioList::isConnected() {
+bool NetworkList::isConnected() {
 	return false;
 }
 
-int AudioList::getNetworkId() {
+int NetworkList::getNetworkId() {
 	return 0;
 }
 
-bool AudioList::isNetworkTick() {
+bool NetworkList::isNetworkTick() {
 	return false;
 }
 
-void AudioList::processNetworking() {}
-void AudioList::processNetworkMessage() {}
-void AudioList::sendNetworkEvent(Event event, bool reliable) {}
-void AudioList::sendNetworkString(std::string data, int code, bool reliable) {}
+void NetworkList::processNetworking() {}
+void NetworkList::processNetworkMessage() {}
+void NetworkList::sendNetworkEvent(Event event, bool reliable) {}
+void NetworkList::sendNetworkString(std::string data, int code, bool reliable) {}

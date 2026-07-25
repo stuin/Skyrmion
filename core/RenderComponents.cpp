@@ -210,6 +210,50 @@ public:
 	}
 };
 
+class ColorCircleRenderComponent : public RenderComponent {
+private:
+	int blendMode = 1;
+	int borderWidth = 1;
+	skColor insideColor = COLOR_EMPTY;
+	skColor outsideColor = COLOR_WHITE;
+
+public:
+	ColorCircleRenderComponent(Node *source) : RenderComponent(source) {}
+
+	int getType() {
+		return RENDER_COLOR_CIRCLE;
+	}
+
+	int getBlendMode() {
+		return blendMode;
+	}
+	sint getTexture() {
+		return 0;
+	}
+	skColor getColor(sint i=0) {
+		if(i == 0)
+			return outsideColor;
+		else
+			return insideColor;
+	}
+	int getSize() {
+		return borderWidth;
+	}
+
+	void setBlendMode(int _blendMode) {
+		blendMode = _blendMode;
+	}
+	void setColor(skColor _color, sint i=0) {
+		if(i == 0)
+			outsideColor = _color;
+		else
+			insideColor = _color;
+	}
+	void setSize(int _size) {
+		borderWidth = _size;
+	}
+};
+
 class ColorArrayRenderComponent : public RenderComponent {
 private:
 	int blendMode = 1;
@@ -479,6 +523,8 @@ RenderComponent *createRenderComponent(int _type, Node *_source) {
 		return new ColorSingleRenderComponent(_source);
 	case RENDER_COLOR_RECT:
 		return new ColorRectRenderComponent(_source);
+	case RENDER_COLOR_CIRCLE:
+		return new ColorCircleRenderComponent(_source);
 	case RENDER_COLOR_ARRAY:
 		return new ColorArrayRenderComponent(_source);
 	case RENDER_GRADIENT_ARRAY:

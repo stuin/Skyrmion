@@ -25,7 +25,7 @@ private:
     uint startY = 0;
 
 public:
-    ColorMap(Indexer *_indexes, std::function<skColor(int)> _func, int layer=0, Rect<uint> border=Rect<uint>())
+    ColorMap(Indexer *_indexes, std::function<skColor(int)> _func, int layer=0, int buffer=0, Rect<uint> border=Rect<uint>())
      : Node(layer, RENDER_COLOR_ARRAY), indexes(_indexes), func(_func) {
 
         //Set sizing
@@ -47,7 +47,7 @@ public:
         setPosition(startX, startY);
 
         //setTexture(_tileset);
-        setupBuffer(0, COLOR_EMPTY);
+        setupBuffer(buffer, COLOR_EMPTY);
 
         //std::cout << " " << startX << "," << startY << ", " << width << "," << height << "\n";
         //std::cout << toString(getGPosition()) << ":" << toString(getGScale()) <<  "\n";
@@ -111,5 +111,23 @@ static std::function<skColor(int)> cutoffColorFunc(int max=50, skColor high=COLO
         if(v > max)
             return high;
         return low;
+    };
+}
+
+static std::function<skColor(int)> mapColorFunc(std::map<int, skColor> indexes, skColor fallback=COLOR_EMPTY) {
+    return [indexes, fallback](int v) {
+        auto tile = indexes.find(v);
+        if(tile != indexes.end())
+            return tile->second;
+        return fallback;
+    };
+}
+
+static std::function<skColor(int)> mapColorFunc(std::map<int, skColor> indexes, std::function<skColor(int)> fallback) {
+    return [indexes, fallback](int v) {
+        auto tile = indexes.find(v);
+        if(tile != indexes.end())
+            return tile->second;
+        return fallback(v);
     };
 }
