@@ -66,6 +66,7 @@ public:
 				ImGui::Checkbox("Hidden", &layerData.hidden);
 				ImGui::Checkbox("Paused", &layerData.paused);
 				ImGui::Checkbox("Global Update", &layerData.global);
+				ImGui::Checkbox("Screen Position", &layerData.screen);
 
 				ImGui::Text("%d Nodes", layerData.count);
 
@@ -117,6 +118,7 @@ public:
 			ImGui::Text("Parent = NULL");
 
 		Text("Position", source->getPosition());
+		Text("Global Position", source->getGPosition());
 		Text("Origin", source->getOrigin());
 		Text("Size", source->getSize());
 		Text("Scale", source->getScale());
@@ -140,8 +142,8 @@ public:
 		}
 
 		RenderComponent *renderer = source->getRenderComponent();
-		ImGui::Text("RenderComponent = %d", renderer->getType());
-		ImGui::Text("BlendMode = %d", source->getBlendMode());
+		ImGui::Text("RenderComponent = %s", RENDER_TYPE_NAMES[renderer->getType()].c_str());
+		ImGui::Text("BlendMode = %s", BLENDMODE_NAMES[source->getBlendMode()].c_str());
 
 		sint texture = source->getTexture();
 		if(texture < UpdateList::getResourceCount())
@@ -158,8 +160,8 @@ public:
 		ImGui::Checkbox("##", &nodeHidden);
 		source->setHidden(nodeHidden);
 
-		if(renderer->getType() == RENDER_TEXTURE_ARRAY && source->getTextureRects()->size() > 0) {
-			ImGui::Text("Texture Rects = %lu", source->getTextureRects()->size());
+		if(renderer->getTextureRects() != NULL && renderer->getTextureRects()->size() > 0) {
+			ImGui::Text("Texture Rects = %lu", renderer->getTextureRects()->size());
 
 			if(ImGui::BeginChild("##", ImVec2(400.0f, 200.0f), ImGuiChildFlags_Borders, 0)) {
 				focused |= ImGui::IsWindowFocused();
@@ -196,7 +198,16 @@ public:
 				}
 			}
 			ImGui::EndChild();
-		} else if(renderer->getType() == RENDER_COLOR_ARRAY && renderer->getColors()->size() > 0) {
+		} else if(renderer->getType() == RENDER_TEXTURE_RECT) {
+			TextureRect rect = *renderer->getTextureRect();
+			ImGui::Text("(%.3f,%.3f) = (%d,%d)->(%d,%d) / %d",
+						rect.px, rect.py, rect.tx, rect.ty, rect.tx+rect.twidth, rect.ty+rect.theight, rect.rotation);
+			rectCursor.setHidden();
+		} else {
+			ImGui::Text("No Texture Rects");
+			rectCursor.setHidden();
+		}
+		if(renderer->getColors() != NULL && renderer->getColors()->size() > 0) {
 			ImGui::Text("Colors = %lu", renderer->getColors()->size());
 
 			if(ImGui::BeginChild("##", ImVec2(400.0f, 200.0f), ImGuiChildFlags_Borders, 0)) {
@@ -211,9 +222,6 @@ public:
 				}
 			}
 			ImGui::EndChild();
-		} else {
-			ImGui::Text("No Texture Rects");
-			rectCursor.setHidden();
 		}
 
 		ImGui::End();

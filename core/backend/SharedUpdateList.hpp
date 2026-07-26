@@ -138,6 +138,13 @@ void UpdateList::globalLayer(int layer, bool global) {
 	layers[layer].global = global;
 }
 
+//Node position relative to camera
+void UpdateList::screenLayer(int layer, bool screen) {
+	if(layer >= MAXLAYER)
+		throw new std::invalid_argument(LAYERERROR);
+	layers[layer].screen = screen;
+}
+
 //Check if layer is paused
 bool UpdateList::isLayerPaused(int layer) {
 	if(layer >= MAXLAYER)

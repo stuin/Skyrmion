@@ -1,24 +1,13 @@
 #pragma once
 
 #include "Vector.h"
+#include "Enum.h"
 
 //Control input constants
 #define MOUSE_OFFSET 350
 #define JOYSTICK_OFFSET 360
 #define JOYSTICK_NEXT 50
 #define JOYSTICK_DEADZONE 0.05f
-
-//Macro to build enum + array of names
-#define GENERATE_TYPE(ENUM) ENUM,
-#define GENERATE_STRING(STRING) #STRING,
-#define GENERATE_STRING1(STRING) GENERATE_STRING(_ ## STRING)
-#define GENERATE_TYPE2(ENUM, STRING) ENUM,
-#define GENERATE_STRING2(ENUM, STRING) STRING,
-
-#define NAMED_ENUM(ENUM) enum ENUM##_TYPES { ENUM##_FOREACH(GENERATE_TYPE) }; static std::vector<std::string> ENUM##_NAMES = { ENUM##_FOREACH(GENERATE_STRING) };
-#define FILE_ENUM(ENUM) enum ENUM##_TYPES { ENUM##_FOREACH(GENERATE_TYPE, GENERATE_TYPE2) }; static std::vector<std::string> ENUM##_FILES = { ENUM##_FOREACH(GENERATE_STRING1, GENERATE_STRING2) };
-
-static std::vector<std::string> BLANK_NAMES;
 
 //List of event types
 //Overflow types are sorted into EVENT_CUSTOM
@@ -34,6 +23,7 @@ static std::vector<std::string> BLANK_NAMES;
 	E(EVENT_SUSPEND) \
 	E(EVENT_SETTINGS) \
 	E(EVENT_BUFFER) \
+	E(EVENT_UNIFORM) \
 	E(EVENT_IMGUI) \
 	E(EVENT_AUDIO) \
 	E(EVENT_NETWORK_CONNECT_SERVER) \

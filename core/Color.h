@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 
+#include "Enum.h"
+
 //Color type with lots of conversions
 class skColor {
 public:
@@ -147,11 +149,12 @@ const static skColor COLOR_BLUE = skColor(0.0f,0.0f,1.0f,1.0f);
 const static skColor COLOR_PURPLE = skColor(200, 122, 255, 255);
 
 //BlendModes
-enum SK_BLENDMODE {
-	SK_BLEND_NONE,
-	SK_BLEND_ALPHA,
-	SK_BLEND_ALPHA_MULT,
-	SK_BLEND_ADD,
-	SK_BLEND_MULT,
-	SK_BLEND_MAX
-};
+#define BLENDMODE_FOREACH(E) \
+	E(SK_BLEND_NONE) \
+	E(SK_BLEND_ALPHA) \
+	E(SK_BLEND_ALPHA_MULT) \
+	E(SK_BLEND_ADD) \
+	E(SK_BLEND_MULT) \
+	E(SK_BLEND_MAX) \
+
+NAMED_ENUM(BLENDMODE);

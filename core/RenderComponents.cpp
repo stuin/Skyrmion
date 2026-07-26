@@ -1,4 +1,4 @@
-#include "RenderComponent.h"
+#include "Node.h"
 
 class TextureSingleRenderComponent : public RenderComponent {
 private:
@@ -43,7 +43,9 @@ private:
 	TextureRect textureRect;
 
 public:
-	TextureRectRenderComponent(Node *source) : RenderComponent(source) {}
+	TextureRectRenderComponent(Node *source) : RenderComponent(source) {
+		setTextureVecRect(Vector2i(0,0), source->getSize());
+	}
 
 	int getType() {
 		return RENDER_TEXTURE_RECT;
@@ -121,13 +123,13 @@ public:
 		texture = _texture;
 	}
 	void setTextureRect(TextureRect rectangle, sint i=0) {
-		while(i >= textureRects.size())
-			textureRects.emplace_back();
+		if(i >= textureRects.size())
+			textureRects.resize(i);
 		textureRects[i] = rectangle;
 	}
 	void setTextureIntRect(IntRect rect, sint i=0) {
-		while(i >= textureRects.size())
-			textureRects.emplace_back();
+		if(i >= textureRects.size())
+			textureRects.resize(i);
 		textureRects[i] = {0, 0, (float)rect.width,(float)rect.height, rect.left,rect.top, rect.width,rect.height, 0};
 	}
 
@@ -391,13 +393,13 @@ public:
 		texture = _texture;
 	}
 	void setTextureRect(TextureRect rectangle, sint i=0) {
-		while(i >= textureRects.size())
-			textureRects.emplace_back();
+		if(i >= textureRects.size())
+			textureRects.resize(i);
 		textureRects[i] = rectangle;
 	}
 	void setTextureIntRect(IntRect rect, sint i=0) {
-		while(i >= textureRects.size())
-			textureRects.emplace_back();
+		if(i >= textureRects.size())
+			textureRects.resize(i);
 		textureRects[i] = {0, 0, (float)rect.width,(float)rect.height, rect.left,rect.top, rect.width,rect.height, 0};
 	}
 	void setTextureVecRect(Vector2i corner, Vector2i size, sint i=0) {

@@ -50,13 +50,13 @@ void UNode::deleteNext() {
 
 //Base constructor
 Node::Node(int layer, int renderType, Vector2i size, Node *parent) : UNode(layer) {
-	if(layer < 0)
-		throw new std::invalid_argument(DRAWLAYERERROR);
-	rendering = createRenderComponent(renderType, this);
-
 	setSize(size);
 	setOrigin(size.x / 2, size.y / 2);
 	setParent(parent);
+
+	if(layer < 0)
+		throw new std::invalid_argument(DRAWLAYERERROR);
+	rendering = createRenderComponent(renderType, this);
 }
 
 //Get parent node
@@ -95,9 +95,12 @@ Vector2f Node::getPosition() {
 
 //Get global position
 Vector2f Node::getGPosition() {
+	Vector2f screenOffset;
+	if(UpdateList::getLayerData(getLayer()).screen)
+		screenOffset = UpdateList::getCameraRect().pos();
 	if(parent != NULL)
 		return position + parent->getGPosition();
-	return position;
+	return position + screenOffset;
 }
 
 //Get scale

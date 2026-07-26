@@ -118,7 +118,7 @@ int UpdateList::loadResource(std::string filename) {
 			shaderSet.push_back(LoadShader(0, filename.c_str()));
 			resourceData.emplace_back(filename, SK_SHADER, Vector2i(0, 0), shaderSet.size()-1);
 			textureSet.emplace_back();
-		} else if(filename.substr(filename.length()-4) == ".ttf") {
+		} else if(filename.substr(filename.length()-4) == ".ttf" || filename.substr(filename.length()-4) == ".otf") {
 			//Load font
 			fontSet.push_back(LoadFont(filename.c_str()));
 			resourceData.emplace_back(filename, SK_FONT, Vector2i(0, 10), fontSet.size()-1);
@@ -227,8 +227,8 @@ void UpdateList::sendUniformValues(sint uIndex) {
 			bufferData[i].redraw = true;
 
 	//Notify nodes of uniform update
-	event_previous[EVENT_BUFFER] = {};
-	event_queue.emplace_back(EVENT_BUFFER, true, rIndex);
+	event_previous[EVENT_UNIFORM] = {};
+	event_queue.emplace_back(EVENT_UNIFORM, true, rIndex);
 }
 
 static const std::map<int, int> blendModeMap = {
@@ -335,13 +335,15 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 		float tWidth = (float)rect.width/(width);
 		float tHeight = (float)rect.height/(height);
 		//std::cout << width << "," << height << ": " << tWidth << "," << tHeight << "\n";
+		//std::cout << rect.pos() << "\n";
 		for(sint y = 0; y < height-1; y++) {
 			for(sint x = 0; x < width-1; x++) {
 				Rectangle dst = {rect.left + tWidth*x, rect.top + tHeight*y, tWidth, tHeight};
 				Color color1 = rayColor((*colors)[x + y*width]);
-				if(rendering->getType() == RENDER_COLOR_ARRAY)
-					DrawRectangleRec(dst, color1);
-				else {
+				if(rendering->getType() == RENDER_COLOR_ARRAY) {
+					if(color1.a > 0)
+						DrawRectangleRec(dst, color1);
+				} else {
 					Color color2 = rayColor((*colors)[(x+1) + y*width]);
 					Color color3 = rayColor((*colors)[x + (y+1)*width]);
 					Color color4 = rayColor((*colors)[(x+1) + (y+1)*width]);
@@ -422,6 +424,7 @@ void UpdateList::drawBuffer(sint bIndex) {
 	//Render specific linked node
 	if(data.source != NULL) {
 		FloatRect sourceRect = data.source->getRect();
+		//std::cout << "Buffer at " << sourceRect.pos() << "\n";
 		raycamera.target = Vector2{sourceRect.left, sourceRect.top};
 		raycamera.zoom = 1;
 
@@ -429,7 +432,7 @@ void UpdateList::drawBuffer(sint bIndex) {
 		if(data.source->getRenderComponent(false)->getType() == RENDER_PASSTHROUGH_BUFFER)
 			drawNode(data.source, 1);
 		else
-			drawNode(data.source);
+			drawNode(data.source, 0);
 	} else {
 		raycamera.target = Vector2{0, 0};
 		raycamera.zoom = 1;
@@ -440,10 +443,11 @@ void UpdateList::drawBuffer(sint bIndex) {
 	//Render nodes in included layers
 	for(int layer = 0; layer <= maxLayer; layer++) {
 		if(data.layers[layer]) {
+			//std::cout << "Included layer " << layer << "\n";
 			Node *source = layers[layer].root;
 			while(source != NULL) {
 				if(!source->isHidden())
-					drawNode(source);
+					drawNode(source, 1);
 				source = (Node*)source->getNext();
 			}
 		}

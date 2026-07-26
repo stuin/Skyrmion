@@ -129,15 +129,45 @@ Vector2i Indexer::getNearest(Vector2i start, int target) {
 	return Vector2i(-1,-1);
 }
 
-struct Cell {
-	Vector2i parent = Vector2i(-1,-1);
-	double f = FLT_MAX;
-	double g = FLT_MAX;
-	double h = FLT_MAX;
+bool Indexer::lineEmpty(Vector2i start, Vector2i end) {
+	int length = vectorLength(start, end)-2;
+	Vector2f dir = lengthVector(end-start, 1);
+
+	if(!inBounds(start) || !inBounds(end))
+		return false;
+
+	Vector2f next = Vector2f(start)+dir;
+	for(int i = 0; i < length; i++) {
+		if(getTile(next) != 0)
+			return false;
+		next += dir;
+	}
+	return true;
+}
+
+class Cell {
+public:
+	Vector2i parent;
+	double f;
+	double g;
+	double h;
+
+	Cell() {
+		parent = Vector2i(-1,-1);
+		f = FLT_MAX;
+		g = FLT_MAX;
+		h = FLT_MAX;
+	}
+	Cell(Vector2i _parent, double _f, double _g=0, double _h=0) {
+		parent = _parent;
+		f = _f;
+		g = _g;
+		h = _h;
+	}
 };
 
 //A* pathfinding
-std::vector<Vector2i> Indexer::getPath(Vector2i start, Vector2i target, Indexer *debug) {
+std::vector<Vector2i> Indexer::getPath(Vector2i start, Vector2i target, bool simplify, Indexer *debug) {
 	std::vector<Vector2i> out;
 	if(!inBounds(start) || !inBounds(target))
 		return out;
@@ -153,10 +183,10 @@ std::vector<Vector2i> Indexer::getPath(Vector2i start, Vector2i target, Indexer 
 	memset(closed, false, sizeof(closed));
 
 	Cell cells[getSize().x][getSize().y];
-	cells[start.x][start.y] = {start, 0,0,0};
+	cells[start.x][start.y] = Cell(start, 0,0,0);
 
 	std::deque<Cell> open;
-	open.push_back({start, 0,0,0});
+	open.push_back(Cell(start, 0,0,0));
 
 	while(open.size() > 0) {
 		Cell p = open.front();
@@ -175,6 +205,8 @@ std::vector<Vector2i> Indexer::getPath(Vector2i start, Vector2i target, Indexer 
 						out.push_back(next);
 					}
 					out.push_back(start);
+					if(simplify)
+						return simplifyPath(out);
 					return out;
 				}
 
@@ -186,13 +218,34 @@ std::vector<Vector2i> Indexer::getPath(Vector2i start, Vector2i target, Indexer 
 					if(cells[next.x][next.y].f > f) {
 						if(debug != NULL)
 							debug->setTileI(next.x, next.y, h);
-						open.push_back({next, f});
-						cells[next.x][next.y] = {p.parent, f,g,h};
+						open.push_back(Cell(next, f));
+						cells[next.x][next.y] = Cell(p.parent, f,g,h);
 					}
 				}
 			}
 		}
 	}
+	return out;
+}
+
+//Reduce path down to required corners
+std::vector<Vector2i> Indexer::simplifyPath(std::vector<Vector2i> path) {
+	if(path.size()<2)
+		return path;
+
+	std::vector<Vector2i> out;
+	out.push_back(path[0]);
+
+	sint start = 0;
+	sint furthest = 1;
+	while(furthest < path.size()-1) {
+		while(furthest < path.size()-1 && lineEmpty(path[start], path[furthest+1]))
+			furthest++;
+		start = furthest;
+		furthest = start + 1;
+		out.push_back(path[start]);
+	}
+	out.push_back(path[path.size()-1]);
 	return out;
 }
 

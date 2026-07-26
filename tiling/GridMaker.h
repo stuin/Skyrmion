@@ -45,7 +45,9 @@ public:
 	//Area/path finding
 	int setTileRecursive(int x, int y, int value);
 	Vector2i getNearest(Vector2i start, int target);
-	std::vector<Vector2i> getPath(Vector2i start, Vector2i target, Indexer *debug=NULL);
+	bool lineEmpty(Vector2i start, Vector2i end);
+	std::vector<Vector2i> getPath(Vector2i start, Vector2i target, bool simplify=false, Indexer *debug=NULL);
+	std::vector<Vector2i> simplifyPath(std::vector<Vector2i> path);
 	void drawPath(std::vector<Vector2i> path, int value);
 
 	//Check grid size

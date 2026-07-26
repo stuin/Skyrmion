@@ -5,12 +5,21 @@
 Vector2f operator*(const Vector2f &first, const Vector2i &second) {
 	return Vector2f(first.x * second.x, first.y * second.y);
 }
+Vector2f operator*(const Vector2f &first, const int second) {
+	return Vector2f(first.x * second, first.y * second);
+}
 Vector2f operator*(const Vector2i &first, const float second) {
 	return Vector2f(first.x * second, first.y * second);
 }
 
 Vector2f operator/(const Vector2f &first, const Vector2i &second) {
 	return Vector2f(first.x / second.x, first.y / second.y);
+}
+Vector2f operator/(const Vector2f &first, const int second) {
+	return Vector2f(first.x / second, first.y / second);
+}
+Vector2f operator/(const Vector2i &first, const float second) {
+	return Vector2f(first.x / second, first.y / second);
 }
 
 std::ostream& operator<<(std::ostream& os, const Vector2f &pos) {
@@ -43,8 +52,8 @@ Vector2f lengthVector(Vector2f dir, double distance) {
 }
 
 Vector2f angleVector(float angle, double distance) {
-	float xOffset = cos(angle) * distance;
-	float yOffset = sin(angle) * distance;
+	float xOffset = cos(-angle*DTOR) * distance;
+	float yOffset = sin(-angle*DTOR) * distance;
 	return Vector2f(xOffset, yOffset);
 }
 
@@ -73,9 +82,12 @@ Vector2i round(Vector2f pos) {
 int limitRange(int value, int min, int max) {
 	return std::max(min, std::min(value, max));
 }
+float limitRange(float value, float min, float max) {
+	return std::max(min, std::min(value, max));
+}
 
-Vector2i limitRange(Vector2i value, Vector2i min, Vector2i max) {
-	return Vector2i(limitRange(value.x, min.x, max.x), limitRange(value.y, min.y, max.y));
+Vector2f limitRange(Vector2f value, Vector2f min, Vector2f max) {
+	return Vector2f(limitRange(value.x, min.x, max.x), limitRange(value.y, min.y, max.y));
 }
 
 bool operator==(const TextureRect &first, const TextureRect &second) {

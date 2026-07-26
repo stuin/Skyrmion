@@ -20,22 +20,23 @@ enum SK_RESOURCE_TYPE {
 	SK_JSON
 };
 
-enum SK_RENDER_TYPE {
-	RENDER_NONE,
-	RENDER_TEXTURE_SINGLE,
-	RENDER_TEXTURE_RECT,
-	RENDER_TEXTURE_ARRAY,
-	RENDER_TEXTURE_MAP,
-	RENDER_COLOR_SINGLE,
-	RENDER_COLOR_RECT,
-	RENDER_COLOR_CIRCLE,
-	RENDER_COLOR_ARRAY,
-	RENDER_COLOR_TEXTURE_ARRAY,
-	RENDER_GRADIENT_RECT,
-	RENDER_GRADIENT_ARRAY,
-	RENDER_PASSTHROUGH_BUFFER,
-	RENDER_STRING
-};
+#define RENDER_TYPE_FOREACH(E) \
+	E(RENDER_NONE) \
+	E(RENDER_TEXTURE_SINGLE) \
+	E(RENDER_TEXTURE_RECT) \
+	E(RENDER_TEXTURE_ARRAY) \
+	E(RENDER_TEXTURE_MAP) \
+	E(RENDER_COLOR_SINGLE) \
+	E(RENDER_COLOR_RECT) \
+	E(RENDER_COLOR_CIRCLE) \
+	E(RENDER_COLOR_ARRAY) \
+	E(RENDER_COLOR_TEXTURE_ARRAY) \
+	E(RENDER_GRADIENT_RECT) \
+	E(RENDER_GRADIENT_ARRAY) \
+	E(RENDER_PASSTHROUGH_BUFFER) \
+	E(RENDER_STRING) \
+
+NAMED_ENUM(RENDER_TYPE);
 
 enum SK_UNIFORM_TYPE {
 	SKU_FLOAT,
@@ -81,8 +82,8 @@ public:
 	//Optional getters
 	virtual int getSize() { throw new RENDERCOMPONENTERROR; }
 	virtual TextureRect *getTextureRect(sint i=0) { throw new RENDERCOMPONENTERROR; }
-	virtual std::vector<TextureRect> *getTextureRects() { throw new RENDERCOMPONENTERROR; }
-	virtual std::vector<skColor> *getColors() { throw new RENDERCOMPONENTERROR; }
+	virtual std::vector<TextureRect> *getTextureRects() { return NULL; }
+	virtual std::vector<skColor> *getColors() { return NULL; }
 	virtual RenderComponent *getSubComponent() { throw new RENDERCOMPONENTERROR; }
 	virtual const char *getString() { throw new RENDERCOMPONENTERROR; }
 

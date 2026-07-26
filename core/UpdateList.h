@@ -15,6 +15,7 @@ struct LayerData {
 	bool paused = false;
 	bool hidden = false;
 	bool global = false;
+	bool screen = false;
 	Node *root = NULL;
 	UNode *uRoot = NULL;
 	int count = 0;
@@ -182,6 +183,7 @@ public:
 	static void pauseLayer(int layer, bool pause=true);
 	static void hideLayer(int layer, bool hidden=true);
 	static void globalLayer(int layer, bool global=true);
+	static void screenLayer(int layer, bool screen=true);
 
 	//Layer read features
 	static bool isLayerPaused(int layer);

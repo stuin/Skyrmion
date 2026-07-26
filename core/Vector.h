@@ -191,8 +191,11 @@ skVector2<T> max(const skVector2<T> &first, const skVector2<T> &second) {
 
 //Different type combinations
 Vector2f operator*(const Vector2f &first, const Vector2i &second);
+Vector2f operator*(const Vector2f &first, const int second);
 Vector2f operator*(const Vector2i &first, const float second);
 Vector2f operator/(const Vector2f &first, const Vector2i &second);
+Vector2f operator/(const Vector2f &first, const int second);
+Vector2f operator/(const Vector2i &first, const float second);
 
 //Output to string
 std::ostream& operator<<(std::ostream& os, const Vector2f &pos);
@@ -215,7 +218,12 @@ Vector2f lerp(Vector2f start, Vector2f end, float progress);
 Vector2i round(Vector2f pos);
 Vector2f screenToGlobal(float x, float y);
 
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
 int limitRange(int value, int min, int max);
-Vector2i limitRange(Vector2i value, Vector2i min, Vector2i max);
+float limitRange(float value, float min, float max);
+Vector2f limitRange(Vector2f value, Vector2f min, Vector2f max);
 
 bool operator==(const TextureRect &first, const TextureRect &second);

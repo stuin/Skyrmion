@@ -42,6 +42,10 @@ else ifeq ($(platform), windows)
 		LDFLAGS += -Wl,--subsystem,windows
 	endif
 
+	ifneq ($(OS),Windows_NT)
+		EXECUTOR = wine
+	endif
+
 	EXEC = exe
 	PLATFORM = Windows
 	BUILD_DIR = build/windows
@@ -50,7 +54,7 @@ else ifeq ($(platform), web)
 	CXX = em++
 	CFLAGS := ${CFLAGS} -Os -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES2
 	CORE_FILES := ${CORE_FILES} core/backend/nullClient.o
-	LDFLAGS := ${LDFLAGS} -sALLOW_MEMORY_GROWTH -s USE_GLFW=3 --shell-file src/Skyrmion/include/raylib/src/minshell.html --preload-file res
+	LDFLAGS := ${LDFLAGS} -sALLOW_MEMORY_GROWTH -sSTACK_SIZE=131072 -s USE_GLFW=3 --shell-file src/Skyrmion/include/raylib/src/minshell.html --preload-file res
 
 	EXEC = html
 	PLATFORM = Web
@@ -105,9 +109,18 @@ SKYRMION_DEPENDS := $(patsubst %.o,%.d,$(SKYRMION_OBJS)) $(patsubst %.o,%.d,$(SE
 GAME_DEPENDS := $(patsubst %.o,%.d,$(GAME_OBJS))
 DEPENDS := $(SKYRMION_DEPENDS) $(GAME_DEPENDS)
 
+PLATFORM_FILE := $(wildcard res/$(platform)_$(PLATFORM_RES))
+
 # Linking execs
 game: $(OBJS)
+ifneq ("$(PLATFORM_FILE)", "")
+	mv res/$(PLATFORM_RES) res/default_$(PLATFORM_RES)
+	cp $(PLATFORM_FILE) res/$(PLATFORM_RES)
 	$(CXX) $(OBJS) -o $(BUILD_DIR)/$(GAME_NAME).$(EXEC) $(LDFLAGS) $(INCLUDE_PATHS)
+	mv res/default_$(PLATFORM_RES) res/$(PLATFORM_RES)
+else
+	$(CXX) $(OBJS) -o $(BUILD_DIR)/$(GAME_NAME).$(EXEC) $(LDFLAGS) $(INCLUDE_PATHS)
+endif
 
 server: $(SERVER_OBJS)
 	$(CXX) $(SERVER_OBJS) -o $(BUILD_DIR)/$(GAME_NAME)-server.$(EXEC) $(LDFLAGS)
@@ -130,6 +143,7 @@ TARGET_DIR = $(BUILD_DIR)/$(TARGET_NAME)
 zip: game
 	mkdir -p $(TARGET_DIR)
 	cp -r res $(TARGET_DIR)
+	cp $(PLATFORM_FILE) $(TARGET_DIR)/$(PLATFORM_RES)
 	cp $(BUILD_DIR)/$(GAME_NAME).* $(TARGET_DIR)
 ifeq ($(platform), web)
 	mv $(TARGET_DIR)/$(GAME_NAME).html $(TARGET_DIR)/index.html
@@ -141,7 +155,7 @@ run: game
 ifeq ($(platform), web)
 	cd $(BUILD_DIR) ; python -m http.server 12345
 else
-	$(BUILD_DIR)/$(GAME_NAME).$(EXEC)
+	$(EXECUTOR) $(BUILD_DIR)/$(GAME_NAME).$(EXEC)
 endif
 
 # Other

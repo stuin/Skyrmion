@@ -58,7 +58,7 @@ public:
         //std::cout << " " << startX << "," << startY << ", " << width << "," << height << "\n";
         //std::cout << toString(getGPosition()) << ":" << toString(getGScale()) <<  "\n";
 
-        getTextureRects()->reserve(rectSize.x * rectSize.y);
+        getTextureRects()->resize(rectSize.x * rectSize.y);
 
         //Load textures
         reload();
