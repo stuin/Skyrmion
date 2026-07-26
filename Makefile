@@ -143,8 +143,10 @@ TARGET_DIR = $(BUILD_DIR)/$(TARGET_NAME)
 zip: game
 	mkdir -p $(TARGET_DIR)
 	cp -r res $(TARGET_DIR)
-	cp $(PLATFORM_FILE) $(TARGET_DIR)/$(PLATFORM_RES)
 	cp $(BUILD_DIR)/$(GAME_NAME).* $(TARGET_DIR)
+ifneq ("$(PLATFORM_FILE)", "")
+	cp $(PLATFORM_FILE) $(TARGET_DIR)/$(PLATFORM_RES)
+endif
 ifeq ($(platform), web)
 	mv $(TARGET_DIR)/$(GAME_NAME).html $(TARGET_DIR)/index.html
 endif
