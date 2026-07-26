@@ -134,6 +134,7 @@ private:
 	static Node *camera;
 	static FloatRect cameraRect;
 	static FloatRect screenRect;
+	static IntRect screenGuard;
 	static skColor backgroundColor;
 
 	//Skyrmion Resource Data
@@ -173,7 +174,7 @@ public:
 	static void sendSignal(int id, Node *sender);
 
 	//Screen view
-	static Node *setCamera(Node *follow, Vector2f size, Vector2f position=Vector2f(0,0));
+	static Node *setCamera(Node *follow, Vector2f size, Vector2f position=Vector2f(0,0), IntRect guard=IntRect());
 	static FloatRect getCameraRect();
 	static FloatRect getScreenRect();
 	static Vector2i getScreenSize();
@@ -233,7 +234,6 @@ struct WindowConfig {
 	Vector2i windowSize;
 	skColor backgroundColor;
 	std::vector<std::string> &textureFiles;
-	std::vector<std::string> &audioFiles;
 	std::vector<std::string> &layerNames;
 };
 

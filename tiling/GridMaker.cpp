@@ -129,7 +129,7 @@ Vector2i Indexer::getNearest(Vector2i start, int target) {
 	return Vector2i(-1,-1);
 }
 
-bool Indexer::lineEmpty(Vector2i start, Vector2i end) {
+bool Indexer::lineEmpty(Vector2f start, Vector2f end) {
 	int length = vectorLength(start, end)-2;
 	Vector2f dir = lengthVector(end-start, 1);
 

@@ -90,6 +90,10 @@ Vector2f limitRange(Vector2f value, Vector2f min, Vector2f max) {
 	return Vector2f(limitRange(value.x, min.x, max.x), limitRange(value.y, min.y, max.y));
 }
 
+Vector2f limitRange(Vector2f value, FloatRect rect) {
+	return Vector2f(limitRange(value.x, rect.left, rect.left+rect.width), limitRange(value.y, rect.top, rect.top+rect.height));
+}
+
 bool operator==(const TextureRect &first, const TextureRect &second) {
 	return first.px == second.px && first.py == second.py && first.tx == second.tx && first.ty == second.ty;
 }

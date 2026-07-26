@@ -72,11 +72,16 @@ public:
 		height = size.y;
 	}
 
-	skVector2<T> pos() {
+	template <typename T2>
+	Rect(Rect<T2> _r) : Rect(_r.pos(), _r.size()) {
+
+	}
+
+	skVector2<T> pos() const {
 		return skVector2<T>(left, top);
 	}
 
-	skVector2<T> size() {
+	skVector2<T> size() const {
 		return skVector2<T>(width, height);
 	}
 
@@ -161,6 +166,15 @@ constexpr bool operator!=(const skVector2<T> &first, const skVector2<T> &second)
 	return first.x!=second.x || first.y!=second.y;
 }
 
+template <typename T>
+constexpr bool operator==(const Rect<T> &first, const Rect<T> &second) {
+	return first.pos()==second.pos() && first.size()==second.size();
+}
+template <typename T>
+constexpr bool operator!=(const Rect<T> &first, const Rect<T> &second) {
+	return first.pos()!=second.pos() || first.size()!=second.size();
+}
+
 //Vector with number operators
 template <typename T>
 constexpr skVector2<T> operator+(const skVector2<T>& first, T second) {
@@ -225,5 +239,6 @@ template <typename T> int sgn(T val) {
 int limitRange(int value, int min, int max);
 float limitRange(float value, float min, float max);
 Vector2f limitRange(Vector2f value, Vector2f min, Vector2f max);
+Vector2f limitRange(Vector2f value, FloatRect rect);
 
 bool operator==(const TextureRect &first, const TextureRect &second);

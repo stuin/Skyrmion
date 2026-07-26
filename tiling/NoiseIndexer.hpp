@@ -1,3 +1,5 @@
+#pragma once
+
 #include "GridMaker.h"
 
 //#include "../include/libnoise/src/noise/noise.h"

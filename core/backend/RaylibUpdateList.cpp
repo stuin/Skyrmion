@@ -39,6 +39,7 @@ std::vector<UNode *> UpdateList::deleted2;
 Node *UpdateList::camera = NULL;
 FloatRect UpdateList::cameraRect;
 FloatRect UpdateList::screenRect;
+IntRect UpdateList::screenGuard;
 skColor UpdateList::backgroundColor;
 Camera2D raycamera;
 
@@ -604,6 +605,11 @@ void UpdateList::frame(void) {
 		cameraRect = camera->getRect();
 	else
 		cameraRect = screenRect;
+
+	//if(screenGuard != IntRect()) {
+	//	IntRect screenGuard2 = IntRect(Vector2f(screenGuard.pos())+cameraRect.size()/3, Vector2f(screenGuard.size())-cameraRect.size()/2);
+	//	cameraRect = FloatRect(limitRange(cameraRect.pos(), screenGuard2), cameraRect.size());
+	//}
 
 	//Main draw function
 	draw(cameraRect);

@@ -91,13 +91,16 @@ void UpdateList::sendSignal(int id, Node *sender) {
 }
 
 //Set camera to follow node
-Node *UpdateList::setCamera(Node *follow, Vector2f size, Vector2f position) {
+Node *UpdateList::setCamera(Node *follow, Vector2f size, Vector2f position, IntRect _screenGuard) {
 	if(camera != NULL) {
 		camera->setSize(size);
 		camera->setOrigin(size/2.0f);
 		camera->setParent(follow);
 	} else
 		camera = new Node(0, RENDER_NONE, size, follow);
+
+	if(_screenGuard != IntRect())
+		screenGuard = _screenGuard;
 	cameraRect = FloatRect(position, size);
 	camera->setPosition(position);
 	return camera;
@@ -178,7 +181,7 @@ void UpdateList::addListener(UNode *item, int type) {
 
 //Send custom event
 void UpdateList::queueEvent(Event event) {
-	if(event.type >= EVENT_MAX || event != event_previous[event.type % EVENT_MAX])
+	if(event.type > EVENT_SUSPEND || event != event_previous[event.type % EVENT_MAX])
 		event_queue.push_back(event);
 }
 

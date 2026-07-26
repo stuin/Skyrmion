@@ -45,7 +45,7 @@ public:
 	//Area/path finding
 	int setTileRecursive(int x, int y, int value);
 	Vector2i getNearest(Vector2i start, int target);
-	bool lineEmpty(Vector2i start, Vector2i end);
+	bool lineEmpty(Vector2f start, Vector2f end);
 	std::vector<Vector2i> getPath(Vector2i start, Vector2i target, bool simplify=false, Indexer *debug=NULL);
 	std::vector<Vector2i> simplifyPath(std::vector<Vector2i> path);
 	void drawPath(std::vector<Vector2i> path, int value);
