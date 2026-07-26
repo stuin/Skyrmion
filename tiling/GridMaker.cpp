@@ -416,7 +416,7 @@ void GridMaker::save(std::string file) {
 
 	//Loop through tiles
 	for(int y = 0; y < height; y++) {
-		for(int x = 0; x < width; x++) {
+		for(int x = 0; x < width-1; x++) {
 			text[y*width+x] = tiles[y][x];
 		}
 		text[y*width+width-1] = '\n';

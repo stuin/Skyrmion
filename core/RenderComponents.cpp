@@ -124,12 +124,12 @@ public:
 	}
 	void setTextureRect(TextureRect rectangle, sint i=0) {
 		if(i >= textureRects.size())
-			textureRects.resize(i);
+			textureRects.resize(i+1);
 		textureRects[i] = rectangle;
 	}
 	void setTextureIntRect(IntRect rect, sint i=0) {
 		if(i >= textureRects.size())
-			textureRects.resize(i);
+			textureRects.resize(i+1);
 		textureRects[i] = {0, 0, (float)rect.width,(float)rect.height, rect.left,rect.top, rect.width,rect.height, 0};
 	}
 
@@ -394,12 +394,12 @@ public:
 	}
 	void setTextureRect(TextureRect rectangle, sint i=0) {
 		if(i >= textureRects.size())
-			textureRects.resize(i);
+			textureRects.resize(i+1);
 		textureRects[i] = rectangle;
 	}
 	void setTextureIntRect(IntRect rect, sint i=0) {
 		if(i >= textureRects.size())
-			textureRects.resize(i);
+			textureRects.resize(i+1);
 		textureRects[i] = {0, 0, (float)rect.width,(float)rect.height, rect.left,rect.top, rect.width,rect.height, 0};
 	}
 	void setTextureVecRect(Vector2i corner, Vector2i size, sint i=0) {

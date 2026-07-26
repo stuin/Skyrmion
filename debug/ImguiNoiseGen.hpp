@@ -26,6 +26,7 @@ public:
 		limitIndexer = new ConstIndexer(100, testSize, testSize);
 
 		noiseIndexer = new NoiseIndexer(zeroIndexer, limitIndexer, 0, NOISEPerlin, 100 / testDivisions);
+		noiseIndexer->setFrequency(5);
 		randomIndexer = new RandomIndexer(zeroIndexer, limitIndexer, 100 / testDivisions);
 
 		debugNoise = new ColorMap(noiseIndexer, percentColorFunc(100), debugLayer);
