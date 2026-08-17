@@ -1,19 +1,20 @@
-#include "../core/UpdateList.h"
+#include <set>
 
+#include "../core/UpdateList.h"
 #include "../include/imgui/imgui.h"//
 
 class ImguiNodes : public UNode {
 private:
 	bool open = false;
 
-	std::vector<bool> nodeWindows;
-	std::vector<Node *> nodes;
+	std::set<UNode *> nodeWindows;
 
 	Node nodeCursor;
 	Node rectCursor;
 	int currentRect = -1;
 	Node *currentRectNode = NULL;
 	float pickColor[4] = { 1.0f, 0.0f, 0.2f, 1.0f };
+	bool flipRects = false;
 
 public:
 	ImguiNodes(int debugLayer) : UNode(debugLayer),
@@ -26,22 +27,9 @@ public:
 		rectCursor.setColor(skColor(223,135,0));
 		nodeCursor.setHidden(true);
 		rectCursor.setHidden(true);
+		rectCursor.setOrigin(0,0);
 		UpdateList::addNode(&nodeCursor);
 		UpdateList::addNode(&rectCursor);
-
-		//Initial nodes and layer names
-		for(sint layer = 0; layer < UpdateList::getLayerCount(); layer++) {
-			UNode *source = UpdateList::getNode(layer);
-			while(source != NULL) {
-				sint id = source->getId();
-				while(id >= nodeWindows.size()) {
-					nodeWindows.push_back(false);
-					nodes.push_back(NULL);
-				}
-				nodes[id] = (Node*)source;
-				source = source->getNext();
-			}
-		}
 	}
 
 	void Text(std::string name, Vector2f value) {
@@ -74,16 +62,16 @@ public:
 					UNode *source = layerData.root;
 					while(source != NULL) {
 						sint id = source->getId();
-						while(id >= nodeWindows.size()) {
-							nodeWindows.push_back(false);
-							nodes.push_back(NULL);
-						}
-						nodes[id] = (Node*)source;
 
 						std::string nodeName = std::to_string(id);
-						bool window = nodeWindows[id];
-						if(ImGui::Selectable(nodeName.c_str(), &window))
-							nodeWindows[id] = window;
+						bool window = nodeWindows.contains(source);
+						if(ImGui::Selectable(nodeName.c_str(), &window)) {
+							if(window && !nodeWindows.contains(source))
+								nodeWindows.insert(source);
+							else if(!window && nodeWindows.contains(source))
+								nodeWindows.erase(source);
+						}
+
 						source = source->getNext();
 					}
 				}
@@ -98,22 +86,28 @@ public:
 	void showNodeWindow(Node *source) {
 		sint id = source->getId();
 		std::string nodeName = "Node " + std::to_string(id) + " : " + UpdateList::getLayerData(source->getLayer()).name;
-		bool window = nodeWindows[id];
+		bool window = true;
 
 		ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(ImGui::GetCursorScreenPos().x+510, ImGui::GetCursorScreenPos().y), ImGuiCond_FirstUseEver);
 		ImGui::Begin(nodeName.c_str(), &window);
-		nodeWindows[id] = window;
+		//if(!window)
+		//	nodeWindows.erase((UNode*) source);
 
 		bool focused = ImGui::IsWindowFocused();
 
 		if(source->getParent() != NULL) {
-			sint pid = source->getParent()->getId();
+			Node *parent = source->getParent();
+			sint pid = parent->getId();
 			std::string parentName = "Parent = " + std::to_string(pid);
 
-			bool parentWindow = nodeWindows[pid];
-			if(ImGui::Selectable(parentName.c_str(), &parentWindow))
-				nodeWindows[pid] = parentWindow;
+			bool parentWindow = nodeWindows.contains(parent);
+			if(ImGui::Selectable(parentName.c_str(), &parentWindow)) {
+				if(parentWindow && !nodeWindows.contains(parent))
+					nodeWindows.insert(parent);
+				else if(!parentWindow && nodeWindows.contains(parent))
+					nodeWindows.erase(parent);
+			}
 		} else
 			ImGui::Text("Parent = NULL");
 
@@ -128,7 +122,7 @@ public:
 			nodeCursor.setSize((Vector2f)source->getSize());
 			nodeCursor.setOrigin(source->getSOrigin());
 			nodeCursor.setPosition(source->getGPosition());
-			rectCursor.setOrigin(source->getSOrigin());
+			//rectCursor.setOrigin(source->getSOrigin());
 			//nodeCursor.setTextureRect({source->getSOrigin().x,source->getSOrigin().y,1,1, 22,8,1,1,0}, 4);
 			//nodeCursor.createPixelRect(FloatRect(0,0, source->getSize().x,source->getSize().y), Vector2i(18,8), 0);
 		}
@@ -162,6 +156,7 @@ public:
 
 		if(renderer->getTextureRects() != NULL && renderer->getTextureRects()->size() > 0) {
 			ImGui::Text("Texture Rects = %lu", renderer->getTextureRects()->size());
+			ImGui::Checkbox("Flip Rects", &flipRects);
 
 			if(ImGui::BeginChild("##", ImVec2(400.0f, 200.0f), ImGuiChildFlags_Borders, 0)) {
 				focused |= ImGui::IsWindowFocused();
@@ -177,8 +172,11 @@ public:
 						rect.px, rect.py, rect.tx, rect.ty, rect.tx+rect.twidth, rect.ty+rect.theight, rect.rotation);
 
 					if(rectBorderBox && focused) {
-						rectCursor.setSize(rect.p().size()*source->getScale().abs());
-						rectCursor.setPosition(source->getGPosition()+rect.p().pos()*source->getScale().abs());
+						rectCursor.setSize(rect.p().size().abs()*source->getScale().abs());
+						Vector2f pos = rect.p().pos()*source->getScale().abs();
+						if(flipRects)
+							pos.y = source->getRect().height-pos.y;
+						rectCursor.setPosition(source->getGPosition()+pos);
 						rectCursor.setHidden(false);
 						//nodeCursor.createPixelRect(FloatRect(rect.p().pos()*source->getScale().abs(), rect.p().size()*source->getScale().abs()), Vector2i(18,13), 5);
 						currentRect = rectId;
@@ -235,13 +233,12 @@ public:
 				showWindow();
 
 			nodeCursor.setHidden(true);
-			for(sint i = 0; i < nodeWindows.size(); i++)
-				if(nodeWindows[i] && nodes[i] != NULL && !nodes[i]->isDeleted())
-					showNodeWindow(nodes[i]);
-				else if(nodes[i] != NULL && nodes[i]->isDeleted()) {
-					nodes[i] = NULL;
-					nodeWindows[i] = false;
-				}
+			for(auto it = nodeWindows.begin() ; it != nodeWindows.end();it++) {
+				if(!(*it)->isDeleted())
+					showNodeWindow((Node*)*it);
+				else
+					nodeWindows.erase(it);
+			}
 		}
 	}
 };

@@ -30,3 +30,23 @@ public:
 		func(event);
 	}
 };
+
+class PeriodicNode : public UNode {
+public:
+	std::function<void(void)> func;
+	float maxTime;
+	float time;
+
+	PeriodicNode(int layer, float _time, std::function<void(void)> _func) : UNode(layer), func(_func) {
+		maxTime = _time;
+		time = _time;
+		UpdateList::addUNode(this);
+	}
+
+	void update(double delta) {
+		if((time -= delta) <= 0) {
+            time = maxTime;
+            func();
+        }
+	}
+};

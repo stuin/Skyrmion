@@ -38,6 +38,8 @@ UNode *UNode::getNext(sint _id) {
 void UNode::addNode(UNode *node) {
 	if(next == NULL)
 		next = node;
+	else if(next == node)
+		throw new std::invalid_argument(DUPLICATEERROR);
 	else
 		next->addNode(node);
 }

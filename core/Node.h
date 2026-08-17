@@ -8,6 +8,7 @@
 #define MAXLAYER 16
 #define LAYERERROR "Used layer > " + std::to_string(MAXLAYER)
 #define DRAWLAYERERROR "Used node layer < 0"
+#define DUPLICATEERROR "Duplicate Node added"
 
 /*
  * UNode has id, updating, and events

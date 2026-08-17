@@ -15,6 +15,8 @@ void UpdateList::addNode(Node *next) {
 		maxLayer = layer;
 	if(layers[layer].root == NULL)
 		layers[layer].root = next;
+	else if(layers[layer].root == next)
+		throw new std::invalid_argument(DUPLICATEERROR);
 	else
 		layers[layer].root->addNode(next);
 
@@ -60,6 +62,8 @@ void UpdateList::addUNode(UNode *next) {
 		maxULayer = layer;
 	if(layers[layer].uRoot == NULL)
 		layers[layer].uRoot = next;
+	else if(layers[layer].uRoot == next)
+		throw new std::invalid_argument(DUPLICATEERROR);
 	else
 		layers[layer].uRoot->addNode(next);
 

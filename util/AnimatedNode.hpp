@@ -14,9 +14,15 @@ struct FrameTimer {
         time = maxTime;
     }
 
+    FrameTimer(float _maxTime) {
+        maxFrames = 0;
+        maxTime = _maxTime;
+        time = maxTime;
+    }
+
     bool next(float delta) {
-        if((time -= delta) <= 0 || time > maxTime) {
-            time = maxTime;
+        if((time -= delta) <= 0) {
+            time += maxTime;
             frame++;
 
             //Reset to start frame

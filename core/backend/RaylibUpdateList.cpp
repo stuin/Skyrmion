@@ -355,9 +355,9 @@ void UpdateList::drawNode(Node *source, sint passthrough) {
 		} break;
 	case RENDER_STRING:
 		if(source->getString() != NULL && resourceData[texture].type == SK_FONT)
-			DrawTextEx(fontSet[resourceData[texture].index], source->getString(), Vector2{rect.left, rect.top}, rendering->getSize(), 1, color);
+			DrawTextEx(fontSet[resourceData[texture].index], source->getString(), Vector2{rect.left, rect.top}, rendering->getSize()*scaleA.x, 1, color);
 		else if(source->getString() != NULL)
-			DrawTextEx(GetFontDefault(), source->getString(), Vector2{rect.left, rect.top}, rendering->getSize(), 1, color);
+			DrawTextEx(GetFontDefault(), source->getString(), Vector2{rect.left, rect.top}, rendering->getSize()*scaleA.x, 1, color);
 		break;
 	}
 

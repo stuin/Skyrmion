@@ -103,6 +103,9 @@ void AudioList::setMasterVolume(int volume) {
 //Background music streaming
 Music backgroundMusic;
 void AudioList::musicStream(std::string filename, int volume) {
+	if(!IsAudioDeviceReady())
+		InitAudioDevice();
+
 	backgroundMusic = LoadMusicStream(filename.c_str());
 	SetMusicVolume(backgroundMusic, volume/100.0);
 	PlayMusicStream(backgroundMusic);

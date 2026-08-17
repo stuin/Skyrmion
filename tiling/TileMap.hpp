@@ -28,7 +28,7 @@ private:
 
 public:
 
-    TileMap(sint _tileset, int _tileX, int _tileY, Indexer *_indexes, int layer=0, int buffer=0, int _offset=0, bool _hexRows=false, Rect<uint> border=Rect<uint>())
+    TileMap(sint _tileset, int _tileX, int _tileY, Indexer *_indexes, int layer=0, int buffer=0, int _offset=0, bool _hexRows=false, Vector2i _overlap=Vector2i(), Rect<uint> border=Rect<uint>())
      : Node(layer, RENDER_TEXTURE_ARRAY), tileSize(_tileX, _tileY), indexes(_indexes), offset(_offset), hexRows(_hexRows) {
 
         //Set sizing
@@ -43,11 +43,13 @@ public:
         if(rectSize.y + rectPos.y > fullSize.y)
             rectSize.y = fullSize.y - rectPos.y;
 
-        if(_hexRows) {
+        if(_hexRows && _overlap == Vector2i()) {
             overlap = Vector2i(0, _tileY/4);
             setSize((tileSize - overlap) * rectSize);
-        } else
+        } else {
+            overlap = _overlap;
             setSize((tileSize - overlap) * rectSize);
+        }
 
         setOrigin(0, 0);
         setPosition((tileSize - overlap) * rectPos);
@@ -100,7 +102,7 @@ public:
 
                 int xOffset = 0;
                 if(hexRows && (j + rectPos.y) % 2 == 1)
-                    xOffset = tileSize.x / 2;
+                    xOffset = (tileSize.x - overlap.x) / 2;
 
                 if(tileNumber - offset != -1) {
                     TextureRect quad;

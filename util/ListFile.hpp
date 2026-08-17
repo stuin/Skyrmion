@@ -5,6 +5,7 @@ private:
 	std::string filename;
 	std::string fallback;
 	std::vector<std::string> contents;
+	bool modified = false;
 
 public:
 	ListFile(std::string _filename, std::string _fallback="") : filename(_filename), fallback(_fallback) {
@@ -31,6 +32,8 @@ public:
 		contents[l] = s;
 		if(_save)
 			save();
+		else
+			modified = true;
 	}
 
 	void setInt(sint l, int value, bool _save=true) {
@@ -39,6 +42,8 @@ public:
 		contents[l] = std::to_string(value);
 		if(_save)
 			save();
+		else
+			modified = true;
 	}
 
 	void increment(sint l, bool _save=true) {
@@ -53,6 +58,10 @@ public:
 
 	sint size() {
 		return contents.size();
+	}
+
+	bool isModified() {
+		return modified;
 	}
 
 	void load(std::string file="") {
@@ -108,5 +117,6 @@ public:
 		text[size-1] = '\0';
 
 		IO::writeFile(file, text);
+		modified = false;
 	}
 };
