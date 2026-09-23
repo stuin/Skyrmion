@@ -233,8 +233,8 @@ struct WindowConfig {
 	std::string windowTitle;
 	Vector2i windowSize;
 	skColor backgroundColor;
-	std::vector<std::string> &textureFiles;
-	std::vector<std::string> &layerNames;
+	Array<std::string> &textureFiles;
+	Array<std::string> &layerNames;
 };
 
 //System functions to be implemented by the game

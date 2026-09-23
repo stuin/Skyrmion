@@ -1,6 +1,7 @@
 #include "../../include/raylib/src/raylib.h"//
 
 #include "../AudioList.h"
+#include "../UpdateList.h"
 #include "../../tiling/NoiseIndexer.hpp"
 
 std::vector<AudioChannel> channels;
@@ -8,7 +9,7 @@ std::vector<AudioEvent> events;
 std::vector<Sound> eventSounds;
 int audioSeed = 0;
 
-void AudioList::initAudio(std::vector<std::string> _channels, std::vector<std::string> files) {
+void AudioList::initAudio(Array<std::string> _channels, Array<std::string> files) {
 	InitAudioDevice();
 	createChannel(0, "Default");
 	audioSeed = intNoise(time(NULL));
@@ -74,11 +75,20 @@ void AudioList::playEvent(sint e, Node *source) {
 		audioSeed = intNoise(audioSeed);
 	}
 
-	if(event.valid) {
+	if(event.valid && source == NULL) {
 		SetSoundVolume(eventSounds[e], channels[event.channel].volume/100.0f);
 		PlaySound(eventSounds[e]);
+	} else if(event.valid) {
+		Vector2f soundPos = source->getGPosition() - UpdateList::getScreenRect().center();
+		Vector2f falloffPos = soundPos / 2 / UpdateList::getScreenSize() * channels[event.channel].falloff;
+		float distance = vectorLength(falloffPos);
+		if(distance < 1.0f) {
+            float volume = (1 - distance) * channels[event.channel].volume / 100.0f;
+            SetSoundVolume(eventSounds[e], volume);
+            SetSoundPan(eventSounds[e], falloffPos.x);
+            PlaySound(eventSounds[e]);
+        }
 	}
-
 }
 
 bool AudioList::isPlaying(sint e) {

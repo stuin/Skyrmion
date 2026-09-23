@@ -136,8 +136,8 @@ public:
 		}
 
 		RenderComponent *renderer = source->getRenderComponent();
-		ImGui::Text("RenderComponent = %s", RENDER_TYPE_NAMES[renderer->getType()].c_str());
-		ImGui::Text("BlendMode = %s", BLENDMODE_NAMES[source->getBlendMode()].c_str());
+		ImGui::Text("RenderComponent = %s", RENDER_TYPE_NAMES.begin()[renderer->getType()].c_str());
+		ImGui::Text("BlendMode = %s", BLENDMODE_NAMES.begin()[source->getBlendMode()].c_str());
 
 		sint texture = source->getTexture();
 		if(texture < UpdateList::getResourceCount())

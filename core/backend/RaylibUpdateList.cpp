@@ -666,9 +666,14 @@ void UpdateList::init() {
 	rlImGuiSetup(true);
 
 	//Set layer names
-	for(sint layer = 0; layer < config.layerNames.size(); layer++)
-		layers[layer].name = config.layerNames[layer];
-	maxLayer = config.layerNames.size()-1;
+	{
+		auto layerName = config.layerNames.begin();
+		for(sint layer = 0; layer < config.layerNames.size(); layer++) {
+			layers[layer].name = *layerName;
+			layerName++;
+		}
+		maxLayer = config.layerNames.size()-1;
+	}
 
 	//Load resources
 	bufferSet.emplace_back();

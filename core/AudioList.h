@@ -6,6 +6,7 @@
 struct AudioChannel {
 	std::string name = "UNKNOWN";
 	int volume = 100;
+	float falloff = 0.5;
 	bool stream = false;
 
 	AudioChannel() {}
@@ -31,7 +32,7 @@ struct AudioEvent {
 class AudioList {
 public:
 	//Audio setup
-	static void initAudio(std::vector<std::string> channels, std::vector<std::string> files);
+	static void initAudio(Array<std::string> channels, Array<std::string> files);
 	static void createChannel(sint c, std::string name, int volume=100, bool stream=false);
 	static void assignEvent(sint channel, sint e, int variants=0);
 	static void assignEvents(sint channel, sint min, sint max);

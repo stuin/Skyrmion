@@ -85,6 +85,11 @@ public:
 		return skVector2<T>(width, height);
 	}
 
+	skVector2<T> center() const {
+		return skVector2<T>(left + width / 2, top + height / 2);
+	}
+
+
 	bool contains(const skVector2<T> point) const {
 		return point.x >= left && point.x <= left+width &&
 			point.y >= top && point.y <= top+height;

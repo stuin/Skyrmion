@@ -26,12 +26,14 @@ public:
 		ImGui::SetNextWindowSize(ImVec2(300, 500), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Events", &open);
 
+		auto eventName = EVENT_NAMES.begin();
 		for(int i = 0; i < EVENT_MAX; i++) {
 			ImGui::PushID(i);
 
 			if(count[i] == 0)
 				ImGui::BeginDisabled();
-			if(ImGui::CollapsingHeader(EVENT_NAMES[i].c_str())) {
+			if(ImGui::CollapsingHeader((*eventName).c_str())) {
+				eventName++;
 				ImGui::Text("type = %d", last[i].type);
 				ImGui::Text("down = %d", last[i].down);
 				ImGui::Text("code = %d", last[i].code);
